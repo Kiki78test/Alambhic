@@ -10,7 +10,7 @@ def sec(title, items):
 FAIT = [
     ("ok", "<b>Prototype</b> (09/11) : calcul du taux, titres et gages, courbes communes, notifications, avatar évolutif, mode démo avec curseur temporel."),
     ("ok", "<b>Cahier des charges</b> (09/11) : concept, calcul, trophées, alertes, fiabilité et anti-triche, localisation, suivi long terme, supports, monétisation, juridique, architecture, feuille de route."),
-    ("ok", "<b>Dépôt GitHub</b> <code>Kiki78test/Youdrink</code> (10/11), accès de Claude autorisé."),
+    ("ok", "<b>Dépôt GitHub</b> <code>Kiki78test/Alambhic</code> (renommé le 19/11, ex-Youdrink), accès de Claude autorisé."),
     ("ok", "<b>Render</b> (10/11) : Blueprint « youdrink », service web gratuit et base PostgreSQL gratuite, tous deux à Francfort. Adresse : <code>alambhic.onrender.com</code>."),
     ("ok", "<b>Comptes</b> : e-mail + mot de passe (8 caractères minimum, mots de passe chiffrés), connexion gardée 60 jours, limitation des essais de connexion."),
     ("ok", "<b>Profil</b> : pseudo, sexe, âge (18 ans minimum), taille, poids, plafond perso. Les mesures ne sont jamais montrées aux autres joueurs."),
@@ -68,6 +68,7 @@ A_FAIRE = [
     ("todo", "<b>Visuels par IA</b> (jauge, avatars, logo) : 1) <b>Recraft</b> (recraft.ai), en priorité : vrais fichiers vectoriels SVG et style constant d'une image à l'autre, découpables et animables ; 2) <b>Midjourney ou ChatGPT (images)</b> : beau rendu mais images figées (PNG) ; pour la jauge, demander une version vide et une version pleine superposables ; 3) <b>LottieFiles</b> (Lottie Creator et son assistant IA) : vraie animation, plus de travail."),
     ("todo", "<b>Avatar femme</b> : à dessiner d'après les prochaines images (le sexe du profil choisira la version)."),
     ("todo", "<b>Juridique</b> avant toute ouverture publique : loi Évin, règles des stores, RGPD (analyse d'impact, politique de confidentialité, mentions légales)."),
+    ("todo", "<b>Hébergement comme les autres projets</b> : Render payant (service web + base) et domaine sur Cloudflare, avec Airmony, AnagramX et Hermaion."),
     ("todo", "<b>Passage aux offres payantes Render</b> (environ 7 $ + 6 $ par mois) avant d'ouvrir au-delà du cercle d'amis : la base gratuite expire au bout de 30 jours."),
 ]
 

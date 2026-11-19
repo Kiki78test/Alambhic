@@ -142,7 +142,7 @@ ch("Compte et données", """<ul><li><b>Se déconnecter</b> : Profil → « Me d�
 
 ch("Administration", """<ul><li><b>Comptes admin</b> : variable Render <code>ADMIN_EMAILS</code> (adresses séparées par des virgules). Un admin voit le bouton « Documentation » dans sa page Profil.</li>
 <li><b>Documentation</b> : PDF du dossier <code>docs/</code> listés dans <code>docs/index.json</code> (titre, description, date, catégorie), accessibles aux seuls admins. Sources dans <code>docs-src/</code>, régénérées par <code>docs-src/build.sh</code>.</li>
-<li><b>Déploiement</b> : chaque envoi sur la branche <code>main</code> de <code>Kiki78test/Youdrink</code> redéploie le service Render.</li>
+<li><b>Déploiement</b> : chaque envoi sur la branche <code>main</code> de <code>Kiki78test/Alambhic</code> redéploie le service Render.</li>
 <li><b>Variables</b> : <code>DATABASE_URL</code> et <code>SESSION_SECRET</code> (automatiques), <code>GOOGLE_CLIENT_ID</code> (facultatif), <code>ADMIN_EMAILS</code>.</li></ul>""")
 
 toc = "<ol class='toc'>" + "".join(f"<li><span class='n'>{i+1}</span>{t}</li>" for i, (t, _) in enumerate(CH)) + "<li><span class='n'>A</span>Historique des versions</li></ol>"

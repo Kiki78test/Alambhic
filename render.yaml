@@ -1,7 +1,7 @@
 # Blueprint Render : service web + base PostgreSQL, offre gratuite pour les tests.
 databases:
   - name: alambhic-db
-    plan: free
+    plan: basic-256mb   # ≈ 6 $/mois ; pas d'expiration, sauvegardes quotidiennes
     region: frankfurt
     databaseName: youdrink
     user: youdrink
@@ -10,7 +10,7 @@ services:
   - type: web
     name: alambhic
     runtime: node
-    plan: free
+    plan: starter       # 7 $/mois : pas de mise en veille
     region: frankfurt
     buildCommand: npm install --omit=dev
     startCommand: node server/index.js
@@ -27,6 +27,10 @@ services:
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: ADMIN_EMAILS
+        sync: false
+      - key: MONITOR_KEY         # clé du tableau de bord de contrôle (même valeur sur les 4 applis)
+        sync: false
+      - key: MONITOR_ORIGIN      # adresse du tableau de bord, ex. https://controle.airmonylive.com
         sync: false
       - key: CONTACT_EMAIL
         sync: false

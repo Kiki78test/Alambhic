@@ -20,6 +20,10 @@ app.use((req, res, next) => {
 
 app.get("/healthz", (req, res) => res.send("ok"));
 
+// Tableau de bord de contrôle (GET /api/monitor, protégé par la clé MONITOR_KEY)
+const surveillance = require("./surveillance");
+app.use((req, res, next) => { surveillance.traiter(req, res).then(pris => { if (!pris) next(); }, next); });
+
 // Les erreurs des routes async remontent ici (Express 5).
 auth.routes(app);
 parties.routes(app);
@@ -49,6 +53,7 @@ const PORT = process.env.PORT || 3000;
 // Le port s'ouvre tout de suite ; la base est préparée en parallèle.
 const server = http.createServer(app);
 parties.attachWs(server);
+surveillance.brancherDirect(parties.etatDirect);
 server.listen(PORT, () => console.log(`Alamb'hic en écoute sur le port ${PORT}`));
 migrate().then(() => friends.migrate()).then(() => console.log("Base prête."))
   .catch(e => { console.error("Base impossible à préparer :", e.message); process.exit(1); });

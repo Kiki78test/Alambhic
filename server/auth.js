@@ -60,6 +60,7 @@ async function requireUser(req, res, next) {
   const { rows } = await q(`SELECT ${PUBLIC_USER} FROM users WHERE id=$1`, [uid]);
   if (!rows[0]) { clearSession(res); return res.status(401).json({ error: "Session expirée, reconnectez-vous." }); }
   req.user = withAdmin(rows[0]);
+  require("./surveillance").vu(uid);   // activité du jour (tableau de bord de contrôle)
   next();
 }
 function requireAdmin(req, res, next) {

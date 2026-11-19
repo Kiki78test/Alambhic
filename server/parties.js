@@ -230,4 +230,6 @@ function routes(app) {
   });
 }
 
-module.exports = { routes, attachWs };
+// état en direct pour le tableau de bord de contrôle
+const etatDirect = () => ({ soirees: rooms.size, sockets: [...rooms.values()].reduce((t, s) => t + s.size, 0) });
+module.exports = { routes, attachWs, etatDirect };

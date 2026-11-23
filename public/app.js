@@ -153,7 +153,7 @@ function viewRank(list,now){
     return `<section><h2>Mes potes en direct</h2>${seg}
     <p class="muted" style="font-size:13px;margin:0">Taux estimé et tendance sur les 15 dernières minutes : ▲ ça monte, ▼ ça redescend.</p>
     <div class="live">${r.map(p=>{const [lab,col]=stateOf(p.sim.cur,+p.cap||0.8), tr=trendOf(p,now), last=p.ev.filter(e=>e.kind!=="info").sort((a,b)=>b.t-a.t)[0];
-      return `<div class="lcard"><div class="lhead">${avx(p,58,lab)}<div class="lname"><b>${esc(p.pseudo)}</b>${p.id===S.me?'<span class="muted"> (vous)</span>':""}<span class="lstate" style="color:${col}">${lab}</span></div></div>
+      return `<div class="lcard"><div class="lhead">${avx(p,58,lab)}<div class="lname"><b data-noi18n>${esc(p.pseudo)}</b>${p.id===S.me?'<span class="muted"> (vous)</span>':""}<span class="lstate" style="color:${col}">${lab}</span></div></div>
       <div class="lrow"><span class="lnum" style="color:${col}">${fmt(p.sim.cur)}<small>g/L</small></span><span class="ltr ${tr.k}${trendPrev[p.id]&&trendPrev[p.id]!==tr.k?" chg":""}" data-tk="${p.id}|${tr.k}">${tr.k==="up"?"▲":tr.k==="down"?"▼":"■"} ${tr.txt}</span></div>
       ${spark(p,now,p.color)}
       <div class="ltitle ${last?last.kind:""}">${last?`${esc(last.title)} <span class="muted">· ${hm(last.t)}</span>`:`<span class="muted">Pas encore de titre</span>`}</div></div>`}).join("")}</div></section>`;
@@ -257,7 +257,7 @@ function pump(){
   const e=TQ.shift(), k=e.kind||"info", dur=k==="care"?12000:k==="shame"?6500:4500;
   const d=document.createElement("div"); d.className="toast "+k; d.setAttribute("role","status");
   d.innerHTML=`<span class="ti">${icon(k)}${k==="trophy"?'<em class="hic">hic!</em><i class="sp s1"></i><i class="sp s2"></i><i class="sp s3"></i>':""}</span><div class="tx"><b>${esc(e.title)}</b><span>${esc(e.text)}</span></div><span class="tq" hidden></span><button class="tc" aria-label="Fermer">×</button><i class="tp" style="animation-duration:${dur}ms"></i>`;
-  const box=$("#toasts"); box.innerHTML=""; box.appendChild(d); tShown=d; updQ();
+  I18N.apply(d); const box=$("#toasts"); box.innerHTML=""; box.appendChild(d); tShown=d; updQ();
   requestAnimationFrame(()=>d.classList.add("in"));
   const close=()=>{ if(tShown!==d) return; clearTimeout(tTimer); d.classList.remove("in"); d.classList.add("out"); setTimeout(()=>{ d.remove(); tShown=null; pump() },200) };
   d.onclick=close; tTimer=setTimeout(close,dur);
@@ -268,7 +268,7 @@ function snack(title,text="",opt={}){
   const s=$("#snack"); clearTimeout(sTimer);
   s.className="snack "+(opt.err?"err":"ok");
   s.innerHTML=`<span class="si">${icon(opt.err?"care":"ok")}</span><div class="sx"><b>${esc(title)}</b>${text?`<span>${esc(text)}</span>`:""}</div>${opt.undo?`<button class="su">Annuler</button>`:""}`;
-  if(opt.undo) s.querySelector(".su").onclick=()=>{ hideSnack(); opt.undo() };
+  I18N.apply(s); if(opt.undo) s.querySelector(".su").onclick=()=>{ hideSnack(); opt.undo() };
   s.hidden=false; requestAnimationFrame(()=>s.classList.add("show"));
   sTimer=setTimeout(hideSnack,opt.undo?6000:opt.err?5000:2800);
 }
@@ -289,15 +289,17 @@ function viewAuth(){
    ${reg?`<label class="toggle consent"><input type="checkbox" id="consent" required ${S.fConsent?"checked":""}><span>J'ai 18 ans ou plus, j'accepte les <a href="/conditions" target="_blank">conditions d'utilisation</a> et le traitement de mes consommations décrit dans la <a href="/confidentialite" target="_blank">politique de confidentialité</a>.</span></label>`:""}
    ${S.err?`<div class="banner">${esc(S.err)}</div>`:""}
    <button class="btn" type="submit">${reg?"Créer mon compte":"Me connecter"}</button>
+   ${reg?"":`<button type="button" class="link" id="forgotBtn" style="align-self:flex-start">Mot de passe oublié ?</button>`}
   </form>
   ${S.cfg.googleClientId?`<div class="or">ou</div><div class="google" id="gbtn"></div><p class="muted" style="font-size:12px;margin:0;text-align:center">En continuant avec Google, vous confirmez avoir 18 ans ou plus et acceptez les <a href="/conditions" target="_blank">conditions</a> et la <a href="/confidentialite" target="_blank">politique de confidentialité</a>.</p>`:""}
   <div class="or">pour découvrir</div>
   <button class="btn ghost" id="demoBtn">Voir la démo : une soirée fictive en accéléré</button>
-  <p class="note">Réservé aux 18 ans et plus. Les taux affichés sont des estimations, jamais une autorisation de conduire. <a href="/confidentialite">Confidentialité</a> · <a href="/conditions">Conditions</a></p>
+  <p class="note">Réservé aux 18 ans et plus. Les taux affichés sont des estimations, jamais une autorisation de conduire. <a href="/confidentialite">Confidentialité</a> · <a href="/conditions">Conditions</a> · <button class="link" id="helpBtn" style="padding:0;font-size:12px">Aide</button></p>
+  <div class="row" style="justify-content:center">${Object.entries(LANGS).map(([k,l])=>`<button class="link langbtn" data-lang="${k}" aria-pressed="${I18N.lang===k}" style="font-size:12px">${l}</button>`).join("")}</div>
   </section>`;
 }
 function viewProfile(){
-  const p=S.user||{}, edit=profileReady(S.user);
+  const p={...(S.user||{}),...(S.fProf||{})}, edit=profileReady(S.user);
   const wk=S.week?weekView():"";
   return `<div class="hero"><h1>${edit?"Mon profil":"Votre profil"}</h1>${edit?"":`<p class="muted">Ces mesures servent au calcul de votre taux. Seuls votre pseudo, vos verres et vos taux sont visibles des autres joueurs.</p>`}</div>
   <section><div class="field"><span class="label">Pseudo</span><input id="pseudo" maxlength="20" value="${esc(p.pseudo||"")}" placeholder="Ex. Kiki"></div>
@@ -310,7 +312,8 @@ function viewProfile(){
   <div class="row"><button class="btn" id="saveProf">Enregistrer</button>${edit?`<button class="btn ghost" id="back">Retour</button>`:""}</div>
   </section>
   ${wk}
-  ${edit?`<section><div class="row">${S.user?.admin?`<button class="btn ghost small" id="openDocs">Documentation</button>`:""}<button class="btn ghost small" id="demoBtn2">Voir la démo</button>${S.user?.admin?`<a class="btn ghost small" href="/demo.html" target="_blank" rel="noopener" style="text-decoration:none">Banc de test (ordinateur)</a>`:""}</div></section><section><div class="row">${S.code?`<button class="btn ghost small" id="leave">Quitter la soirée ${esc(S.code)}</button>`:""}<button class="btn ghost small" id="logout">Me déconnecter</button></div>
+  ${edit?viewBadges()+viewNotifs()+viewLang():""}
+  ${edit?`<section><div class="row"><button class="btn ghost small" id="helpBtn2">Aide</button>${S.user?.admin?`<button class="btn ghost small" id="openDocs">Documentation</button>`:""}<button class="btn ghost small" id="demoBtn2">Voir la démo</button>${S.user?.admin?`<a class="btn ghost small" href="/demo.html" target="_blank" rel="noopener" style="text-decoration:none">Banc de test (ordinateur)</a>`:""}</div></section><section><div class="row">${S.code?`<button class="btn ghost small" id="leave">Quitter la soirée ${esc(S.code)}</button>`:""}<button class="btn ghost small" id="logout">Me déconnecter</button></div>
   <button class="link danger" id="delAcc">Supprimer mon compte et toutes mes données</button><div id="delConfirm" hidden class="banner">Tout sera effacé : profil, verres, titres. <div class="row" style="margin-top:8px"><button class="btn small" id="delYes">Oui, tout supprimer</button><button class="btn ghost small" id="delNo">Annuler</button></div></div></section>`:""}`;
 }
 function weekView(){
@@ -342,10 +345,10 @@ function openFriends(){ S.err=""; S.screen="friends"; render(); loadFriends().th
 const inviteLink=()=>`${location.origin}/?ami=${S.friends?.code||""}`;
 function friendCard(f,i,now){
   const L=f.live, color=COLORS[(i+1)%COLORS.length];
-  if(!L) return `<div class="lcard off"><div class="lhead">${avatar({id:f.id,color,cap:f.cap,sim:{cur:0,prev:0,peak:0},drinks:[]},50)}<div class="lname"><b>${esc(f.pseudo)}</b><span class="lstate muted">${f.share?"Pas en soirée":"Ne partage pas son taux"}</span></div></div><button class="link danger" data-unf="${f.id}" data-name="${esc(f.pseudo)}">Retirer</button></div>`;
+  if(!L) return `<div class="lcard off"><div class="lhead">${avatar({id:f.id,color,cap:f.cap,sim:{cur:0,prev:0,peak:0},drinks:[]},50)}<div class="lname"><b data-noi18n>${esc(f.pseudo)}</b><span class="lstate muted">${f.share?"Pas en soirée":"Ne partage pas son taux"}</span></div></div><button class="link danger" data-unf="${f.id}" data-name="${esc(f.pseudo)}">Retirer</button></div>`;
   const p={id:f.id,color,cap:f.cap,sim:{cur:L.cur,prev:L.prev,peak:L.peak,pts:L.pts},drinks:L.drinks};
   const [lab,col]=stateOf(L.cur,+f.cap||0.8), tr=trendOf(p,now);
-  return `<div class="lcard"><div class="lhead">${avx(p,58,L.sam?"Sam ce soir":lab,"f"+f.id)}<div class="lname"><b>${esc(f.pseudo)}</b><span class="lstate" style="color:${col}">${L.sam?"Sam ce soir":lab}</span></div></div>
+  return `<div class="lcard"><div class="lhead">${avx(p,58,L.sam?"Sam ce soir":lab,"f"+f.id)}<div class="lname"><b data-noi18n>${esc(f.pseudo)}</b><span class="lstate" style="color:${col}">${L.sam?"Sam ce soir":lab}</span></div></div>
     <div class="lrow"><span class="lnum" style="color:${col}">${fmt(L.cur)}<small>g/L</small></span><span class="ltr ${tr.k}${trendPrev["f"+f.id]&&trendPrev["f"+f.id]!==tr.k?" chg":""}" data-tk="f${f.id}|${tr.k}">${tr.k==="up"?"▲":tr.k==="down"?"▼":"■"} ${tr.txt}</span></div>
     ${spark(p,now,color)}
     <div class="ltitle ${L.last?L.last.kind:""}">${L.last?`${esc(L.last.title)} <span class="muted">· ${hm(L.last.t)}</span>`:`<span class="muted">Pas encore de titre</span>`}</div></div>`;
@@ -393,7 +396,93 @@ function viewHome(){
   ${S.err?`<div class="banner">${esc(S.err)}</div>`:""}</section>${S.week?weekView():""}`;
 }
 
+
+/* ---------- badges à paliers (bronze, argent, or) ---------- */
+async function loadBadges(){ try{ const r=await api("GET","/api/me/badges"); S.badges=r.badges;
+  r.badges.filter(b=>b.new).forEach(b=>toast({kind:"trophy",title:`Badge ${b.tierName} : ${b.title}`,text:`${b.desc} : ${b.count}.`})) }catch(e){} }
+const MEDAL=["var(--line)","#cd7f32","#c9d2de","#ffcf4a"];
+function viewBadges(){
+  if(!S.badges) return "";
+  return `<section><h2>Mes badges</h2><p class="muted" style="font-size:13px;margin:0">Ils suivent votre historique et récompensent la régularité et la modération, jamais l'excès.</p>
+  <div class="bgrid">${S.badges.map(b=>{const top=b.steps[b.steps.length-1], pct=Math.min(100,b.count/(b.next||top)*100);
+    return `<div class="bcard t${b.tier}"><span class="medal" style="--m:${MEDAL[b.tier]}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="7"/><path d="M8 3l2.5 4.5M16 3l-2.5 4.5"/></svg></span>
+    <div class="bx"><b>${esc(b.title)}</b><span class="muted">${esc(b.desc)} : ${b.count}</span><span class="bt">${b.tier?esc(b.tierName):"À débloquer"}${b.next?` · prochain palier à ${b.next}`:" · palier maximal"}</span><i class="bbar"><i style="width:${pct.toFixed(0)}%"></i></i></div></div>`}).join("")}</div></section>`;
+}
+
+/* ---------- notifications push ---------- */
+const pushOK=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+async function loadNotifs(){ try{ S.notifs=await api("GET","/api/me/notifs"); const reg=pushOK()?await navigator.serviceWorker.ready:null; S.notifs.here=!!(reg&&await reg.pushManager.getSubscription()) }catch(e){} }
+const b64u=s=>{const p="=".repeat((4-s.length%4)%4),b=atob((s+p).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(b,c=>c.charCodeAt(0))};
+async function enablePush(){
+  if(!pushOK()) throw new Error(/iPhone|iPad/.test(navigator.userAgent)?"Sur iPhone, installez d'abord Alamb'hic sur l'écran d'accueil (Partager → Sur l'écran d'accueil), puis ouvrez-le depuis l'icône.":"Ce navigateur ne gère pas les notifications.");
+  const perm=await Notification.requestPermission(); if(perm!=="granted") throw new Error("Notifications refusées. Autorisez-les dans les réglages du navigateur pour ce site.");
+  const reg=await navigator.serviceWorker.ready, {key}=await api("GET","/api/push/key");
+  let sub=await reg.pushManager.getSubscription(); if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(key)});
+  await api("POST","/api/push/subscribe",{sub:sub.toJSON()});
+}
+async function disablePush(){ const reg=await navigator.serviceWorker.ready, sub=await reg.pushManager.getSubscription(); if(sub){ await api("POST","/api/push/unsubscribe",{endpoint:sub.endpoint}); await sub.unsubscribe() } }
+function viewNotifs(){
+  const N=S.notifs; if(!N) return "";
+  return `<section><h2>Notifications</h2>
+  <div class="card" style="display:flex;flex-direction:column;gap:10px">
+   <div class="row" style="justify-content:space-between"><span>${N.here?"Activées sur cet appareil":"Désactivées sur cet appareil"}</span>${N.here?`<div class="row" style="gap:6px"><button class="btn ghost small" id="pushTest">Tester</button><button class="btn ghost small" id="pushOff">Couper</button></div>`:`<button class="btn small" id="pushOn">Activer sur cet appareil</button>`}</div>
+   ${Object.entries(N.cats).map(([k,l])=>`<label class="toggle"><span>${esc(l)}</span><input type="checkbox" data-nc="${k}" ${N.prefs[k]?"checked":""}></label>`).join("")}
+   <p class="muted" style="font-size:12px;margin:0">Elles arrivent même appli fermée. ${N.devices>1?`${N.devices} appareils abonnés.`:""}</p>
+  </div></section>`;
+}
+
+/* ---------- langue ---------- */
+const LANGS={fr:"Français",en:"English",es:"Español",pt:"Português"};
+function viewLang(){ return `<section><div class="field"><span class="label">Langue</span><select id="langSel">${Object.entries(LANGS).map(([k,l])=>`<option value="${k}" ${I18N.lang===k?"selected":""}>${l}</option>`).join("")}</select></div></section>` }
+
+/* ---------- aide ---------- */
+async function openHelp(){ S.err=""; S.prevScreen=S.screen==="help"?S.prevScreen:S.screen; S.screen="help"; render(); if(!S.help){ try{ S.help=await api("GET","/api/help") }catch(e){ S.err=e.message } render() } }
+function viewHelp(){
+  const H=S.help, back=`<button class="btn ghost small" id="helpBack">Retour</button>`;
+  if(!H) return `<div class="hero"><h1>Aide</h1></div><section>${loader("Chargement…")}${back}</section>`;
+  const A=S.helpAns;
+  return `<div class="hero"><h1>Aide</h1><p class="muted">Posez votre question ou parcourez les réponses.</p></div>
+  <section><form id="helpForm" class="row" style="flex-wrap:nowrap"><div class="field" style="flex:1"><input id="helpQ" placeholder="Ex. pourquoi mon pic baisse après un repas ?" value="${esc(S.helpQ||"")}" maxlength="300"></div><button class="btn" type="submit">Demander</button></form>
+  ${S.err?`<div class="banner">${esc(S.err)}</div>`:""}
+  ${A?`<div class="card hans">${A.answer?`<span class="label" style="color:var(--accent)">Réponse${A.ai?" (assistant)":""}</span><p style="margin:6px 0 0;white-space:pre-line">${esc(A.answer)}</p>`:A.found.length?"":`<p class="muted" style="margin:0">Pas de réponse toute prête. Essayez d'autres mots, ou écrivez-nous depuis la page <a href="/confidentialite" target="_blank">Confidentialité</a>.</p>`}
+   ${(!A.answer&&A.found.length)?A.found.map(f=>`<details class="hq" open><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join(""):""}</div>`:""}</section>
+  <section><h2>Questions fréquentes</h2>${H.items.map(f=>`<details class="hq"><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</section>
+  <section>${back}</section>`;
+}
+
+/* ---------- mot de passe oublié ---------- */
+function viewForgot(){
+  return `<div class="hero"><h1>Mot de passe oublié</h1><p class="muted">Entrez l'adresse de votre compte : nous vous envoyons un lien pour choisir un nouveau mot de passe (valable 1 heure).</p></div>
+  <section>${S.forgotSent?`<div class="card"><b>E-mail envoyé</b><p class="muted" style="margin:6px 0 0">Si un compte existe avec cette adresse, le lien arrive dans quelques instants. Pensez à regarder dans les indésirables.</p></div>`:
+  `<form id="forgotForm" class="field" style="gap:10px" novalidate><div class="field"><span class="label">E-mail</span><input id="fgEmail" type="email" autocomplete="email" value="${esc(S.fEmail||"")}"></div>
+  ${S.err?`<div class="banner">${esc(S.err)}</div>`:""}<button class="btn" type="submit">Recevoir le lien</button></form>`}
+  <button class="btn ghost small" id="toLogin">Retour à la connexion</button></section>`;
+}
+function viewReset(){
+  return `<div class="hero"><h1>Nouveau mot de passe</h1></div>
+  <section><form id="resetForm" class="field" style="gap:10px" novalidate><div class="field"><span class="label">Nouveau mot de passe (8 caractères minimum)</span><input id="rsPass" type="password" autocomplete="new-password"></div>
+  ${S.err?`<div class="banner">${esc(S.err)}</div>`:""}<button class="btn" type="submit">Enregistrer et me connecter</button></form>
+  <button class="btn ghost small" id="toLogin">Retour à la connexion</button></section>`;
+}
+
+/* ---------- écran TV (télécommande) et récapitulatif partageable ---------- */
+function viewShare(me){
+  const T=S.tv;
+  return `<section><h2>Partager la soirée</h2>
+  <div class="card" style="display:flex;flex-direction:column;gap:10px">
+   <div class="row" style="justify-content:space-between"><div><b>Écran TV</b><div class="muted" style="font-size:13px">Les avatars, les courbes et les titres en grand, pour toute la salle.</div></div>${T?"":`<button class="btn small" id="tvOn">Écran TV</button>`}</div>
+   ${T?`<div class="tvbox"><span class="muted" style="font-size:13px">Sur la TV, ouvrez <b>${esc(location.host)}/tv</b> et tapez :</span><b class="code">${esc(T.tv)}</b>
+   <span class="label">Télécommande</span><div class="seg" id="tvSeg">${[["auto","Auto"],["potes","Avatars"],["courbes","Courbes"],["fil","Fil"]].map(([v,l])=>`<button data-tv="${v}" aria-pressed="${T.view===v}">${l}</button>`).join("")}</div></div>`:""}
+  </div>
+  <div class="card" style="display:flex;flex-direction:column;gap:10px">
+   <div class="row" style="justify-content:space-between"><div><b>Récap à partager</b><div class="muted" style="font-size:13px">Une page publique avec les courbes, les avatars et les titres de la soirée.</div></div><button class="btn small" id="recapOn">${S.recap?"Partager le lien":"Créer le lien"}</button></div>
+   <label class="toggle"><span>Apparaître dans le récap (pseudo seulement)</span><input type="checkbox" id="recapOk" ${me&&me.recapOk?"checked":""}></label>
+   ${S.recap?`<div class="row" style="justify-content:space-between"><a href="${esc(S.recap)}" target="_blank" rel="noopener" class="muted" style="font-size:13px;word-break:break-all">${esc(location.host+S.recap)}</a><button class="link danger" id="recapDel">Supprimer le lien</button></div>`:""}
+  </div></section>`;
+}
+
 /* ---------- rendu ---------- */
+const i18nAll=()=>{ I18N.apply($("#app")); I18N.apply(document.querySelector("header")); I18N.apply($("#nav")); I18N.apply($("#demoBar")) };
 function render(){
   const app=$("#app"), inParty=demo||(S.screen==="party"&&S.code);
   const ready=!!S.user&&profileReady(S.user);
@@ -401,14 +490,17 @@ function render(){
   $("#profBtn").hidden=demo||!ready||S.screen==="profile";
   $("#friendsBtn").hidden=demo||!ready||S.screen==="friends";
   if(S.screen!=="friends") stopFriendsPoll();
-  if(!inParty||(S.screen==="profile"||S.screen==="docs"||S.screen==="friends")&&!demo){
+  if(!inParty||(S.screen==="profile"||S.screen==="docs"||S.screen==="friends"||S.screen==="help")&&!demo){
     if(S.screen==="boot") app.innerHTML=`<section>${loader("Chargement…")}</section>`;
     else if(S.screen==="auth") app.innerHTML=viewAuth();
     else if(S.screen==="profile") app.innerHTML=viewProfile();
     else if(S.screen==="docs") app.innerHTML=viewDocs();
     else if(S.screen==="friends") app.innerHTML=viewFriends();
+    else if(S.screen==="help") app.innerHTML=viewHelp();
+    else if(S.screen==="forgot") app.innerHTML=viewForgot();
+    else if(S.screen==="reset") app.innerHTML=viewReset();
     else app.innerHTML=viewHome();
-    bindOut(); if(S.screen==="auth") mountGoogle(); return;
+    bindOut(); if(S.screen==="auth") mountGoogle(); i18nAll(); return;
   }
   $("#codeChip").textContent=demo?"Démo":S.code;
   const {now,list,log}=compute();
@@ -425,10 +517,11 @@ function render(){
     if(S.tab==="courbes") h+=viewChart(list,now);
     if(S.tab==="classement") h+=viewRank(list,now);
     if(S.tab==="fil") h+=viewFeed(list,log);
+    if(S.tab==="moi"&&!demo) h+=viewShare(meP);
     if(S.tab==="moi"&&!demo) h+=`<section><div class="card"><span class="label">Code de la soirée</span><div class="row" style="justify-content:space-between;margin-top:6px"><b style="font-family:var(--display);font-size:30px;letter-spacing:.15em">${esc(S.code)}</b><button class="btn ghost small" id="copyCode">Copier l'invitation</button></div><p class="muted" style="font-size:13px;margin:8px 0 0">Vos amis ouvrent Alamb'hic et entrent ce code.</p></div></section>`;
   }
   h+=`<p class="note">Taux estimé par la formule de Widmark (eau corporelle de Watson). L'écart avec un éthylotest peut dépasser 0,2 g/L. Ce n'est jamais une autorisation de conduire : après avoir bu, on ne prend pas le volant.</p>`;
-  app.innerHTML=h; bindMain();
+  app.innerHTML=h; bindMain(); i18nAll();
 }
 function viewFeed(list,log){
   const all=list.flatMap(p=>p.ev).concat(log||[]).sort((a,b)=>b.t-a.t);
@@ -448,8 +541,23 @@ function bindOut(){
     run(async()=>{
     await api("POST",S.authMode==="register"?"/api/auth/register":"/api/auth/login",{email:S.fEmail,password:pw}); await afterLogin() })};
   on("demoBtn",startDemo);
-  on("saveProf",()=>run(async()=>{ const r=await api("PUT","/api/me",readProfile()); S.user=r.user; await loadWeek(); S.screen=S.code?"party":"home"; render(); if(S.code) refresh() }));
-  on("back",()=>{S.err="";S.screen=S.code?"party":"home";render()});
+  on("saveProf",()=>run(async()=>{ S.fProf=readProfile(); const r=await api("PUT","/api/me",S.fProf); S.user=r.user; S.fProf=null; await loadWeek(); S.screen=S.code?"party":"home"; render(); if(S.code) refresh() }));
+  on("back",()=>{S.err="";S.fProf=null;S.screen=S.code?"party":"home";render()});
+  /* aide, mot de passe oublié, langue, badges, notifications */
+  on("helpBtn",openHelp); on("helpBtn2",openHelp);
+  on("helpBack",()=>{S.err="";S.helpAns=null;S.screen=S.prevScreen&&S.prevScreen!=="help"?S.prevScreen:(S.user?(S.code?"party":"home"):"auth");render()});
+  const hf=$("#helpForm"); if(hf) hf.onsubmit=e=>{e.preventDefault(); const v=$("#helpQ").value.trim(); if(!v) return; S.helpQ=v;
+    run(async()=>{ S.helpAns={answer:null,found:[],wait:1}; S.helpAns=await api("POST","/api/help/ask",{q:v,lang:I18N.lang}); render() })};
+  on("forgotBtn",()=>{S.err="";S.forgotSent=false;S.screen="forgot";render()});
+  on("toLogin",()=>{S.err="";S.screen="auth";S.authMode="login";history.replaceState(null,"","/");render()});
+  const fg=$("#forgotForm"); if(fg) fg.onsubmit=e=>{e.preventDefault(); S.fEmail=$("#fgEmail").value.trim(); run(async()=>{ await api("POST","/api/auth/forgot",{email:S.fEmail}); S.forgotSent=true; render() })};
+  const rs=$("#resetForm"); if(rs) rs.onsubmit=e=>{e.preventDefault(); const pw=$("#rsPass").value; run(async()=>{ await api("POST","/api/auth/reset",{token:S.resetTok,password:pw}); S.resetTok=null; history.replaceState(null,"","/"); flash("Mot de passe changé","Vous êtes connecté."); await afterLogin() })};
+  document.querySelectorAll("[data-lang]").forEach(b=>b.onclick=()=>{ I18N.set(b.dataset.lang); render() });
+  const lsel=$("#langSel"); if(lsel) lsel.onchange=()=>{ I18N.set(lsel.value); api("PUT","/api/me/lang",{lang:lsel.value}).catch(()=>{}); render() };
+  on("pushOn",()=>run(async()=>{ await enablePush(); await loadNotifs(); render(); snack("Notifications activées","Vous les recevrez même appli fermée.") }));
+  on("pushOff",()=>run(async()=>{ await disablePush(); await loadNotifs(); render(); snack("Notifications coupées sur cet appareil") }));
+  on("pushTest",()=>run(async()=>{ const r=await api("POST","/api/push/test"); snack(r.sent?"Notification de test envoyée":"Aucun appareil joignable",r.sent?"Elle doit apparaître dans quelques secondes.":"Réactivez les notifications.",{err:!r.sent}) }));
+  document.querySelectorAll("[data-nc]").forEach(c=>c.onchange=async()=>{ try{ await api("PUT","/api/me/notifs",{prefs:{[c.dataset.nc]:c.checked}}); S.notifs.prefs[c.dataset.nc]=c.checked; snack("Réglage enregistré") }catch(e){ c.checked=!c.checked; snack("Réglage non enregistré",e.message,{err:1}) } });
   on("openDocs",openDocs); on("friendsBtn2",openFriends); on("demoBtn2",startDemo); on("demoBtn3",startDemo); bindFriends();
   on("logout",()=>run(async()=>{ await api("POST","/api/auth/logout"); closeWs(); Object.assign(S,{user:null,code:null,snap:null,screen:"auth"}); render() }));
   on("leave",()=>run(async()=>{ await api("POST",`/api/parties/${S.code}/leave`); closeWs(); S.code=null; S.snap=null; S.screen="home"; render() }));
@@ -486,6 +594,14 @@ function bindMain(){
     b.disabled=true; b.closest(".item")?.classList.add("leaving");
     api("DELETE",`/api/parties/${S.code}/drinks/${id}`).then(()=>{ snack("Verre supprimé","visible dans le fil de la soirée"); refresh() })
       .catch(e=>{ b.disabled=false; b.closest(".item")?.classList.remove("leaving"); snack("Suppression impossible",e.message,{err:1}) }) });
+  /* écran TV et récap */
+  const tvo=$("#tvOn"); if(tvo) tvo.onclick=()=>run(async()=>{ S.tv=await api("POST",`/api/parties/${S.code}/tv`); render() });
+  document.querySelectorAll("[data-tv]").forEach(b=>b.onclick=async()=>{ try{ const r=await api("PUT",`/api/parties/${S.code}/tv`,{view:b.dataset.tv}); S.tv.view=r.view; render() }catch(e){ snack("Télécommande",e.message,{err:1}) } });
+  const ro=$("#recapOn"); if(ro) ro.onclick=()=>run(async()=>{ const r=await api("POST",`/api/parties/${S.code}/recap`); S.recap=r.url; render();
+    const url=location.origin+r.url, txt=`Le récap de notre soirée Alamb'hic : ${url}`;
+    try{ if(navigator.share){ await navigator.share({title:"Alamb'hic",text:txt}); return } await navigator.clipboard.writeText(url); snack("Lien du récap copié","Collez-le dans votre groupe.") }catch(e){ snack("Lien du récap",url) } });
+  const rk=$("#recapOk"); if(rk) rk.onchange=async()=>{ try{ await api("PUT",`/api/parties/${S.code}/recap-ok`,{ok:rk.checked}); snack(rk.checked?"Vous apparaîtrez dans le récap":"Vous n'apparaîtrez pas dans le récap") }catch(e){ rk.checked=!rk.checked; snack("Réglage non enregistré",e.message,{err:1}) } };
+  const rd=$("#recapDel"); if(rd) rd.onclick=()=>run(async()=>{ await api("DELETE",`/api/parties/${S.code}/recap`); S.recap=null; render(); snack("Lien du récap supprimé","Il ne s'ouvre plus.") });
   const sm=$("#samT"); if(sm) sm.onchange=()=>run(async()=>{ await api("PUT",`/api/parties/${S.code}/me`,{sam:sm.checked}); await refresh() });
   const cc=$("#copyCode"); if(cc) cc.onclick=async()=>{ const txt=`Rejoins ma soirée Alamb'hic avec le code ${S.code} : ${location.origin}`;
     try{ if(navigator.share){await navigator.share({title:"Alamb'hic",text:txt});return} await navigator.clipboard.writeText(txt); flash("Invitation copiée","Collez-la dans votre groupe.") }catch(e){ flash("Code de la soirée",txt) } };
@@ -494,7 +610,7 @@ function bindMain(){
 /* ---------- soirée en direct ---------- */
 async function refresh(){ if(!S.code||demo) return; try{ S.snap=await api("GET",`/api/parties/${S.code}`); render() }catch(e){ if(e.status===403){S.code=null;S.snap=null;S.screen="home";closeWs()} S.err=e.message; render() } }
 function enterParty(code){
-  S.code=code; S.snap=null; S.screen="party"; S.tab="moi"; feedUnread=0;
+  S.code=code; S.snap=null; S.screen="party"; S.tab="moi"; feedUnread=0; S.tv=null; S.recap=null;
   seen=new Set(ls.get("yd_seen_"+code,[])); bootT=Date.now();
   render(); loadMeals().then(refresh); openWs();
 }
@@ -521,8 +637,9 @@ function mountGoogle(){
 /* ---------- démarrage ---------- */
 async function afterLogin(){
   const r=await api("GET","/api/me"); S.user=r.user; S.me=r.user.id; S.err="";
+  if(r.user.lang&&r.user.lang!==I18N.lang) I18N.set(r.user.lang); else if(!r.user.lang) api("PUT","/api/me/lang",{lang:I18N.lang}).catch(()=>{});
   if(!profileReady(S.user)){ S.screen="profile"; render(); return }
-  loadWeek().then(()=>{ if(S.screen==="home") render() });
+  loadWeek().then(()=>{ if(S.screen==="home") render() }); loadBadges();
   const c=await api("GET","/api/parties/current");
   if(c.code) enterParty(c.code); else { S.screen="home"; render() }
   if(ls.get("yd_ami","")){ openFriends(); snack("Invitation d'un ami","Touchez « Ajouter » pour l'ajouter") }
@@ -539,29 +656,58 @@ function startDemo(){
     drinks:x.d.map(([m,i])=>{const P=PRESETS[i];const t=demoStart+m*MIN;return{id:t,t,l:P.l,ml:P.ml,abv:P.abv,...(P.water?{water:1}:{})}})}});
   S.me="demo-lea"; S.tab="moi"; feedUnread=0;
   $("#demoRange").value=0; $("#demoBar").hidden=false; document.body.classList.add("isdemo"); setDemo(0);
+  if(!ls.get("yd_tour",0)) setTimeout(()=>tour(0),500);
 }
+/* Visite guidée : 5 bulles par-dessus la démo, au premier lancement puis avec le bouton « Visite ». */
+const TOUR=[
+  [".merow","Votre avatar, la jauge alambic et votre taux estimé : ils évoluent en direct à chaque verre et à chaque repas."],
+  [".drinks","Touchez une boisson pour l'enregistrer. L'eau compte aussi : trois verres d'eau débloquent le Chameau."],
+  ["#demoRange","Faites avancer la soirée avec ce curseur, ou touchez « Lecture » : les titres tombent et les avatars changent."],
+  ["nav button[data-tab=classement]","Courbes : tout le groupe sur un même graphique. Potes : taux en direct et tendance façon bourse."],
+  ["nav button[data-tab=fil]","Le fil garde tous les titres et les alertes de la soirée. Amusez-vous bien, et on ne conduit pas après avoir bu !"]];
+let tourI=-1;
+function tour(i){
+  document.querySelectorAll(".tour-hole,.tour-tip").forEach(e=>e.remove());
+  if(i<0||i>=TOUR.length){ tourI=-1; ls.set("yd_tour",1); return }
+  tourI=i; stopPlay(); clearToasts(); if(S.tab!=="moi"&&i<2){S.tab="moi";render()}
+  const [sel,txt]=TOUR[i], el=document.querySelector(sel); if(!el) return tour(i+1);
+  el.scrollIntoView({block:"center",behavior:REDUCE?"auto":"smooth"});
+  setTimeout(()=>{ if(tourI!==i) return; const r=el.getBoundingClientRect(), pad=6;
+    const h=document.createElement("div"); h.className="tour-hole"; Object.assign(h.style,{left:r.left-pad+"px",top:r.top-pad+"px",width:r.width+pad*2+"px",height:r.height+pad*2+"px"});
+    const t=document.createElement("div"); t.className="tour-tip"; t.setAttribute("role","dialog");
+    t.innerHTML=`<span class="step">Visite ${i+1} / ${TOUR.length}</span><p style="margin:0">${esc(txt)}</p><div class="row"><button class="link" id="tourSkip">Passer</button><button class="btn small" id="tourNext">${i===TOUR.length-1?"Terminer":"Suivant"}</button></div>`;
+    document.body.append(h,t); I18N.apply(t);
+    const below=r.bottom+170<innerHeight; t.style.top=below?(r.bottom+pad+10)+"px":"auto"; t.style.bottom=below?"auto":(innerHeight-r.top+pad+10)+"px";
+    t.querySelector("#tourNext").onclick=()=>tour(i+1); t.querySelector("#tourSkip").onclick=()=>tour(-1); t.querySelector("#tourNext").focus();
+  },REDUCE?0:350);
+}
+addEventListener("resize",()=>{ if(tourI>=0) tour(tourI) });
 function clearToasts(){ TQ.length=0; clearTimeout(tTimer); tShown=null; $("#toasts").innerHTML="" }
 function setDemo(min){ if(!demoTimer) clearToasts(); demoT=demoStart+min*MIN; $("#demoClock").textContent=hm(demoT); render() }
-function stopPlay(){ if(demoTimer){clearInterval(demoTimer);demoTimer=null} $("#demoPlay").textContent="Lecture" }
+function stopPlay(){ if(demoTimer){clearInterval(demoTimer);demoTimer=null} $("#demoPlay").textContent=I18N.t("Lecture") }
 $("#demoHdr").onclick=()=>{ if(!demo) startDemo() };
 $("#demoRange").oninput=e=>{stopPlay();setDemo(+e.target.value)};
 $("#demoPlay").onclick=()=>{ if(demoTimer){stopPlay();return}
   const r=$("#demoRange"); if(+r.value>=+r.max) r.value=0;
-  $("#demoPlay").textContent="Pause";
+  $("#demoPlay").textContent=I18N.t("Pause");
   demoTimer=setInterval(()=>{ const v=Math.min(+r.max,+r.value+5); r.value=v; setDemo(v); if(v>=+r.max) stopPlay() },450) };
-$("#demoQuit").onclick=()=>{ stopPlay(); demo=false; $("#demoBar").hidden=true; document.body.classList.remove("isdemo");
+$("#demoTour").onclick=()=>tour(0);
+$("#demoQuit").onclick=()=>{ tour(-1); stopPlay(); demo=false; $("#demoBar").hidden=true; document.body.classList.remove("isdemo");
   S.me=demoSaved.me; S.tab=demoSaved.tab; feedUnread=0; clearToasts(); hideSnack(); render() };
 
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;render();window.scrollTo(0,0)});
 function openDocs(){S.err="";S.screen="docs";render();api("GET","/api/docs").then(d=>{S.docs=d;render()}).catch(e=>{S.err=e.message;S.screen=S.code?"party":"home";render()})}
 $("#friendsBtn").onclick=openFriends;
-$("#profBtn").onclick=()=>{S.err="";S.screen="profile";loadWeek().then(render);render()};
+$("#profBtn").onclick=()=>{S.err="";S.screen="profile";Promise.all([loadWeek(),loadBadges(),loadNotifs()]).then(render);render()};
 setInterval(()=>{ if(document.activeElement&&/INPUT|SELECT/.test(document.activeElement.tagName)) return; if(S.screen==="party"||demo) render() },30000);
 if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(()=>{});
 
+try{ const rt=new URLSearchParams(location.search).get("reset"); if(rt){ S.resetTok=rt.slice(0,80) } }catch(e){}
 try{ const a=new URLSearchParams(location.search).get("ami"); if(a){ ls.set("yd_ami",a.toUpperCase().slice(0,6)); history.replaceState(null,"","/") } }catch(e){}
 (async function init(){
   render();
   try{ S.cfg=await api("GET","/api/config") }catch(e){}
+  if(S.resetTok){ S.screen="reset"; render(); return }
   try{ await afterLogin() }catch(e){ S.screen="auth"; S.err=e.status===401?"":e.message; render() }
+  try{ if(new URLSearchParams(location.search).get("amis")&&S.user){ history.replaceState(null,"","/"); openFriends() } }catch(e){}
 })();

@@ -2,6 +2,9 @@
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const { q } = require("./db");
+const guard = require("./guard");
+const mail = require("./mail");
+const LANGS = ["fr", "en", "es", "pt"];
 
 const SECRET = process.env.SESSION_SECRET || (() => {
   console.warn("SESSION_SECRET absent : secret temporaire (les sessions sautent au redémarrage).");
@@ -51,7 +54,7 @@ function limited(key, max = 10, windowMs = 10 * 60 * 1000) {
   return h.length > max;
 }
 
-const PUBLIC_USER = "id, email, pseudo, sex, age, height, weight, cap, (google_sub IS NOT NULL) AS google, is_admin";
+const PUBLIC_USER = "id, email, pseudo, sex, age, height, weight, cap, lang, (google_sub IS NOT NULL) AS google, (pass_hash IS NOT NULL) AS has_pass, is_admin";
 const withAdmin = u => { if (!u) return u; const { is_admin, ...rest } = u; return { ...rest, admin: !!is_admin || ADMIN_EMAILS.has(String(u.email || "").toLowerCase()) }; };
 
 async function requireUser(req, res, next) {
@@ -69,7 +72,36 @@ function requireAdmin(req, res, next) {
 }
 
 function routes(app) {
-  app.get("/api/config", (req, res) => res.json({ googleClientId: GOOGLE_CLIENT_ID }));
+  app.get("/api/config", (req, res) => res.json({ googleClientId: GOOGLE_CLIENT_ID, mail: mail.enabled() }));
+
+  /* Mot de passe oublié : lien par e-mail (Resend), valable 1 h, à usage unique. Réponse identique que le compte existe ou non. */
+  app.post("/api/auth/forgot", async (req, res) => {
+    const email = String(req.body.email || "").trim().toLowerCase();
+    if (limited("fg:" + req.ip, 6) || limited("fgm:" + email, 3, 60 * 60 * 1000)) return res.status(429).json({ error: "Trop de demandes. Réessayez plus tard." });
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: "Adresse e-mail invalide." });
+    if (!mail.enabled()) return res.status(503).json({ error: "L'envoi d'e-mails n'est pas encore activé. Écrivez-nous depuis la page Confidentialité." });
+    const { rows } = await q("SELECT id FROM users WHERE email=$1", [email]);
+    if (rows[0]) {
+      const tok = crypto.randomBytes(24).toString("base64url");
+      await q("DELETE FROM resets WHERE user_id=$1 OR exp < now()", [rows[0].id]);
+      await q("INSERT INTO resets(token_hash, user_id, exp) VALUES($1,$2, now() + interval '1 hour')", [crypto.createHash("sha256").update(tok).digest("hex"), rows[0].id]);
+      const base = process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+      const m = mail.reset(`${base}/?reset=${tok}`);
+      mail.send({ to: email, subject: m.subject, html: m.html });
+    }
+    res.json({ ok: true });
+  });
+  app.post("/api/auth/reset", async (req, res) => {
+    const tok = String(req.body.token || ""), pass = String(req.body.password || "");
+    if (limited("rs:" + req.ip, 10)) return res.status(429).json({ error: "Trop d'essais. Réessayez dans quelques minutes." });
+    if (pass.length < 8) return res.status(400).json({ error: "Le mot de passe doit faire au moins 8 caractères." });
+    const h = crypto.createHash("sha256").update(tok).digest("hex");
+    const { rows } = await q("UPDATE resets SET used=true WHERE token_hash=$1 AND NOT used AND exp > now() RETURNING user_id", [h]);
+    if (!rows[0]) return res.status(400).json({ error: "Ce lien a expiré ou a déjà servi. Refaites une demande." });
+    await q("UPDATE users SET pass_hash=$2 WHERE id=$1", [rows[0].user_id, await bcrypt.hash(pass, 11)]);
+    setSession(res, rows[0].user_id);
+    res.json({ ok: true });
+  });
 
   app.post("/api/auth/register", async (req, res) => {
     const email = String(req.body.email || "").trim().toLowerCase();
@@ -131,12 +163,20 @@ function routes(app) {
     const age = Math.round(+b.age), height = Math.round(+b.height), weight = Math.round(+b.weight);
     const cap = [0.5, 0.6, 0.8, 1.0].includes(+b.cap) ? +b.cap : 0.8;
     if (!pseudo) return res.status(400).json({ error: "Choisissez un pseudo." });
+    const g = guard.check(pseudo);
+    if (g.blocked) return res.status(400).json({ error: g.reason === "abuse" ? "Ce pseudo n'est pas accepté : choisissez-en un autre." : "Un pseudo ne peut pas contenir d'adresse, de numéro ni de lien." });
     if (!(age >= 18 && age <= 99)) return res.status(400).json({ error: "Alamb'hic est réservé aux 18 ans et plus : indiquez votre âge." });
     if (!(height >= 130 && height <= 220)) return res.status(400).json({ error: "Indiquez une taille entre 130 et 220 cm." });
     if (!(weight >= 35 && weight <= 200)) return res.status(400).json({ error: "Indiquez un poids entre 35 et 200 kg." });
     const { rows } = await q(`UPDATE users SET pseudo=$2, sex=$3, age=$4, height=$5, weight=$6, cap=$7 WHERE id=$1 RETURNING ${PUBLIC_USER}`,
       [req.user.id, pseudo, sex, age, height, weight, cap]);
     res.json({ user: withAdmin(rows[0]) });
+  });
+
+  app.put("/api/me/lang", requireUser, async (req, res) => {
+    const lang = LANGS.includes(req.body.lang) ? req.body.lang : null;
+    await q("UPDATE users SET lang=$2 WHERE id=$1", [req.user.id, lang]);
+    res.json({ ok: true, lang });
   });
 
   app.delete("/api/me", requireUser, async (req, res) => {

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alamb'hic TV</title>
+<meta name="theme-color" content="#0a1626">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#0a1626;--surface:#10233b;--surface2:#16304f;--line:#24446e;--fg:#f4f8ff;--muted:#9fb3cc;--accent:#2f8cff;--ok:#5bc88a;--warn:#ffd34d;--bad:#ff6b6b;--care:#ff9f43;--gold:#ffcf4a;
+ --display:"Bricolage Grotesque","Arial Black",system-ui,sans-serif;--body:Inter,system-ui,sans-serif;color-scheme:dark}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);height:100%;overflow:hidden}
+[hidden]{display:none!important}
+.top{display:flex;align-items:center;justify-content:space-between;padding:2vh 3vw;border-bottom:1px solid var(--line)}
+.top img{height:6vh}
+.top .clock{font-family:var(--display);font-size:4vh;font-variant-numeric:tabular-nums}
+.top .tabs{display:flex;gap:1vw;font-size:2vh;color:var(--muted)}
+.top .tabs span[aria-current=true]{color:var(--fg);font-weight:600;border-bottom:3px solid var(--accent)}
+main{height:80vh;padding:2vh 3vw;box-sizing:border-box}
+.pair{display:flex;flex-direction:column;align-items:center;justify-content:center;height:90vh;gap:3vh;text-align:center}
+.pair h1{font-family:var(--display);font-size:6vh;margin:0}
+.pair p{color:var(--muted);font-size:2.6vh;margin:0;max-width:60vw}
+.pair input{font-family:var(--display);font-size:9vh;letter-spacing:.3em;text-transform:uppercase;width:52vh;max-width:90vw;text-align:center;background:var(--surface2);color:var(--fg);border:2px solid var(--line);border-radius:2vh;padding:1vh 2vh}
+.pair button{font-size:3vh;background:var(--accent);color:#fff;border:0;border-radius:1.6vh;padding:1.6vh 4vh;font-weight:600;cursor:pointer}
+.err{color:var(--bad);font-size:2.4vh}
+.grid{display:grid;gap:2vh;height:100%;grid-template-columns:repeat(var(--cols,3),1fr);align-content:center}
+.pc{background:var(--surface);border:1px solid var(--line);border-radius:2.4vh;padding:2vh;display:flex;flex-direction:column;align-items:center;gap:1vh;min-width:0}
+.pc .nm{font-family:var(--display);font-size:3.4vh;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pc .val{font-family:var(--display);font-size:6vh;font-weight:800;line-height:1}
+.pc .val small{font-size:2.2vh;color:var(--muted);margin-left:.4vh}
+.pc .tr{font-size:2.4vh;font-weight:600}
+.tr.up{color:var(--bad)}.tr.down{color:var(--ok)}.tr.flat{color:var(--muted)}
+.pc .ti{font-size:2.2vh;color:var(--gold);text-align:center;min-height:2.6vh}
+.pc .ti.shame{color:var(--bad)}.pc .ti.care{color:var(--care)}
+.chart{height:100%}
+.chart svg{width:100%;height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:1vh 3vw;font-size:2.4vh;justify-content:center;margin-top:1vh}
+.legend i{display:inline-block;width:1.6vh;height:1.6vh;border-radius:50%;margin-right:.8vh;vertical-align:middle}
+.feed{display:flex;flex-direction:column;gap:1.4vh;height:100%;justify-content:center}
+.ev{display:flex;gap:2vw;align-items:baseline;background:var(--surface);border-left:.8vh solid var(--accent);border-radius:1.4vh;padding:1.6vh 2vw}
+.ev.trophy{border-color:var(--gold)}.ev.shame{border-color:var(--bad)}.ev.care{border-color:var(--care)}
+.ev .t{color:var(--muted);font-size:2.4vh;font-variant-numeric:tabular-nums}
+.ev b{font-size:3vh;font-family:var(--display)}
+.ev span{font-size:2.4vh;color:var(--muted)}
+.foot{position:fixed;inset:auto 0 0 0;padding:1.4vh 3vw;font-size:1.8vh;color:var(--muted);border-top:1px solid var(--line);display:flex;justify-content:space-between;background:var(--bg)}
+.bigt{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.8);opacity:0;transition:all .4s cubic-bezier(.3,1.4,.5,1);background:var(--surface);border:3px solid var(--gold);border-radius:3vh;padding:4vh 6vw;text-align:center;box-shadow:0 0 0 100vmax rgba(4,10,20,.55);z-index:5}
+.bigt.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+.bigt.shame{border-color:var(--bad)}.bigt.care{border-color:var(--care)}
+.bigt b{display:block;font-family:var(--display);font-size:7vh}
+.bigt span{font-size:3vh;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.bigt{transition:none}}
+</style>
+</head>
+<body>
+<div id="pair" class="pair">
+  <img src="/logo.png" alt="Alamb'hic" style="height:10vh">
+  <h1>Écran TV</h1>
+  <p>Sur un téléphone de la soirée : écran Moi → « Écran TV ». Tapez ici le code à 6 caractères qui s'affiche.</p>
+  <form id="pf" style="display:flex;flex-direction:column;align-items:center;gap:3vh"><input id="pc" maxlength="6" autocomplete="off" autocapitalize="characters" aria-label="Code TV" placeholder="ABC123"><button type="submit">Afficher la soirée</button></form>
+  <div class="err" id="perr"></div>
+</div>
+<div id="live" hidden>
+  <div class="top"><img src="/logo.png" alt="Alamb'hic"><div class="tabs" id="tabs"><span data-v="potes">Avatars</span><span data-v="courbes">Courbes</span><span data-v="fil">Fil</span></div><span class="clock" id="clock"></span></div>
+  <main id="main"></main>
+  <div class="foot"><span>Taux estimés, jamais une autorisation de conduire. Après avoir bu, on ne prend pas le volant.</span><span id="conn"></span></div>
+</div>
+<div class="bigt" id="bigt" role="status" aria-live="polite"></div>
+<script src="/i18n.js"></script>
+<script src="/engine.js"></script>
+<script src="/avatar.js"></script>
+<script>
+"use strict";
+const MIN=60000, COLORS=["#f7941d","#5ab0ff","#5bc88a","#e879f9","#f2c94c","#ff7a6e","#7dd3fc","#c4b5fd","#fda4af","#a3e635"];
+const $=s=>document.querySelector(s), esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=b=>Math.max(0,b).toFixed(2).replace(".",",");
+const hm=t=>new Date(t).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+let D=null, view="auto", autoV="potes", autoT=0, ws=null, tries=0, code="", seen=null, skew=0;
+const NOW=()=>Date.now()+skew;
+const ls={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const valAt=(pts,t)=>{let v=0;for(const [x,b] of pts||[]){if(x<=t)v=b;else break}return v};
+function trend(p,now){ const c=p.sim.cur, r=(c-valAt(p.sim.pts,now-15*MIN))*4; if(Math.abs(r)<0.02) return ["flat","■ stable"]; return r>0?["up",`▲ +${fmt(r)}/h`]:["down",`▼ −${fmt(-r)}/h`] }
+function members(){ return (D?.members||[]).map((m,i)=>({...m,color:COLORS[i%COLORS.length]})) }
+function vPotes(list,now){
+  const n=list.length, cols=n<=2?n||1:n<=4?2:n<=9?3:4, size=Math.round(Math.min(innerHeight*(n<=4?0.32:n<=9?0.2:0.15),innerWidth/cols*0.55));
+  const r=list.slice().sort((a,b)=>b.sim.cur-a.sim.cur);
+  return `<div class="grid" style="--cols:${cols}">${r.map(p=>{const [k,t]=trend(p,now), last=p.ev.filter(e=>e.kind!=="info").sort((a,b)=>b.t-a.t)[0];
+    return `<div class="pc">${avatar(p,size)}<span class="nm" data-noi18n>${esc(p.pseudo)}</span><span class="val">${fmt(p.sim.cur)}<small>g/L</small></span><span class="tr ${k}">${t}</span><span class="ti ${last?last.kind:""}">${last?esc(last.title):""}</span></div>`}).join("")||`<p style="font-size:3vh;color:var(--muted)">Personne dans la soirée pour l'instant.</p>`}</div>`;
+}
+function vCourbes(list,now){
+  const withD=list.filter(p=>p.sim.pts&&p.sim.pts.length); if(!withD.length) return `<div class="feed"><p style="font-size:3vh;color:var(--muted);text-align:center">Les courbes apparaissent dès le premier verre d'alcool.</p></div>`;
+  const t0=Math.min(...withD.map(p=>p.sim.pts[0][0])), t1=Math.min(Math.max(now+30*MIN,...withD.map(p=>p.sim.zeroT||now)),now+8*3600e3);
+  const ymax=Math.max(1,...withD.map(p=>Math.max(...p.sim.pts.filter(x=>x[0]<=t1).map(x=>x[1]))))*1.1;
+  const W=1600,H=700,L=60,R=20,T=20,B=40, X=t=>L+(t-t0)/(t1-t0)*(W-L-R), Y=b=>T+(1-b/ymax)*(H-T-B);
+  let g="";
+  for(const [v,c] of [[0.5,"var(--warn)"],[0.8,"var(--accent)"],[1.2,"var(--bad)"]]) if(v<ymax) g+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${c}" stroke-opacity=".5" stroke-dasharray="6 8"/><text x="${L-10}" y="${Y(v)+6}" text-anchor="end" fill="var(--muted)" font-size="20">${fmt(v)}</text>`;
+  let th=new Date(t0); th.setMinutes(0,0,0); th=th.getTime()+3600e3; for(;th<t1;th+=3600e3) g+=`<text x="${X(th)}" y="${H-10}" text-anchor="middle" fill="var(--muted)" font-size="20">${new Date(th).getHours()}h</text>`;
+  g+=`<line x1="${X(now)}" x2="${X(now)}" y1="${T}" y2="${Y(0)}" stroke="var(--fg)" stroke-opacity=".35"/>`;
+  for(const p of withD){ const pts=p.sim.pts, past=pts.filter(x=>x[0]<=now), fut=pts.filter(x=>x[0]>=now&&x[0]<=t1), d=a=>a.map((x,i)=>(i?"L":"M")+X(x[0]).toFixed(1)+" "+Y(x[1]).toFixed(1)).join("");
+    if(past.length>1) g+=`<path d="${d(past)}" fill="none" stroke="${p.color}" stroke-width="5" stroke-linejoin="round"/>`;
+    if(fut.length>1) g+=`<path d="${d(fut)}" fill="none" stroke="${p.color}" stroke-width="3" stroke-dasharray="8 10" stroke-opacity=".7"/>`;
+    g+=`<circle cx="${X(now)}" cy="${Y(p.sim.cur)}" r="9" fill="${p.color}" stroke="var(--bg)" stroke-width="3"/>`; }
+  return `<div class="chart" style="height:88%"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Courbes de la soirée">${g}</svg></div>
+  <div class="legend">${withD.map(p=>`<span><i style="background:${p.color}"></i><b data-noi18n>${esc(p.pseudo)}</b> · ${fmt(p.sim.cur)}</span>`).join("")}</div>`;
+}
+function vFil(list){
+  const all=list.flatMap(p=>p.ev).filter(e=>e.kind!=="info"||/Clés/.test(e.title)).sort((a,b)=>b.t-a.t).slice(0,6);
+  return `<div class="feed">${all.map(e=>`<div class="ev ${e.kind}"><span class="t">${hm(e.t)}</span><div><b>${esc(e.title)}</b><br><span>${esc(e.text)}</span></div></div>`).join("")||`<p style="font-size:3vh;color:var(--muted);text-align:center">Les titres de la soirée s'afficheront ici.</p>`}</div>`;
+}
+function render(){
+  if(!D) return; const now=NOW(), list=members();
+  const v=view==="auto"?autoV:view;
+  $("#tabs").querySelectorAll("span").forEach(s=>s.setAttribute("aria-current",s.dataset.v===v));
+  $("#main").innerHTML=v==="courbes"?vCourbes(list,now):v==="fil"?vFil(list):vPotes(list,now);
+  $("#clock").textContent=hm(now);
+  I18N.apply(document.body);
+}
+/* nouveau titre : grande annonce 6 s */
+const BQ=[]; let bOn=false;
+function announce(list){
+  const all=list.flatMap(p=>p.ev).filter(e=>e.kind!=="info");
+  if(!seen){ seen=new Set(all.map(e=>e.key)); return }
+  all.filter(e=>!seen.has(e.key)).sort((a,b)=>a.t-b.t).forEach(e=>{ seen.add(e.key); BQ.push(e) }); pumpB();
+}
+function pumpB(){ if(bOn||!BQ.length) return; const e=BQ.shift(), b=$("#bigt"); bOn=true;
+  b.className="bigt "+e.kind; b.innerHTML=`<b>${esc(e.title)}</b><span>${esc(e.text)}</span>`; I18N.apply(b); requestAnimationFrame(()=>b.classList.add("on"));
+  setTimeout(()=>{ b.classList.remove("on"); setTimeout(()=>{ bOn=false; pumpB() },500) }, e.kind==="care"?10000:6000) }
+function onData(d){ D=d; skew=d.now?d.now-Date.now():0; announce(members()); render() }
+function connect(){
+  if(ws){ ws.onclose=null; ws.close() }
+  ws=new WebSocket(`${location.protocol==="https:"?"wss":"ws"}://${location.host}/ws?tv=${code}`);
+  ws.onopen=()=>{ tries=0; $("#conn").textContent="" };
+  ws.onmessage=e=>{ try{ const m=JSON.parse(e.data); if(m.type==="party") onData(m.data); if(m.type==="view"){ view=m.view; render() } }catch(_){} };
+  ws.onclose=()=>{ $("#conn").textContent=I18N.t("Connexion perdue, nouvel essai…"); setTimeout(async()=>{ if(await check(code,true)) connect() },Math.min(30000,1000*2**tries++)) };
+}
+async function check(c,silent){
+  try{ const r=await fetch("/api/tv/"+encodeURIComponent(c)); const j=await r.json(); if(!r.ok) throw new Error(j.error||"Erreur");
+    view=j.view; onData(j.data); return true }catch(e){ if(!silent){ $("#perr").textContent=I18N.t(e.message) } else if(/inconnu|expiré/.test(e.message)){ ls.set("yd_tv",null); location.reload() } return false }
+}
+async function start(c){ code=c.toUpperCase(); if(!(await check(code))) return; ls.set("yd_tv",code); $("#pair").hidden=true; $("#live").hidden=false; connect() }
+$("#pf").onsubmit=e=>{ e.preventDefault(); const c=$("#pc").value.trim(); if(!/^[A-Za-z2-9]{6}$/.test(c)){ $("#perr").textContent=I18N.t("Le code TV fait 6 caractères."); return } start(c) };
+setInterval(()=>{ if(view==="auto"&&D){ autoT++; if(autoT>=3){ autoT=0; autoV=autoV==="potes"?"courbes":autoV==="courbes"?"fil":"potes" } } render() },5000);
+addEventListener("resize",render);
+I18N.apply(document.body);
+const saved=ls.get("yd_tv"); if(saved) start(saved); else $("#pc").focus();
+</script>
+</body>
+</html>

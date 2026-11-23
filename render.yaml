@@ -34,3 +34,11 @@ services:
         sync: false
       - key: CONTACT_EMAIL
         sync: false
+      - key: RESEND_API_KEY      # e-mails (mot de passe oublié) : même équipe Resend qu'Airmony
+        sync: false
+      - key: MAIL_FROM           # ex. Alamb'hic <noreply@domaine-vérifié-dans-Resend>
+        sync: false
+      - key: BASE_URL            # adresse publique, ex. https://alambhic.onrender.com (liens des e-mails)
+        sync: false
+      - key: ANTHROPIC_API_KEY   # facultatif : l'aide reformule ses réponses avec l'IA
+        sync: false

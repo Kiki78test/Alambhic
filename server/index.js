@@ -30,6 +30,10 @@ parties.routes(app);
 require("./legal").routes(app);
 const friends = require("./friends");
 friends.routes(app);
+const badges = require("./badges");
+require("./push").routes(app, auth);
+badges.routes(app, auth);
+require("./help").routes(app);
 
 /* Documentation (réservée aux administrateurs) : docs/index.json + PDF */
 const DOCS = path.join(__dirname, "..", "docs");
@@ -42,6 +46,9 @@ app.use(express.static(path.join(__dirname, "..", "public"), {
     if (/\.(html|webmanifest)$|sw\.js$/.test(p)) res.setHeader("Cache-Control", "no-cache");
   }
 }));
+// écran TV et récapitulatif public : pages à part
+app.get(["/tv", "/tv/"], (req, res) => res.sendFile(path.join(__dirname, "..", "public", "tv.html")));
+app.get(/^\/r\/[\w-]{6,40}$/, (req, res) => res.sendFile(path.join(__dirname, "..", "public", "recap.html")));
 app.get(/^\/(?!api|ws).*/, (req, res) => res.sendFile(path.join(__dirname, "..", "public", "index.html")));
 
 app.use((err, req, res, next) => {
@@ -55,5 +62,5 @@ const server = http.createServer(app);
 parties.attachWs(server);
 surveillance.brancherDirect(parties.etatDirect);
 server.listen(PORT, () => console.log(`Alamb'hic en écoute sur le port ${PORT}`));
-migrate().then(() => friends.migrate()).then(() => console.log("Base prête."))
+migrate().then(() => friends.migrate()).then(() => badges.migrate()).then(() => console.log("Base prête."))
   .catch(e => { console.error("Base impossible à préparer :", e.message); process.exit(1); });

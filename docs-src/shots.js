@@ -32,7 +32,11 @@ const out = n => require('path').join(__dirname, 'img', n + '.png');
   await p.fill('#pseudo', 'Sacha'); await p.fill('#age', '29'); await p.fill('#height', '172'); await p.fill('#weight', '66');
   await p.click('#saveProf'); await p.waitForTimeout(900); await p.click('#create'); await p.waitForTimeout(1500);
   await shot('repas-avant');
-  await p.click('#mealsOk'); await p.waitForTimeout(1500); await p.click('[data-p="2"]'); await p.waitForTimeout(1200);
+  // heures de repas obligatoires : on remplit celles des repas proposés (déjà passés à l'heure du test)
+  for (const id of await p.$$eval('.meals1 input[type=time]', a => a.map(x => x.id))) { const v = { 'mt-matin': '08:00', 'mt-midi': '12:30', 'mt-gouter': '16:30', 'mt-soir': '19:30' }[id]; if (v) await p.fill('#' + id, v); }
+  await p.click('#mealsOk'); await p.waitForTimeout(1500);
+  if (await p.$('#mealsNone')) { await p.click('#mealsNone'); await p.waitForTimeout(1200); }
+  await p.click('[data-p="2"]'); await p.waitForTimeout(1200);
   await p.evaluate(() => document.querySelector('#mAdd').scrollIntoView({ block: 'center' })); await p.waitForTimeout(300);
   await p.evaluate(() => document.querySelectorAll('#toasts .toast').forEach(t => t.remove())); await p.screenshot({ path: out('repas-liste') });
   await p.click('#profBtn'); await p.waitForTimeout(500); await p.click('#delAcc'); await p.click('#delYes'); await p.waitForTimeout(1200);

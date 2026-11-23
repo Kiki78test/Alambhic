@@ -3,17 +3,20 @@ from common import A4, D, band, write
 
 ACTIFS = [
     ("GitHub", "Dépôt privé <code>Kiki78test/Alambhic</code> : code source et documentation.", "Gratuit", "Code uniquement", "Accès de l'appli Claude autorisé sur le dépôt."),
-    ("Render — service web", "Héberge le serveur Node (site, API, temps réel, pages légales). Redéploie à chaque envoi sur <code>main</code>.", "Gratuit (s'endort après 15 min sans visite)", "Transit des données des joueurs", "Région Francfort. Blueprint <code>render.yaml</code>. Variables : <code>SESSION_SECRET</code> (générée), <code>DATABASE_URL</code> (reliée), <code>GOOGLE_CLIENT_ID</code>, <code>ADMIN_EMAILS</code>, <code>CONTACT_EMAIL</code>."),
-    ("Render — PostgreSQL", "Base de données : comptes, profils, soirées, verres, titres.", "Gratuit, expire au bout de 30 jours", "Toutes les données des joueurs, dont les consommations (données sensibles)", "Région Francfort, même région que le service (obligatoire pour la connexion interne)."),
+    ("Render — service web", "Héberge le serveur Node (site, API, temps réel, pages légales). Redéploie à chaque envoi sur <code>main</code>.", "Offre Starter, ~7 $/mois (toujours éveillé)", "Transit des données des joueurs", "Région Francfort. Blueprint <code>render.yaml</code>. Variables : <code>SESSION_SECRET</code> (générée), <code>DATABASE_URL</code> (reliée), <code>GOOGLE_CLIENT_ID</code>, <code>ADMIN_EMAILS</code>, <code>CONTACT_EMAIL</code>, <code>MONITOR_KEY</code>, <code>MONITOR_ORIGIN</code>, <code>RESEND_API_KEY</code>, <code>MAIL_FROM</code>, <code>BASE_URL</code>, <code>ANTHROPIC_API_KEY</code> (facultatif)."),
+    ("Render — PostgreSQL", "Base de données : comptes, profils, soirées, verres, titres.", "Offre basic-256mb, ~6 $/mois (sauvegardes quotidiennes, pas d'expiration)", "Toutes les données des joueurs, dont les consommations (données sensibles)", "Région Francfort, même région que le service (obligatoire pour la connexion interne)."),
     ("Google Identity", "Bouton « Continuer avec Google ».", "Gratuit", "E-mail, prénom, identifiant Google", "Projet Google Cloud « YouDrink », client OAuth « Application Web », origine autorisée <code>https://alambhic.onrender.com</code> (ajouter le futur domaine). Variable <code>GOOGLE_CLIENT_ID</code>."),
+    ("Web Push (navigateurs)", "Notifications appli fermée : le serveur chiffre chaque notification et la remet au service du navigateur (Google pour Chrome et Android, Apple, Mozilla, Microsoft).", "Gratuit", "Adresse d'abonnement de l'appareil, texte chiffré des notifications", "Clés VAPID créées automatiquement et gardées en base (table <code>settings</code>) ; ou variables <code>VAPID_PUBLIC_KEY</code> / <code>VAPID_PRIVATE_KEY</code>. Rien à faire sur Render."),
+    ("Resend", "E-mails : lien de nouveau mot de passe.", "Gratuit jusqu'à 3 000 e-mails/mois", "Adresse e-mail du joueur", "Même équipe Resend qu'Airmony et Hermaion. Variables <code>RESEND_API_KEY</code>, <code>MAIL_FROM</code> (expéditeur sur un domaine vérifié dans Resend), <code>BASE_URL</code>. <b>À renseigner</b> : sans clé, le mot de passe oublié affiche « envoi pas encore activé »."),
+    ("GitHub Actions", "Contrôle de sécurité des dépendances chaque lundi ; fabrication de l'APK de test.", "Gratuit (minutes incluses)", "Code uniquement", "Fichiers <code>.github/workflows/securite.yml</code> et <code>android.yml</code>. APK dans Releases → « Appli Android (test) »."),
+    ("Anthropic (facultatif)", "Assistant de l'aide : reformule une réponse à partir des questions fréquentes.", "Au message (quelques centimes par jour au plus)", "Texte de la question, sans identité", "Variable <code>ANTHROPIC_API_KEY</code> (et <code>ANTHROPIC_MODEL</code>, par défaut claude-sonnet-5-5). Sans clé, l'aide fonctionne avec les réponses toutes prêtes."),
     ("Google Fonts", "Polices Bricolage Grotesque et Inter de l'interface.", "Gratuit", "Adresse IP du visiteur (chargement des polices)", "À héberger nous-mêmes avant l'ouverture publique pour ne plus rien envoyer à Google."),
 ]
 PREVUS = [
     ("Cloudflare", "Nom de domaine, DNS, protection.", "Domaine ~10 à 15 €/an", "Trafic du site (proxy)", "Comme airmonylive.com."),
-    ("Resend", "E-mails (mot de passe oublié, confirmation).", "Gratuit jusqu'à 3 000 e-mails/mois", "Adresse e-mail", "Comme Airmony."),
-    ("Firebase Cloud Messaging", "Notifications push sur Android, appli fermée.", "Gratuit", "Jeton de l'appareil, texte des notifications", "Étape 2 (APK)."),
+    ("Firebase Cloud Messaging", "Notifications natives dans l'appli Android (l'enveloppe ne reçoit pas les push du navigateur).", "Gratuit", "Jeton de l'appareil, texte des notifications", "Projet Firebase, fichier <code>google-services.json</code>, variable <code>FCM_SERVICE_ACCOUNT</code>, comme Airmony."),
+    ("UptimeRobot", "Alerte par e-mail si le site ne répond plus.", "Gratuit", "Aucune", "Sonde sur <code>https://alambhic.onrender.com/healthz</code>, comme Airmony."),
     ("Google Play Console", "Publication de l'APK.", "25 $ une fois", "Fiche de l'appli", "Compte déjà utilisé pour vos autres applis."),
-    ("Render payant", "Service toujours éveillé et base durable.", "~7 $ + 6 $ par mois", "—", "Avant d'ouvrir au-delà du cercle d'amis."),
 ]
 
 def table(rows):
@@ -21,7 +24,7 @@ def table(rows):
         f"<tr><td><b>{a}</b></td><td>{b}</td><td>{c}</td><td>{d}</td><td>{e}</td></tr>" for a, b, c, d, e in rows) + "</table>"
 
 body = f"""<div class="page">{band("Services externes", "Pilotage du projet")}
-<p class="lead">Alamb’hic tourne aujourd'hui sur des services gratuits : GitHub, le service web et la base Render, et la connexion Google. Coût actuel : 0 €.</p>
+<p class="lead">Alamb’hic tourne sur GitHub, Render (service web et base), la connexion Google, les services de notification des navigateurs et, une fois la clé renseignée, Resend pour les e-mails. L'assistant IA de l'aide est facultatif.</p>
 <h2>En service</h2>{table(ACTIFS)}
 <h2>Prévus</h2>{table(PREVUS)}
 <div class="note warn"><b>Données sensibles.</b> Les consommations d'alcool sont des données de santé au sens du RGPD. Tous les sous-traitants qui les reçoivent devront être listés dans la politique de confidentialité avant l'ouverture publique.</div>

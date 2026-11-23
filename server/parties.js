@@ -3,29 +3,32 @@ const { WebSocketServer } = require("ws");
 const YD = require("../public/engine.js");
 const { q } = require("./db");
 const { requireUser, userIdFromReq } = require("./auth");
+const push = require("./push");
+const crypto = require("crypto");
 
 const MIN = 60000;
 const ALPHA = "ABCDEFGHJKMNPQRSTUVWXYZ";
 const CODE_RE = /^[A-Z]{4}$/;
 
 /* ---------- instantané d'une soirée (calcul côté serveur) ---------- */
-async function snapshot(code) {
+/* opt.recap : récapitulatif public, seulement les joueurs qui l'ont accepté (même partis), sans trace des suppressions */
+async function snapshot(code, opt = {}) {
   const now = Date.now();
   const { rows: mem } = await q(`
-    SELECT u.id, u.pseudo, u.sex, u.age, u.height, u.weight, u.cap, m.sam, m.fed, m.meals_ok, m.joined_at
+    SELECT u.id, u.pseudo, u.sex, u.age, u.height, u.weight, u.cap, m.sam, m.fed, m.meals_ok, m.joined_at, m.recap_ok
     FROM party_members m JOIN users u ON u.id = m.user_id
-    WHERE m.party_code=$1 AND m.left_at IS NULL ORDER BY m.joined_at`, [code]);
+    WHERE m.party_code=$1 AND ${opt.recap ? "m.recap_ok" : "m.left_at IS NULL"} ORDER BY m.joined_at`, [code]);
   const { rows: dr } = await q(`
     SELECT id, user_id, t, label, ml, abv, fed, water, deleted_at FROM drinks
     WHERE party_code=$1 ORDER BY t`, [code]);
   const { rows: ml } = await q(`
     SELECT me.user_id, me.t, me.kind FROM meals me JOIN party_members m ON m.user_id = me.user_id
-    WHERE m.party_code=$1 AND m.left_at IS NULL AND me.t > now() - interval '30 hours'`, [code]);
+    WHERE m.party_code=$1 AND ${opt.recap ? "m.recap_ok" : "m.left_at IS NULL"} AND me.t > now() - interval '30 hours'`, [code]);
   const log = [];
   const members = mem.map(m => {
     const drinks = dr.filter(d => d.user_id === m.id && !d.deleted_at)
       .map(d => ({ id: +d.id, t: +d.t, l: d.label, ml: d.ml, abv: d.abv, fed: d.fed, ...(d.water ? { water: 1 } : {}) }));
-    dr.filter(d => d.user_id === m.id && d.deleted_at)
+    if (!opt.recap) dr.filter(d => d.user_id === m.id && d.deleted_at)
       .forEach(d => log.push({ key: "del:" + d.id, pid: m.id, kind: "info", t: +d.deleted_at, title: "Verre supprimé",
         text: `${m.pseudo} a supprimé un verre (${d.label}, noté à ${new Date(+d.t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}).` }));
     const meals = ml.filter(x => x.user_id === m.id).map(x => ({ t: +x.t, kind: x.kind }));
@@ -33,29 +36,43 @@ async function snapshot(code) {
     const { sim, ev, score } = YD.scoreSummary(p, now);
     const pts = sim.pts.filter((x, i) => i % 5 === 0 || Math.abs(x[0] - now) < MIN || i === sim.pts.length - 1)
       .map(([t, b]) => [t, Math.round(b * 1000) / 1000]);
-    return { id: m.id, pseudo: m.pseudo, cap: m.cap, sam: m.sam, fed: m.fed, mealsOk: m.meals_ok, joined: p.joined, drinks,
+    return { id: m.id, pseudo: m.pseudo, cap: m.cap, sam: m.sam, fed: m.fed, mealsOk: m.meals_ok, recapOk: m.recap_ok, sex: m.sex, joined: p.joined, drinks,
       sim: { pts, cur: sim.cur, prev: sim.prev, peak: sim.peak, peakT: sim.peakT, zeroT: sim.zeroT, grams: sim.grams }, ev, score };
   });
+  if (opt.recap) return { now, members: members.map(({ id, recapOk, ...m }, i) => ({ id: "j" + i, ...m, ev: m.ev.map(e => ({ ...e, pid: "j" + i, key: "j" + i + ":" + e.key.split(":")[1] })) })) };
   persistTrophies(code, members).catch(e => console.error("trophées", e.message));
   return { code, now, members, log };
 }
 
+/* chaque titre est gardé une fois ; un titre nouveau part en notification push (autres joueurs, amis) */
 async function persistTrophies(code, members) {
+  const fresh = [];
   for (const m of members) for (const e of m.ev) {
-    await q(`INSERT INTO trophies(user_id, party_code, key, kind, title, t) VALUES($1,$2,$3,$4,$5,to_timestamp($6/1000.0))
-             ON CONFLICT DO NOTHING`, [m.id, code, e.key.split(":")[1], e.kind, e.title, e.t]);
+    const r = await q(`INSERT INTO trophies(user_id, party_code, key, kind, title, t) VALUES($1,$2,$3,$4,$5,to_timestamp($6/1000.0))
+             ON CONFLICT DO NOTHING RETURNING key`, [m.id, code, e.key.split(":")[1], e.kind, e.title, e.t]);
+    if (r.rows[0]) fresh.push(e);
   }
+  if (fresh.length) push.partyEvents(code, fresh, members).catch(e => console.error("push", e.message));
 }
 
 /* ---------- temps réel ---------- */
 const rooms = new Map(); // code -> Set(ws)
+const tvRooms = new Map(); // code -> Set(ws) des écrans TV
 async function broadcast(code) {
-  const set = rooms.get(code);
-  if (!set || !set.size) return;
-  const msg = JSON.stringify({ type: "party", data: await snapshot(code) });
-  for (const ws of set) if (ws.readyState === 1) ws.send(msg);
+  const set = rooms.get(code), tvs = tvRooms.get(code);
+  if ((!set || !set.size) && (!tvs || !tvs.size)) return;
+  const data = await snapshot(code);
+  const msg = JSON.stringify({ type: "party", data });
+  for (const ws of set || []) if (ws.readyState === 1) ws.send(msg);
+  if (tvs && tvs.size) {
+    const tv = JSON.stringify({ type: "party", data: tvData(data) });
+    for (const ws of tvs) if (ws.readyState === 1) ws.send(tv);
+  }
 }
-setInterval(() => { for (const code of rooms.keys()) broadcast(code).catch(e => console.error("diffusion", e.message)); }, MIN);
+/* écran TV : pas de verres supprimés ni d'identifiants de compte */
+const tvData = d => ({ code: d.code, now: d.now, members: d.members.map((m, i) => ({ ...m, id: "t" + i, ev: m.ev.map(e => ({ ...e, pid: "t" + i, key: "t" + i + ":" + e.key.split(":")[1] })) })) });
+function tvSend(code, obj) { const s = tvRooms.get(code); if (s) for (const ws of s) if (ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+setInterval(() => { for (const code of new Set([...rooms.keys(), ...tvRooms.keys()])) broadcast(code).catch(e => console.error("diffusion", e.message)); }, MIN);
 
 function attachWs(server) {
   const wss = new WebSocketServer({ noServer: true });
@@ -63,6 +80,20 @@ function attachWs(server) {
     try {
       const url = new URL(req.url, "http://x");
       if (url.pathname !== "/ws") return socket.destroy();
+      const tvc = String(url.searchParams.get("tv") || "").toUpperCase();
+      if (tvc) {   // écran TV : code à 6 caractères, valable 12 h
+        const { rows: t } = await q("SELECT party_code, view FROM tv_links WHERE tv=$1 AND exp > now()", [tvc]);
+        if (!t[0]) return socket.destroy();
+        const pc = t[0].party_code;
+        return wss.handleUpgrade(req, socket, head, ws => {
+          if (!tvRooms.has(pc)) tvRooms.set(pc, new Set());
+          tvRooms.get(pc).add(ws); ws.isAlive = true;
+          ws.on("pong", () => { ws.isAlive = true; });
+          ws.on("close", () => { const s = tvRooms.get(pc); if (s) { s.delete(ws); if (!s.size) tvRooms.delete(pc); } });
+          ws.send(JSON.stringify({ type: "view", view: t[0].view }));
+          snapshot(pc).then(d => ws.send(JSON.stringify({ type: "party", data: tvData(d) }))).catch(() => {});
+        });
+      }
       const code = String(url.searchParams.get("code") || "").toUpperCase();
       const uid = userIdFromReq(req);
       if (!uid || !CODE_RE.test(code)) return socket.destroy();
@@ -194,6 +225,60 @@ function routes(app) {
     if (!rows[0]) return res.status(400).json({ error: "Ce verre ne peut plus être supprimé (plus de 3 h)." });
     res.json({ ok: true });
     broadcast(m.code).catch(() => {});
+  });
+
+  /* Écran TV : un joueur crée un code TV (6 caractères, 12 h) ; la TV ouvre /tv et le saisit ; le téléphone choisit la vue */
+  const TV_ALPHA = "ABCDEFGHJKMNPQRSTUVWXYZ23456789", VIEWS = ["auto", "potes", "courbes", "fil"];
+  app.post("/api/parties/:code/tv", requireUser, async (req, res) => {
+    const m = await member(req, res); if (!m) return;
+    const { rows: ex } = await q("SELECT tv, view FROM tv_links WHERE party_code=$1 AND exp > now() + interval '1 hour' ORDER BY exp DESC LIMIT 1", [m.code]);
+    if (ex[0]) return res.json({ tv: ex[0].tv, view: ex[0].view });
+    for (let i = 0; i < 20; i++) {
+      const tv = Array.from({ length: 6 }, () => TV_ALPHA[crypto.randomInt(TV_ALPHA.length)]).join("");
+      const r = await q("INSERT INTO tv_links(tv, party_code, exp) VALUES($1,$2, now() + interval '12 hours') ON CONFLICT DO NOTHING RETURNING tv", [tv, m.code]);
+      if (r.rows[0]) return res.json({ tv, view: "auto" });
+    }
+    res.status(503).json({ error: "Code TV impossible à créer. Réessayez." });
+  });
+  app.put("/api/parties/:code/tv", requireUser, async (req, res) => {
+    const m = await member(req, res); if (!m) return;
+    const view = VIEWS.includes(req.body.view) ? req.body.view : "auto";
+    await q("UPDATE tv_links SET view=$2 WHERE party_code=$1 AND exp > now()", [m.code, view]);
+    tvSend(m.code, { type: "view", view });
+    res.json({ ok: true, view });
+  });
+  app.get("/api/tv/:tv", async (req, res) => {
+    const tv = String(req.params.tv || "").toUpperCase();
+    if (!/^[A-Z2-9]{6}$/.test(tv)) return res.status(400).json({ error: "Le code TV fait 6 caractères." });
+    const { rows } = await q("SELECT party_code, view FROM tv_links WHERE tv=$1 AND exp > now()", [tv]);
+    if (!rows[0]) return res.status(404).json({ error: "Code TV inconnu ou expiré. Demandez-en un nouveau sur un téléphone de la soirée." });
+    res.json({ view: rows[0].view, data: tvData(await snapshot(rows[0].party_code)) });
+  });
+
+  /* Récapitulatif public de la soirée : lien partageable ; seuls les joueurs qui ont coché « apparaître » y figurent (pseudo seulement) */
+  app.put("/api/parties/:code/recap-ok", requireUser, async (req, res) => {
+    const m = await member(req, res); if (!m) return;
+    await q("UPDATE party_members SET recap_ok=$3 WHERE party_code=$1 AND user_id=$2", [m.code, req.user.id, !!req.body.ok]);
+    res.json({ ok: true }); broadcast(m.code).catch(() => {});
+  });
+  app.post("/api/parties/:code/recap", requireUser, async (req, res) => {
+    const m = await member(req, res); if (!m) return;
+    await q("UPDATE party_members SET recap_ok=true WHERE party_code=$1 AND user_id=$2", [m.code, req.user.id]);
+    const { rows: ex } = await q("SELECT token FROM recaps WHERE party_code=$1 LIMIT 1", [m.code]);
+    const token = ex[0] ? ex[0].token : crypto.randomBytes(9).toString("base64url");
+    if (!ex[0]) await q("INSERT INTO recaps(token, party_code, created_by) VALUES($1,$2,$3)", [token, m.code, req.user.id]);
+    res.json({ token, url: "/r/" + token }); broadcast(m.code).catch(() => {});
+  });
+  app.delete("/api/parties/:code/recap", requireUser, async (req, res) => {
+    const m = await member(req, res); if (!m) return;
+    await q("DELETE FROM recaps WHERE party_code=$1", [m.code]);
+    res.json({ ok: true });
+  });
+  app.get("/api/recap/:token", async (req, res) => {
+    const { rows } = await q("SELECT r.party_code, p.created_at FROM recaps r JOIN parties p ON p.code=r.party_code WHERE r.token=$1", [String(req.params.token || "").slice(0, 40)]);
+    if (!rows[0]) return res.status(404).json({ error: "Ce récapitulatif n'existe plus." });
+    const d = await snapshot(rows[0].party_code, { recap: true });
+    res.json({ date: +rows[0].created_at, ...d });
   });
 
   /* Repas (servent au calcul de l'absorption) */

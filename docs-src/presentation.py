@@ -99,7 +99,8 @@ S.append(slide(f"""<div class="cols"><div><div class="k">Classement, fil et noti
 <ul><li>Chaque titre et chaque seuil s'affiche en notification sur tous les téléphones de la soirée, avec vibration.</li>
 <li>Le ton change avec le niveau : moqueur, puis honte, puis <span class="c">« apportez-lui de l'eau »</span> à 1,5 g/L et rappel du 15 à 2 g/L.</li>
 <li>Le fil garde tout l'historique, suppressions de verres comprises.</li>
-<li>Écran « Potes » en direct : taux, tendance ▲▼ façon bourse, mini-courbe et dernier titre de chacun ; classement par points en un clic.</li></ul></div>
+<li>Écran « Potes » en direct : taux, tendance ▲▼ façon bourse, mini-courbe et dernier titre de chacun ; classement par points en un clic.</li>
+<li>Notifications <b>appli fermée</b> (push), réglables : alertes, titres de la soirée, titres des amis, rappel repas, badges.</li></ul></div>
 <div class="phones">{img("demo-notifs")}{img("demo-classement")}</div></div>"""))
 
 AV = [(0, "En forme"), (0.1, "Premier verre"), (0.25, "Détendu"), (0.4, "Pompette"), (0.55, "Éméché"), (0.7, "Fou rire"), (0.9, "Hilare"), (1.1, "Ça tourne"), (1.3, "Les étoiles"), (1.6, "KO")]
@@ -130,14 +131,21 @@ S.append(slide("""<div class="k">Fiabilité et anti-triche</div><h2>Tout repose 
 S.append(slide(f"""<div class="cols"><div><div class="k">Suivi long terme</div><h2>Pour réduire, pas seulement pour rire</h2>
 <ul><li>Page Profil : verres standard des 7 derniers jours, comparés aux repères de Santé publique France (10 par semaine au plus, 2 par jour, des jours sans alcool).</li>
 <li>Jours sans alcool comptés, barres en rouge au-delà de 2 verres.</li>
-<li>À venir : bilan mensuel, objectifs perso, trophées long terme, défis entre amis (mois sec en équipe).</li></ul></div>
+<li>Six badges bronze, argent, or sur tout l'historique : Habitué, Chameau d'or, Sam fidèle, Sans fausse note, Pilote de ligne, Bande de potes. Ils récompensent la régularité et la modération.</li>
+<li>À venir : bilan mensuel, objectifs perso, défis entre amis (mois sec en équipe).</li></ul></div>
 <div class="phones">{img("profil")}</div></div>"""))
 
 S.append(slide("""<div class="k">Architecture et supports</div><h2>Un seul serveur pour le site, l'APK et la montre</h2>
 <div class="arch">
 <div class="card"><b>Aujourd'hui</b><span>Site web installable sur alambhic.onrender.com · serveur Node et temps réel · base PostgreSQL · Render à Francfort · code sur GitHub.</span></div>
-<div class="card"><b>APK Android</b><span>Même appli emballée, notifications push Firebase appli fermée, widget écran d'accueil (jauge, retour à 0, + bière / + vin / + eau).</span></div>
+<div class="card"><b>APK Android</b><span>Première version de test fabriquée par GitHub (enveloppe Capacitor). À venir : notifications natives Firebase, widget écran d'accueil (jauge, retour à 0, + bière / + vin / + eau).</span></div>
 <div class="card"><b>Montre Wear OS</b><span>Ajouter un verre au poignet, taux en complication, vibration aux seuils et quand un ami est en alerte, gorgées détectées.</span></div></div>"""))
+
+S.append(slide("""<div class="k">La soirée en grand</div><h2>Écran TV, récap à partager, et pour tout le monde</h2>
+<div class="cards" style="grid-template-columns:repeat(3,1fr)">
+<div class="card"><b>Écran TV</b><span>Code à 6 caractères sur alambhic.onrender.com/tv : avatars, courbes et fil en grand, titres annoncés au milieu de l'écran. Le téléphone sert de télécommande. Idéal pour le mode « soirée du bar ».</span></div>
+<div class="card"><b>Récap à partager</b><span>Une page publique avec les avatars au pic, les courbes et les titres, pour les réseaux et le bouche-à-oreille. Seuls les joueurs volontaires y figurent, pseudo seulement.</span></div>
+<div class="card"><b>Pour tout le monde</b><span>Quatre langues (FR, EN, ES, PT), aide intégrée avec assistant, visite guidée de la démo, mot de passe oublié par e-mail, appli Android de test.</span></div></div>"""))
 
 S.append(slide(f"""<div class="cols"><div><div class="k">Les amis</div><h2>Ses potes en direct, même hors de la soirée</h2>
 <ul><li>Un code ami et un lien d'invitation ; l'autre accepte la demande.</li>
@@ -147,7 +155,7 @@ S.append(slide(f"""<div class="cols"><div><div class="k">Les amis</div><h2>Ses p
 <div class="phones">{img("amis")}</div></div>"""))
 
 ROAD = [("1", "Socle web", "Comptes, soirées, calcul serveur, titres, avatar, démo, suivi 7 jours", True),
-        ("2", "APK Android", "Push Firebase, widget écran d'accueil", False),
+        ("2", "APK Android", "APK de test fait ; push Firebase, widget, Google Play", False),
         ("3", "Fiabilité", "Éthylotest, recalibrage, validation par les amis", False),
         ("4", "Montre, long terme", "Wear OS et gorgées, tableau de bord, objectifs", False),
         ("5", "Ouverture publique", "Localisation approximative, défis, publicités, premium", False)]

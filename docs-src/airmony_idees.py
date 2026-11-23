@@ -48,13 +48,14 @@ table.f tr{break-inside:avoid}
 
 rows = ""
 for grp, items in F:
-    rows += f"<h2>{grp}</h2><table class='f'><tr><th></th><th style='width:34mm'>Fonction</th><th>Dans Airmony</th><th>Pour Alamb’hic</th><th style='width:17mm'>Effort</th><th style='width:20mm'>Priorité proposée</th><th>Décision</th></tr>"
+    rows += f"<h2>{grp}</h2><table class='f'><tr><th></th><th style='width:34mm'>Fonction</th><th>Pour Alamb’hic</th><th style='width:17mm'>Effort</th><th style='width:20mm'>Priorité proposée</th><th>Décision</th></tr>"
     for n, t, a, y, e, p in items:
-        rows += f"<tr><td class='n'>{n}</td><td><b>{t}</b></td><td>{a}</td><td>{y}</td><td>{e}</td><td class='prio'>{p}</td><td class='dec'></td></tr>"
+        dec = "<b style='color:#7a3f00'>Plus tard</b>" if n == 10 else "<b style='color:#0b6b35'>Oui · fait le 23/11</b>"
+        rows += f"<tr><td class='n'>{n}</td><td><b>{t}</b></td><td>{y}</td><td>{e}</td><td class='prio'>{p}</td><td class='dec'>{dec}</td></tr>"
     rows += "</table>"
 
 body = f"""<div class="page">{band("Idées venues d'Airmony", "Pilotage du projet")}
-<p class="lead">Douze fonctions déjà construites dans Airmony qu'on peut reprendre dans Alamb’hic. À trancher plus tard : la colonne « Décision » est laissée vide.</p>
+<p class="lead">Douze fonctions déjà construites dans Airmony qu'on peut reprendre dans Alamb’hic. Décision du 23/11 : toutes, sauf les paiements Stripe (plus tard) ; les onze retenues sont faites.</p>
 <div class="note"><b>Recommandation</b> : commencer par 1 (badges long terme) et 2 (notifications push), qui apportent le plus au jeu, puis 5 (mot de passe oublié) et 4 (sécurité), presque gratuits. Les efforts sont des estimations, code d'Airmony réutilisé.</div>
 {rows}
 <div class="foot"><span>Alamb’hic · Idées venues d'Airmony</span><span>{D}</span></div></div>"""

@@ -85,7 +85,7 @@ ch("Notifications", f"""<div class="split"><div>
 <p>Les confirmations de vos propres actions (verre, repas, invitation copiée, erreur) s'affichent à part, dans un bandeau en bas de l'écran, pour ne jamais se mélanger aux notifications des amis.</p>
 <ul><li><b>Titres</b> : message moqueur.</li><li><b>Honte</b> : passage à l'eau.</li>
 <li><b>1,5 g/L</b> : « apportez-lui de l'eau et gardez un œil sur lui ».</li><li><b>2 g/L</b> : rester avec la personne ; si elle vomit, ne répond plus ou respire mal, appeler le 15.</li></ul>
-<p>Aujourd'hui, les notifications arrivent quand l'appli est ouverte. Les notifications appli fermée viendront avec l'APK (étape 2).</p>
+<h3>Notifications appli fermée (push)</h3><p>Profil → Notifications → « Activer sur cet appareil » : le navigateur demande l'autorisation, puis les notifications arrivent même appli fermée. Cinq catégories se règlent une à une : <b>alertes</b> (alertes copains et rouges des joueurs de la soirée, qui restent affichées et vibrent), <b>titres</b> de la soirée, <b>titres des amis</b> dans leurs propres soirées (s'ils partagent leur taux), <b>rappel repas</b> (12 h 45 et 20 h 15 si vous êtes en soirée sans repas noté depuis 3 h) et <b>badges</b>. « Tester » envoie une notification d'essai, « Couper » désabonne l'appareil. Un titre n'est envoyé qu'aux autres joueurs, une seule fois, et seulement s'il date de moins de 30 minutes. Sur iPhone, il faut d'abord installer l'appli sur l'écran d'accueil. Dans l'appli Android (enveloppe), les notifications demanderont Firebase (étape suivante).</p>
 </div>{shot("demo-notifs", "Notifications pendant la démo")}</div>""")
 
 AVS = '<div class="avs">' + "".join(f'<div><div class="av" data-b="{b}"></div><span>{t}</span></div>' for b, t in
@@ -111,6 +111,7 @@ ch("Le mode démo", """<p>Le bouton « Démo » en haut de l'écran lance une so
 <li><b>Lecture</b> : la soirée défile en accéléré, 5 minutes toutes les demi-secondes.</li>
 <li>On peut ajouter ou supprimer des verres pour Léa : rien n'est enregistré.</li>
 <li><b>Quitter</b> revient à votre vraie soirée.</li></ul>
+<h3>Visite guidée</h3><p>Au premier lancement de la démo, cinq bulles expliquent l'écran : l'avatar et la jauge, les boissons, le curseur du temps, les onglets Courbes et Potes, puis le fil. « Suivant » avance, « Passer » ferme ; le bouton « Visite » de la barre de démo la relance.</p>
 <h3>Banc de test sur ordinateur</h3><p>La page <code>/demo.html</code> (lien « Banc de test (ordinateur) » dans le Profil des admins) affiche la même soirée fictive en grand : les quatre joueurs côte à côte (avatar, alambic, taux, tendance, titres obtenus), les courbes de la soirée et le fil des titres. Une frise en bas fait défiler la soirée de 19 h à 6 h ; chaque point de la frise est un titre, cliquable pour y sauter. Lecture ×1, ×5 ou ×15, touche Espace pour lancer ou arrêter, flèches pour avancer de 5 minutes (30 avec Maj).</p>""")
 
 ch("Suivi des 7 derniers jours", f"""<div class="split"><div>
@@ -135,6 +136,9 @@ ch("Les amis", f"""<div class="split"><div>
 </div>{shot("amis", "Mes amis")}</div>""")
 
 ch("Compte et données", """<ul><li><b>Se déconnecter</b> : Profil → « Me déconnecter ».</li>
+<li><b>Mot de passe oublié</b> : sur l'écran de connexion, « Mot de passe oublié ? » envoie par e-mail un lien valable 1 heure, utilisable une fois ; il ouvre la page « Nouveau mot de passe » et connecte directement. La réponse est la même que le compte existe ou non. Il faut la variable Render <code>RESEND_API_KEY</code> (sinon un message indique que l'envoi n'est pas encore activé).</li>
+<li><b>Pseudo</b> : les pseudos injurieux, ou qui contiennent une adresse, un numéro ou un lien, sont refusés (garde-fou repris d'Airmony, qui servira aussi au futur tchat).</li>
+<li><b>Langue</b> : français, anglais, espagnol ou portugais (Profil → Langue, ou les liens sous l'écran de connexion). Par défaut, la langue du téléphone. L'interface, les titres, les notifications de la soirée et les pages TV et récap sont traduits ; les réponses de l'aide et quelques messages du serveur restent en français.</li>
 <li><b>Supprimer son compte</b> : Profil → « Supprimer mon compte et toutes mes données », puis confirmer. Profil, verres et titres sont effacés définitivement.</li>
 <li><b>Données gardées</b> : e-mail, mot de passe chiffré, profil, verres, repas, titres. Hébergement Render à Francfort (Union européenne).</li>
 <li><b>Consentement</b> : à la création du compte, une case à cocher confirme l'âge (18 ans et plus) et l'accord pour le traitement des consommations, qui sont des données de santé. Avec Google, la même mention s'affiche sous le bouton.</li>
@@ -143,7 +147,32 @@ ch("Compte et données", """<ul><li><b>Se déconnecter</b> : Profil → « Me d�
 ch("Administration", """<ul><li><b>Comptes admin</b> : variable Render <code>ADMIN_EMAILS</code> (adresses séparées par des virgules). Un admin voit le bouton « Documentation » dans sa page Profil.</li>
 <li><b>Documentation</b> : PDF du dossier <code>docs/</code> listés dans <code>docs/index.json</code> (titre, description, date, catégorie), accessibles aux seuls admins. Sources dans <code>docs-src/</code>, régénérées par <code>docs-src/build.sh</code>.</li>
 <li><b>Déploiement</b> : chaque envoi sur la branche <code>main</code> de <code>Kiki78test/Alambhic</code> redéploie le service Render.</li>
-<li><b>Variables</b> : <code>DATABASE_URL</code> et <code>SESSION_SECRET</code> (automatiques), <code>GOOGLE_CLIENT_ID</code> (facultatif), <code>ADMIN_EMAILS</code>.</li></ul>""")
+<li><b>Variables</b> : <code>DATABASE_URL</code> et <code>SESSION_SECRET</code> (automatiques), <code>GOOGLE_CLIENT_ID</code> (facultatif), <code>ADMIN_EMAILS</code>, <code>CONTACT_EMAIL</code>, <code>MONITOR_KEY</code> et <code>MONITOR_ORIGIN</code> (tableau de bord de contrôle), <code>RESEND_API_KEY</code>, <code>MAIL_FROM</code> et <code>BASE_URL</code> (e-mails), <code>ANTHROPIC_API_KEY</code> (facultatif, assistant de l'aide). Les clés des notifications push (VAPID) sont créées toutes seules et gardées en base.</li>
+<li><b>Sécurité</b> : GitHub Actions « Sécurité des dépendances » contrôle chaque lundi les failles connues des bibliothèques (échec et e-mail de GitHub si une faille haute ou critique apparaît). À ajouter : une sonde UptimeRobot sur <code>/healthz</code>.</li>
+<li><b>Appli Android</b> : GitHub Actions « Appli Android » fabrique l'APK de test à chaque modification du dossier <code>mobile/</code> (Releases → « Appli Android (test) »). Voir le chapitre « L'appli Android ».</li></ul>""")
+
+ch("Badges à paliers", """<p>En plus des titres de soirée, six badges suivent tout votre historique, avec trois paliers : bronze, argent et or. Ils récompensent la régularité et la modération, jamais l'excès. Ils sont dans le Profil, avec le nombre qui manque pour le palier suivant ; un nouveau palier s'annonce par une notification.</p>
+<table><tr><th>Badge</th><th>Ce qui compte</th><th>Bronze</th><th>Argent</th><th>Or</th></tr>
+<tr><td>L'Habitué</td><td>Soirées jouées</td><td>3</td><td>10</td><td>25</td></tr>
+<tr><td>Le Chameau d'or</td><td>Verres d'eau notés</td><td>10</td><td>25</td><td>50</td></tr>
+<tr><td>Sam fidèle</td><td>Soirées en Sam</td><td>1</td><td>3</td><td>5</td></tr>
+<tr><td>Sans fausse note</td><td>Soirées terminées sans titre de honte</td><td>2</td><td>5</td><td>10</td></tr>
+<tr><td>Pilote de ligne</td><td>Atterrissages en douceur</td><td>2</td><td>5</td><td>10</td></tr>
+<tr><td>Bande de potes</td><td>Amis dans votre liste</td><td>2</td><td>5</td><td>10</td></tr></table>""")
+
+ch("Écran TV et récap à partager", """<h3>Écran TV</h3><p>Écran Moi → « Partager la soirée » → « Écran TV » : un code de 6 caractères s'affiche (valable 12 h). Sur la TV, un vidéoprojecteur ou un ordinateur relié, ouvrez <code>alambhic.onrender.com/tv</code> et saisissez le code. L'écran garde le code et se reconnecte tout seul.</p>
+<ul><li><b>Avatars</b> : chaque joueur en grand, avec son taux, sa tendance et son dernier titre.</li><li><b>Courbes</b> : tout le groupe sur un grand graphique.</li><li><b>Fil</b> : les six derniers titres.</li><li><b>Auto</b> : les trois vues tournent toutes les 15 secondes.</li></ul>
+<p>Chaque nouveau titre s'annonce en grand au milieu de l'écran. Le téléphone sert de <b>télécommande</b> : les boutons Auto, Avatars, Courbes et Fil changent la vue de la TV immédiatement.</p>
+<h3>Récap à partager</h3><p>« Récap à partager » crée un lien public (<code>/r/…</code>) vers une page avec les joueurs (avatar à leur pic, pic, points, titres), les courbes de la soirée et le fil des titres, plus un bouton « Créer votre soirée sur Alamb'hic ». Seuls les joueurs qui ont coché « Apparaître dans le récap » y figurent, avec leur pseudo seulement ; celui qui crée le lien est coché d'office et peut se décocher. « Supprimer le lien » le désactive. La page n'est pas référencée par les moteurs de recherche.</p>""")
+
+ch("Aide", """<p>Profil → « Aide », ou le lien « Aide » sous l'écran de connexion. On tape sa question (« pourquoi mon pic baisse après un repas ? ») : l'aide montre les réponses les plus proches parmi 17 questions fréquentes (calcul, repas, plafond, titres, badges, avatar, Sam, erreurs de saisie, soirées, amis, notifications, TV, récap, mot de passe, données, installation, malaise d'un ami). Toutes les réponses sont aussi listées dessous.</p>
+<p>Avec la variable Render <code>ANTHROPIC_API_KEY</code>, un assistant reformule une réponse sur mesure, uniquement à partir de cette base, dans la langue de l'appli. La base est dans <code>server/help.js</code>, à tenir à jour quand l'appli change.</p>""")
+
+ch("L'appli Android", """<p>Le dossier <code>mobile/</code> contient une enveloppe Capacitor (comme Airmony) qui ouvre l'appli en ligne dans une appli Android : identifiant <code>app.alambhic</code>, icône et écran de démarrage bleu nuit, page « Pas de connexion ».</p>
+<ul><li><b>Fabrication</b> : GitHub → Actions → « Appli Android » (automatique à chaque modification de <code>mobile/</code>, ou « Run workflow »). L'APK est publié dans Releases → « Appli Android (test) ».</li>
+<li><b>Installation</b> : sur le téléphone, télécharger <code>Alambhic-Android-test.apk</code>, l'ouvrir et autoriser l'installation depuis cette source. Chaque nouvelle version s'installe par-dessus (clé de test fixe).</li>
+<li><b>Google Play</b> : avec les secrets <code>ANDROID_KEYSTORE_B64</code>, <code>ANDROID_KEYSTORE_PASSWORD</code>, <code>ANDROID_KEY_ALIAS</code>, <code>ANDROID_KEY_PASSWORD</code>, un fichier .aab signé est aussi fabriqué.</li>
+<li><b>À venir</b> : notifications natives (Firebase), widget « mes potes ». La connexion Google dans l'appli est à vérifier (Google peut refuser les vues web intégrées : utiliser alors l'e-mail et le mot de passe).</li></ul>""")
 
 toc = "<ol class='toc'>" + "".join(f"<li><span class='n'>{i+1}</span>{t}</li>" for i, (t, _) in enumerate(CH)) + "<li><span class='n'>A</span>Historique des versions</li></ol>"
 body = f"""<div>{band("Guide complet", "Présentation et guides")}

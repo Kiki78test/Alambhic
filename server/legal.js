@@ -2,7 +2,7 @@
 /* Pages publiques : politique de confidentialité et conditions d'utilisation.
    L'adresse de contact vient de la variable CONTACT_EMAIL (Render). */
 const CONTACT = () => process.env.CONTACT_EMAIL || "";
-const MAJ = "10 novembre 2026";
+const MAJ = "23 novembre 2026";
 
 function page(title, body) {
   const c = CONTACT();
@@ -30,13 +30,20 @@ const PRIVACY = `
 <tr><th>Données</th><th>Pourquoi</th></tr>
 <tr><td>E-mail, mot de passe chiffré, ou identifiant Google, e-mail et prénom si vous utilisez « Continuer avec Google »</td><td>Créer et sécuriser votre compte</td></tr>
 <tr><td>Pseudo, sexe biologique, âge, taille, poids, plafond perso</td><td>Estimer votre taux (formule de Widmark). Seul le pseudo est montré aux autres joueurs.</td></tr>
-<tr><td>Verres (heure, boisson, volume, degré), repas (heure, type), soirées rejointes, titres obtenus</td><td>Calculer et partager les taux, courbes, titres et alertes avec les joueurs de la même soirée ; suivi personnel sur 7 jours</td></tr>
+<tr><td>Verres (heure, boisson, volume, degré), repas (heure, type), soirées rejointes, titres obtenus</td><td>Calculer et partager les taux, courbes, titres et alertes avec les joueurs de la même soirée ; suivi personnel sur 7 jours ; badges calculés sur votre historique</td></tr>
+<tr><td>Abonnements aux notifications (adresse technique fournie par votre navigateur) et catégories choisies</td><td>Vous envoyer les notifications que vous avez activées ; vous pouvez les couper à tout moment (Profil → Notifications)</td></tr>
+<tr><td>Langue choisie</td><td>Afficher l'appli dans votre langue</td></tr>
+<tr><td>Questions posées à l'aide</td><td>Y répondre ; elles ne sont pas gardées</td></tr>
 </table></div>
+<p><b>Récapitulatif public</b> : un joueur peut créer un lien public vers le récapitulatif d'une soirée. Seuls y figurent les joueurs qui ont coché « Apparaître dans le récap », avec leur pseudo, leurs courbes et leurs titres (jamais d'e-mail ni de mesures). Vous pouvez décocher à tout moment ; le lien peut être supprimé. <b>Écran TV</b> : un code TV temporaire (12 h) permet d'afficher la soirée sur un écran de la pièce, avec les mêmes informations que celles vues par les joueurs.</p>
 <p>Les consommations d'alcool sont des <b>données de santé</b>. Nous ne les traitons qu'avec votre <b>consentement explicite</b>, donné à la création du compte, et vous pouvez le retirer à tout moment en supprimant votre compte.</p>
 <h2>Qui voit quoi</h2><ul><li>Les joueurs d'une même soirée voient votre pseudo, vos verres, vos taux estimés, vos titres et les suppressions de verres.</li><li>Ils ne voient jamais votre e-mail, votre âge, votre taille, votre poids ni vos repas.</li><li>Aucune donnée n'est vendue ni utilisée pour de la publicité.</li></ul>
 <h2>Sous-traitants</h2><div class="tw"><table><tr><th>Service</th><th>Rôle</th><th>Lieu</th></tr>
 <tr><td>Render</td><td>Hébergement du site et de la base de données</td><td>Francfort (Union européenne)</td></tr>
 <tr><td>Google</td><td>Connexion « Continuer avec Google » (si vous la choisissez) ; polices de caractères de l'interface</td><td>Union européenne et États-Unis (clauses contractuelles types)</td></tr>
+<tr><td>Resend</td><td>Envoi des e-mails (lien de nouveau mot de passe) : votre adresse e-mail seulement</td><td>Union européenne et États-Unis (clauses contractuelles types)</td></tr>
+<tr><td>Services de notification de votre navigateur (Google, Apple, Mozilla, Microsoft)</td><td>Acheminement des notifications push, contenu chiffré</td><td>Selon votre navigateur</td></tr>
+<tr><td>Anthropic (si l'assistant est activé)</td><td>Reformuler les réponses de l'aide à partir de votre question, sans votre identité</td><td>États-Unis (clauses contractuelles types)</td></tr>
 <tr><td>GitHub</td><td>Code source de l'appli (aucune donnée de joueur)</td><td>—</td></tr></table></div>
 <h2>Durée de conservation</h2><p>Vos données sont gardées tant que votre compte existe. La suppression du compte (Profil → « Supprimer mon compte et toutes mes données ») efface immédiatement et définitivement profil, verres, repas et titres.</p>
 <h2>Cookies et stockage</h2><p>Un seul cookie, indispensable : celui qui garde votre session ouverte (60 jours). Le navigateur garde aussi quelques préférences locales (notifications déjà vues, questions « avez-vous mangé ? » écartées). Aucun cookie publicitaire ni de mesure d'audience.</p>

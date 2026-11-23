@@ -84,6 +84,31 @@ async function migrate() {
     kind TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await pool.query("CREATE INDEX IF NOT EXISTS meals_user_t ON meals(user_id, t)");
+  /* 23/11 : notifications push, réglages, mot de passe oublié, écran TV, récapitulatif public, langue */
+  await pool.query(`CREATE TABLE IF NOT EXISTS settings (k TEXT PRIMARY KEY, v TEXT NOT NULL)`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS push_subs (
+    endpoint TEXT PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    sub JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS notif_prefs JSONB NOT NULL DEFAULT '{}'::jsonb");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS lang TEXT");
+  await pool.query(`CREATE TABLE IF NOT EXISTS resets (
+    token_hash TEXT PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    exp TIMESTAMPTZ NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT false)`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS tv_links (
+    tv CHAR(6) PRIMARY KEY,
+    party_code CHAR(4) NOT NULL REFERENCES parties(code) ON DELETE CASCADE,
+    view TEXT NOT NULL DEFAULT 'auto',
+    exp TIMESTAMPTZ NOT NULL)`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS recaps (
+    token TEXT PRIMARY KEY,
+    party_code CHAR(4) NOT NULL REFERENCES parties(code) ON DELETE CASCADE,
+    created_by UUID REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  await pool.query("ALTER TABLE party_members ADD COLUMN IF NOT EXISTS recap_ok BOOLEAN NOT NULL DEFAULT false");
 }
 
 module.exports = { pool, migrate, q: (text, params) => pool.query(text, params) };

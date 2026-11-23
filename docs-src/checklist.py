@@ -36,9 +36,20 @@ FAIT = [
     ("ok", "<b>Banc de test sur ordinateur</b> (10/11) : <code>/demo.html</code>, la soirée fictive en grand avec frise temporelle, avatars, titres et courbes."),
     ("ok", "<b>Business plan</b> (10/11) : document dans l'onglet Documentation, à enrichir au fil des idées."),
     ("ok", "<b>Liste d'amis</b> (10/11) : code ami, lien d'invitation, demandes, amis en direct (taux, tendance, mini-courbe, dernier titre), partage désactivable."),
-    ("todo", "<b>Widget « mes potes »</b> sur l'APK et la montre, et notifications des titres des amis hors soirée (avec l'APK)."),
+    ("todo", "<b>Widget « mes potes »</b> sur l'APK et la montre (les notifications des titres des amis hors soirée sont faites, voir ci-dessous) (avec l'APK)."),
     ("ok", "<b>Nouvel avatar</b> (10/11) : portrait dans un cercle en 10 stades (du sourire au KO), d'après la planche fournie. Version femme à venir."),
     ("ok", "<b>Gages supprimés</b> (10/11) : les titres de honte coûtent seulement des points."),
+    ("ok", "<b>Badges à paliers</b> (23/11) : six badges bronze, argent, or sur tout l'historique (Habitué, Chameau d'or, Sam fidèle, Sans fausse note, Pilote de ligne, Bande de potes), dans le Profil, notification à chaque palier."),
+    ("ok", "<b>Notifications push appli fermée</b> (23/11) : Profil → Notifications ; 5 catégories réglables (alertes, titres de la soirée, titres des amis hors soirée, rappel repas, badges) ; clés créées automatiquement. Testé : un 2e joueur reçoit les titres du 1er."),
+    ("ok", "<b>Garde-fou sur les pseudos</b> (23/11) : insultes, adresses, numéros et liens refusés (repris d'Airmony)."),
+    ("ok", "<b>Sécurité</b> (23/11) : GitHub Actions « Sécurité des dépendances » chaque lundi."),
+    ("ok", "<b>Mot de passe oublié</b> (23/11) : lien par e-mail valable 1 h (Resend) ; actif dès que <code>RESEND_API_KEY</code> est renseignée."),
+    ("ok", "<b>Aide</b> (23/11) : 17 questions fréquentes avec recherche ; assistant IA facultatif (<code>ANTHROPIC_API_KEY</code>)."),
+    ("ok", "<b>Visite guidée</b> (23/11) : 5 bulles au premier lancement de la démo, bouton « Visite »."),
+    ("ok", "<b>Quatre langues</b> (23/11) : français, anglais, espagnol, portugais (interface, titres, notifications de soirée, pages TV et récap)."),
+    ("ok", "<b>Appli Android</b> (23/11) : enveloppe Capacitor dans <code>mobile/</code>, APK de test fabriqué par GitHub Actions (Releases → « Appli Android (test) »)."),
+    ("ok", "<b>Écran TV</b> (23/11) : <code>/tv</code> avec un code à 6 caractères ; vues Avatars, Courbes, Fil ou Auto ; le téléphone sert de télécommande ; titres annoncés en grand."),
+    ("ok", "<b>Récap à partager</b> (23/11) : lien public <code>/r/…</code> avec avatars, courbes et titres ; seuls les joueurs volontaires y figurent (pseudo seulement)."),
     ("ok", "<b>Onglet Documentation</b> (10/11) réservé aux admins : présentation complète, guide complet, check-list, services externes."),
 ]
 A_TESTER = [
@@ -50,7 +61,11 @@ A_TESTER = [
     ("test", "<b>Repas</b> : en entrant dans la soirée, renseigner les repas du jour (heure et type) avant le premier verre ; ajouter un repas en cours de soirée ; vérifier la question « avez-vous dîné ? » entre 19 h 30 et 22 h (et « avez-vous déjeuné ? » entre 12 h et 14 h 30), avec l'heure du repas à indiquer."),
     ("test", "<b>Installation</b> : menu du navigateur → « Ajouter à l'écran d'accueil »."),
     ("test", "<b>Mode démo</b> : curseur et lecture, déblocage des titres, évolution des avatars."),
-    ("test", "<b>Réveil du serveur gratuit</b> : après 15 min sans visite, la première ouverture prend environ 30 à 50 s."),
+    ("test", "<b>Notifications push</b> : Profil → Notifications → « Activer » puis « Tester », sur Android (Chrome) et sur iPhone (appli installée sur l'écran d'accueil) ; vérifier qu'un ami de la soirée reçoit vos titres appli fermée."),
+    ("test", "<b>Écran TV</b> : ouvrir <code>alambhic.onrender.com/tv</code> sur la TV ou un ordinateur, saisir le code, changer la vue depuis le téléphone."),
+    ("test", "<b>Récap</b> : créer le lien, l'ouvrir sur un autre appareil, décocher « Apparaître » et vérifier qu'on disparaît."),
+    ("test", "<b>APK de test</b> : GitHub → Releases → « Appli Android (test) » (après la première fabrication), installer sur un Android ; vérifier la connexion (Google peut refuser la vue intégrée)."),
+    ("test", "<b>Langues et aide</b> : passer en English / Español / Português (Profil → Langue) ; poser une question dans l'aide ; lancer la démo et suivre la visite."),
     ("test", "<b>Vraie soirée entre amis</b> : validation de l'étape 1 avant de passer à l'APK."),
 ]
 A_FAIRE = [
@@ -58,8 +73,11 @@ A_FAIRE = [
     ("todo", "<b>Logo définitif</b> : choisir parmi les pistes A à D (brand/propositions-logo.png) ou fournir le vôtre."),
     ("todo", "<b>Google</b> : Branding → nom de l'application « Alamb’hic » (le projet peut garder son nom)."),
     ("todo", "<b>Nom de domaine</b> (alambhic.app, .fr ou .com) sur Cloudflare, puis branchement sur Render ; l'ajouter aux origines du client Google et, dans Branding, remettre page d'accueil, confidentialité, conditions et domaine autorisé."),
-    ("todo", "<b>Mot de passe oublié</b> par e-mail (Resend, comme Airmony)."),
-    ("todo", "<b>Étape 2 — APK Android</b> : notifications push Firebase appli fermée, widget écran d'accueil."),
+    ("todo", "<b>Variables Render pour les e-mails</b> : <code>RESEND_API_KEY</code> (clé de l'équipe Resend « Airmony »), <code>MAIL_FROM</code> (ex. « Alamb'hic &lt;noreply@domaine vérifié&gt; »), <code>BASE_URL</code> = https://alambhic.onrender.com. Facultatif : <code>ANTHROPIC_API_KEY</code> pour l'assistant de l'aide."),
+    ("todo", "<b>UptimeRobot</b> : sonde sur https://alambhic.onrender.com/healthz (alerte e-mail si le site tombe)."),
+    ("todo", "<b>Paiements Stripe</b> (Premium, Pass soirée) : reportés, à reprendre d'Airmony le moment venu."),
+    ("todo", "<b>Traduire les réponses de l'aide</b> et les messages du serveur (aujourd'hui en français dans toutes les langues)."),
+    ("todo", "<b>Étape 2 — APK Android, suite</b> : notifications natives Firebase dans l'appli (projet Firebase, <code>google-services.json</code>, <code>FCM_SERVICE_ACCOUNT</code>), widget écran d'accueil, publication Google Play."),
     ("todo", "<b>Étape 3 — Fiabilité</b> : saisie d'un éthylotest et recalibrage personnel, éthylotest Bluetooth, validation des verres par les amis, indice de fiabilité."),
     ("todo", "<b>Étape 4 — Montre et long terme</b> : Wear OS (ajout d'un verre, vibration aux seuils, gorgées détectées par l'inclinaison), tableau de bord mensuel, objectifs, trophées long terme."),
     ("todo", "<b>Étape 5 — Ouverture publique</b> : localisation approximative et défis entre soirées, publicités cohérentes (VTC, repas, sans alcool), version premium."),
@@ -69,7 +87,7 @@ A_FAIRE = [
     ("todo", "<b>Avatar femme</b> : à dessiner d'après les prochaines images (le sexe du profil choisira la version)."),
     ("todo", "<b>Juridique</b> avant toute ouverture publique : loi Évin, règles des stores, RGPD (analyse d'impact, politique de confidentialité, mentions légales)."),
     ("todo", "<b>Hébergement comme les autres projets</b> : Render payant (service web + base) et domaine sur Cloudflare, avec Airmony, AnagramX et Hermaion."),
-    ("todo", "<b>Passage aux offres payantes Render</b> (environ 7 $ + 6 $ par mois) avant d'ouvrir au-delà du cercle d'amis : la base gratuite expire au bout de 30 jours."),
+    ("todo", "<b>Offres payantes Render</b> : le Blueprint demande Starter (~7 $/mois) et une base basic-256mb (~6 $/mois) ; vérifier sur Render que les deux sont bien actives (Sync du Blueprint)."),
 ]
 
 CSS = A4 + """

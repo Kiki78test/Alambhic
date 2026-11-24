@@ -53,9 +53,9 @@ function viewMe(p,now){
   return `${needMeals?viewMealsFirst():mealQuestion()}<section>
   <div class="card" style="display:flex;flex-direction:column;gap:12px">
     <div class="row" style="justify-content:space-between"><span class="label">${esc(my.pseudo)} · taux estimé</span><span class="state" style="color:${col}">${lab}</span></div>
-    <div class="row merow"><div class="avcol">${avx(p,88,lab,"me")}<span class="curt ${cur?cur.kind:""}" title="Titre actuel, visible par vos potes">${cur?esc(cur.title):"Pas encore de titre"}</span></div>${gauge(s.cur,maxB,cap,col,s.cur<s.prev-0.004)}<div class="bac">${fmt(s.cur)}<small>g/L</small></div></div>
+    <div class="row merow"><div class="avcol">${alertBtn()}${avx(p,88,lab,"me")}<span class="curt ${cur?cur.kind:""}" title="Titre actuel, visible par vos potes">${cur?esc(cur.title):"Pas encore de titre"}</span></div>${gauge(s.cur,maxB,cap,col,s.cur<s.prev-0.004)}<div class="bac">${fmt(s.cur)}<small>g/L</small></div></div>
     <div class="muted" style="font-size:13px">${sub}. Plafond perso : ${fmt(cap)} g/L.</div>
-  </div></section>
+  </div></section>${S.alertOpen&&S.cal&&S.cal.alerts.length&&!demo?alertsCard(true):""}
   <section><h2>${my.sam?"Sam boit de l'eau":"Ajouter un verre"}</h2>
   <div class="field"><span class="label">Bu</span><div class="seg" id="ago">${[[0,"Maintenant"],[15,"il y a 15 min"],[30,"30 min"],[60,"1 h"]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${ago===v}">${l}</button>`).join("")}</div></div>
   ${demo||S.screen!=="party"?"":`<label class="toggle"><span>Je suis Sam ce soir (zéro alcool)</span><input type="checkbox" id="samT" ${my.sam?"checked":""}></label>`}
@@ -536,7 +536,6 @@ function viewSolo(now){
   my={pseudo:p.pseudo,cap:p.cap,sam:p.sam,mealsOk:p.mealsOk,drinks:p.drinks};
   return `<div class="hero" style="padding-bottom:0"><h1>Salut ${esc(S.user.pseudo)} !</h1></div>
   ${pa?`<section><div class="card pnow"><div><span class="label" style="color:var(--accent)">Soirée en cours</span><b>${esc(pa.name||"Soirée "+pa.code)} · ${esc(pa.code)}</b><span class="muted" style="font-size:13px">Vos verres comptent aussi dans cette soirée.</span></div><button class="btn small" data-open="${esc(pa.code)}">Ouvrir</button></div></section>`:""}
-  ${alertsCard(true)}
   ${viewMe(p,now)}
   ${p.sim.pts.length>1?viewChart([p],now,{title:"Ma session en cours",t0:p.sessionStart-10*MIN,note:"La session a commencé à votre premier verre d'alcool ; elle se terminera quand votre taux sera revenu à 0."}):""}`;
 }
@@ -572,6 +571,12 @@ function viewSession(s,now){
 
 /* Agenda : verres standard par jour, vert 1-2, orange 3-5, rouge 6+ */
 const dayCls=std=>{ if(!std) return ""; const r=Math.round(std); return r>=6?"red":r>=3?"orange":"green" };
+/* bouton ⚠ à côté de l'avatar quand l'agenda signale une conso élevée ; le message s'ouvre au clic */
+function alertBtn(){
+  const A=!demo&&S.cal&&S.cal.alerts; if(!A||!A.length) return "";
+  const red=A.some(a=>a.level==="red");
+  return `<button class="alertbtn ${red?"red":"orange"}${S.alertOpen?" on":""}" id="alertBtn" aria-expanded="${!!S.alertOpen}" aria-label="Un œil sur votre conso : voir le message"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18v.01"/></svg></button>`;
+}
 function alertsCard(compact){
   const C=S.cal; if(!C) return "";
   if(!C.alerts.length) return compact?"":`<div class="card okc"><b>Dans les repères</b><span class="muted" style="font-size:13px">${C.week?`${stdF(C.week)} verre${C.week>=2?"s":""} standard ces 7 derniers jours (repère : 10 au plus, 2 par jour, et des jours sans alcool).`:"Aucun verre d'alcool ces 7 derniers jours."}</span></div>`;
@@ -579,7 +584,7 @@ function alertsCard(compact){
   return `<section><div class="card alc ${red?"red":"orange"}"><b>${red?"Prenez soin de vous":"Un œil sur votre conso"}</b>
   <ul>${C.alerts.map(a=>`<li>${esc(a.text)}</li>`).join("")}</ul>
   <span class="muted" style="font-size:13px">Envie d'en parler, sans jugement ? Alcool info service : <b>0 980 980 930</b> (7 j/7, 8 h-2 h, anonyme et non surtaxé) · <a href="https://www.alcool-info-service.fr" target="_blank" rel="noopener">alcool-info-service.fr</a></span>
-  ${compact?`<button class="link" data-htab-go="agenda" style="align-self:flex-start">Voir mon agenda</button>`:""}</div></section>`;
+  ${compact?`<div class="row" style="justify-content:space-between"><button class="link" data-htab-go="agenda">Voir mon agenda</button><button class="link" id="alertClose">Fermer</button></div>`:""}</div></section>`;
 }
 function viewAgenda(){
   const C=S.cal; if(!C) return loading();
@@ -650,6 +655,7 @@ function bindHub(){
   document.querySelectorAll("[data-htab-go]").forEach(b=>b.onclick=()=>{ openHub(b.dataset.htabGo); window.scrollTo(0,0) });
   document.querySelectorAll("[data-ses]").forEach(b=>b.onclick=()=>{ S.sesOpen=+b.dataset.ses; render(); window.scrollTo(0,0) });
   on("sesBack",()=>{ S.sesOpen=null; render() });
+  on("alertBtn",()=>{ S.alertOpen=!S.alertOpen; render() }); on("alertClose",()=>{ S.alertOpen=false; render() });
   document.querySelectorAll("[data-cal]").forEach(b=>b.onclick=()=>run(async()=>{ const [y,m]=S.calMonth.split("-").map(Number), d=new Date(y,m-1+(+b.dataset.cal),1); S.calDay=null; await loadCal(d.toLocaleDateString("sv-SE").slice(0,7)); render() }));
   document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{ S.calDay=S.calDay===b.dataset.day?null:b.dataset.day; render() });
   document.querySelectorAll("[data-grp]").forEach(b=>b.onclick=()=>run(async()=>{ S.gid=+b.dataset.grp; S.gEnd=null; S.gLeave=false; render(); await loadGroup(); render(); window.scrollTo(0,0) }));
@@ -811,7 +817,7 @@ async function refresh(){ if(demo) return; if(S.screen==="home"){ try{ await loa
 function enterParty(code){
   S.code=code; S.snap=null; S.screen="party"; S.tab="moi"; feedUnread=0; S.tv=null; S.recap=null;
   seen=new Set(ls.get("yd_seen_"+code,[])); bootT=Date.now();
-  render(); loadMeals().then(refresh); openWs();
+  render(); loadMeals().then(refresh); openWs(); if(!S.cal) loadCal().then(()=>{ if(S.screen==="party") render() }).catch(()=>{});
 }
 function closeWs(){ if(S.ws){ S.ws.onclose=null; S.ws.close(); S.ws=null } }
 function openWs(){

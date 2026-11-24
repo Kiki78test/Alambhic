@@ -307,3 +307,12 @@ nav #navHub button{font-size:12px;padding-inline:2px}
 .curt.trophy{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 55%,transparent)}
 .curt.shame{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 55%,transparent)}
 .curt.care{color:var(--care);border-color:color-mix(in srgb,var(--care) 55%,transparent)}
+
+/* ⚠ conso élevée, à côté de l'avatar */
+.avcol{position:relative}
+.alertbtn{position:absolute;top:-6px;right:-8px;z-index:2;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--bg);cursor:pointer;padding:0;animation:alpulse 2.4s ease-in-out infinite}
+.alertbtn.orange{background:#ff9f43}.alertbtn.red{background:var(--bad)}
+.alertbtn svg{width:20px;height:20px;fill:none;stroke:#1b1206;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+.alertbtn.on{animation:none;box-shadow:0 0 0 3px var(--fg)}
+@keyframes alpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.alertbtn{animation:none}}

@@ -140,7 +140,10 @@ async function groupView(gid, end) {
     const p = profileOf(m), drinks = dr.filter(d => d.uid === m.id), meals = ml.filter(x => x.uid === m.id);
     const sim = YD.simulate({ ...p, drinks, meals }, Math.min(now, end));
     const win = drinks.filter(d => d.t >= start && d.abv > 0);
+    /* titre actuel : le dernier titre gagné sur le créneau (pas les simples infos) */
+    const ev = YD.events({ ...p, drinks, meals }, sim, Math.min(now, end)).filter(e => e.kind !== "info" && e.t >= start && e.t <= end).sort((a, b) => b.t - a.t);
     return { id: m.id, pseudo: m.pseudo, cap: m.cap, sim: { pts: thin(sim.pts, start, end), cur: end >= now ? sim.cur : 0, prev: sim.prev, peak: sim.peak, peakT: sim.peakT, zeroT: sim.zeroT },
+      title: ev[0] ? { title: ev[0].title, kind: ev[0].kind, t: ev[0].t } : null,
       std: Math.round(win.reduce((s, d) => s + STD(d), 0) * 10) / 10, n: win.length, water: drinks.filter(d => d.water && d.t >= start).length };
   });
   return { id: +g[0].id, name: g[0].name, code: g[0].code, start, end, now, members };

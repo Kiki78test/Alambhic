@@ -300,3 +300,10 @@ nav #navHub button{font-size:12px;padding-inline:2px}
 .card.okc{display:flex;flex-direction:column;gap:4px;border-color:var(--ok)}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
 .nowrap{white-space:nowrap;flex:none}
+
+/* titre actuel sous l'avatar (visible par les potes dans Potes, Amis, Groupes) */
+.avcol{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none;max-width:120px}
+.curt{font-size:11.5px;font-weight:700;text-align:center;line-height:1.2;color:var(--muted);background:var(--surface2);border:1px solid var(--line);border-radius:999px;padding:3px 8px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.curt.trophy{color:var(--gold);border-color:color-mix(in srgb,var(--gold) 55%,transparent)}
+.curt.shame{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 55%,transparent)}
+.curt.care{color:var(--care);border-color:color-mix(in srgb,var(--care) 55%,transparent)}

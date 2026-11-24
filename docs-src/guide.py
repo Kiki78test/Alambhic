@@ -16,7 +16,7 @@ ch("Démarrer", f"""<div class="split"><div>
 </div>{shot("auth", "Écran d'accueil")}</div>""")
 
 ch("L'accueil : vos verres partout", """<p>Les verres appartiennent au joueur : on les note partout, seul, en soirée ou entre potes. Hors soirée, l'accueil a cinq onglets en bas de l'écran :</p>
-<ul><li><b>Moi</b> : votre taux, l'avatar, la jauge, les boutons de boisson, vos repas et la courbe de la <b>session en cours</b>. Si vous êtes dans une soirée à code en cours, une carte « Soirée en cours » le rappelle : vos verres y comptent aussi.</li>
+<ul><li><b>Moi</b> : votre taux, l'avatar avec, juste dessous, votre <b>titre actuel</b> (le dernier gagné, celui que vos potes voient dans Potes, Amis et Groupes), la jauge, les boutons de boisson, vos repas et la courbe de la <b>session en cours</b>. Les autres titres de la session sont regroupés dans « Titres de la session ». Si vous êtes dans une soirée à code en cours, une carte « Soirée en cours » le rappelle : vos verres y comptent aussi.</li>
 <li><b>Sessions</b> : vos sessions des 60 derniers jours.</li><li><b>Agenda</b> : le calendrier de votre consommation.</li>
 <li><b>Groupes</b> : vos groupes de potes et leurs courbes.</li><li><b>Soirées</b> : vos soirées à code (à venir, en cours, passées), créer ou rejoindre.</li></ul>
 <p>Avant le premier verre d'alcool de la journée, Alamb’hic demande vos repas (ou « rien mangé »), où que vous soyez.</p>""" + f"""<div class="shots">{shot("h-moi", "Moi : la session en cours")}{shot("h-sessions", "Sessions")}{shot("h-agenda", "Agenda")}{shot("h-groupe", "Groupe de potes")}</div>""")

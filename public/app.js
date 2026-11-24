@@ -48,12 +48,12 @@ function viewMe(p,now){
   const std=(s.grams/10).toFixed(1).replace(".",",");
   const sub=s.peakT?`Pic ${fmt(s.peak)} à ${hm(s.peakT)} · ${std} verres standard`+(s.cur>0&&s.zeroT?` · retour à 0 vers ${hm(s.zeroT)}`:""):"Aucun verre d'alcool pour l'instant";
   const mine=(my.drinks||[]).slice().sort((a,b)=>b.t-a.t);
-  const titles=p.ev.filter(e=>e.kind!=="info");
+  const titles=p.ev.filter(e=>e.kind!=="info").sort((a,b)=>b.t-a.t), cur=titles[0];
   const needMeals=!demo&&!noAdd&&!p.mealsOk&&!(my.drinks||[]).some(d=>d.abv>0)&&!my.sam;
   return `${needMeals?viewMealsFirst():mealQuestion()}<section>
   <div class="card" style="display:flex;flex-direction:column;gap:12px">
     <div class="row" style="justify-content:space-between"><span class="label">${esc(my.pseudo)} · taux estimé</span><span class="state" style="color:${col}">${lab}</span></div>
-    <div class="row merow">${avx(p,88,lab,"me")}${gauge(s.cur,maxB,cap,col,s.cur<s.prev-0.004)}<div class="bac">${fmt(s.cur)}<small>g/L</small></div></div>
+    <div class="row merow"><div class="avcol">${avx(p,88,lab,"me")}<span class="curt ${cur?cur.kind:""}" title="Titre actuel, visible par vos potes">${cur?esc(cur.title):"Pas encore de titre"}</span></div>${gauge(s.cur,maxB,cap,col,s.cur<s.prev-0.004)}<div class="bac">${fmt(s.cur)}<small>g/L</small></div></div>
     <div class="muted" style="font-size:13px">${sub}. Plafond perso : ${fmt(cap)} g/L.</div>
   </div></section>
   <section><h2>${my.sam?"Sam boit de l'eau":"Ajouter un verre"}</h2>
@@ -64,7 +64,7 @@ function viewMe(p,now){
   ${my.sam?"":`<div class="row"><div class="field" style="flex:1;min-width:90px"><span class="label">Volume (cl)</span><input id="cml" type="number" inputmode="decimal" min="1" max="100" placeholder="15"></div><div class="field" style="flex:1;min-width:90px"><span class="label">Degré (%)</span><input id="cabv" type="number" inputmode="decimal" min="0" max="80" placeholder="13"></div><button class="btn${pend.perso?" "+pend.perso:""}" id="cadd" style="align-self:flex-end">${pend.perso==="ok"?"✓ Noté":pend.perso==="sending"?"Envoi…":"Ajouter"}</button></div>`}
   </section>
   ${needMeals?"":viewMeals()}
-  ${titles.length?`<section><h2>Mes titres</h2><div class="badges">${titles.map(e=>`<span class="badge ${e.kind}">${esc(e.title)}</span>`).join("")}</div></section>`:""}
+  ${titles.length>1?`<section><details class="hq"><summary>Titres de la session (${titles.length})</summary><div class="badges" style="margin-top:8px">${titles.map(e=>`<span class="badge ${e.kind}">${esc(e.title)} · ${hm(e.t)}</span>`).join("")}</div></details></section>`:""}
   <section><h2>Mes verres</h2>${mine.length?`<div class="list">${mine.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div><button class="x" data-del="${d.id}" aria-label="Supprimer ce verre">×</button></div>`).join("")}</div>`:`<p class="muted">Touchez une boisson ci-dessus pour l'enregistrer. Pensez à l'eau : trois verres débloquent le Chameau.</p>`}</section>`;
 }
 /* Courbes sur une fenêtre : soirée (début → fin prévus), session (premier verre → retour à 0), groupe (48 h). */
@@ -623,7 +623,7 @@ function viewGroup(now){
   <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><button class="btn ghost small nowrap" id="gPrev">‹ 48 h</button><span class="muted" style="font-size:13px;text-align:center">${esc(lab)}</span><button class="btn ghost small nowrap" id="gNext" ${latest?"disabled":""}>48 h ›</button></div></section>
   ${viewChart(list,now,{title:"Les courbes du groupe",t0:G.start,t1:G.end,legend:p=>`${esc(p.pseudo)} · ${stdF(p.std)} v.${latest&&p.sim.cur>0?` · ${fmt(p.sim.cur)} g/L`:""}`,note:"Chaque membre, où qu'il boive. Nombre de verres standard sur les 48 h."})}
   <section><div class="card"><span class="label">Inviter dans le groupe</span><div class="row" style="justify-content:space-between;margin-top:6px"><b class="code" style="font-family:var(--display);font-size:26px;letter-spacing:.15em">${esc(G.code)}</b><button class="btn ghost small" id="gShare">Partager le lien</button></div></div>
-  <div class="list">${list.map(m=>`<div class="item"><i class="dot" style="background:${m.color}"></i><div class="grow"><b data-noi18n>${esc(m.pseudo)}</b> <span class="muted">${stdF(m.std)} verre${m.std>=2?"s":""} standard · ${m.water} eau</span></div></div>`).join("")}</div>
+  <div class="list">${list.map(m=>`<div class="item"><i class="dot" style="background:${m.color}"></i><div class="grow"><b data-noi18n>${esc(m.pseudo)}</b> <span class="muted">${stdF(m.std)} verre${m.std>=2?"s":""} standard · ${m.water} eau</span>${m.title?`<div class="ltitle ${m.title.kind}">${esc(m.title.title)} <span class="muted">· ${hm(m.title.t)}</span></div>`:""}</div></div>`).join("")}</div>
   ${S.gLeave?`<div class="card"><b>Quitter ce groupe ?</b><span class="muted" style="font-size:13px">Les autres ne verront plus vos courbes.</span><div class="row"><button class="btn small" id="gLeaveYes">Oui, quitter</button><button class="btn ghost small" id="gLeaveNo">Annuler</button></div></div>`:`<button class="link danger" id="gLeave" style="align-self:flex-start">Quitter le groupe</button>`}</section>`;
 }
 

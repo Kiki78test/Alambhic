@@ -376,6 +376,7 @@ Soirées passées|Past parties|Fiestas pasadas|Festas passadas
 terminée|finished|terminada|terminada
 Aller à l'accueil|Go to home|Ir al inicio|Ir para o início
 Vos verres se notent maintenant depuis l'accueil (onglet Moi).|Your drinks are now logged from home (Me tab).|Tus copas se anotan ahora desde el inicio (pestaña Yo).|Seus copos agora são anotados no início (aba Eu).
+Titre actuel, visible par vos potes|Current title, visible to your mates|Título actual, visible para tus colegas|Título atual, visível para a galera
 `;
   const MAP = {}; const L = { en: 0, es: 1, pt: 2 };
   DICT.trim().split("\n").forEach(l => { const p = l.split("|"); if (p.length === 4) MAP[p[0].trim()] = p.slice(1).map(x => x.trim()); });
@@ -410,6 +411,7 @@ Vos verres se notent maintenant depuis l'accueil (onglet Moi).|Your drinks are n
     [/^(.+) a bu 3 verres d'eau\.$/, "$1 drank 3 glasses of water.", "$1 ha bebido 3 vasos de agua.", "$1 bebeu 3 copos de água."],
     [/^(.+) en est à 6 verres d'eau\.$/, "$1 is up to 6 glasses of water.", "$1 va por 6 vasos de agua.", "$1 já está em 6 copos de água."],
     [/^(.+) reste à zéro et veille sur tout le monde\.$/, "$1 stays at zero and looks after everyone.", "$1 se queda a cero y cuida de todos.", "$1 fica no zero e cuida de todo mundo."],
+    [/^Titres de la session \((\d+)\)$/, "Session titles ($1)", "Títulos de la sesión ($1)", "Títulos da sessão ($1)"],
     [/^Notre soirée du (.+)$/, "Our night: $1", "Nuestra noche del $1", "Nossa noite de $1"],
     [/^(\d+) joueurs? · (\d+) titres? débloqués?$/, "$1 player(s) · $2 title(s) unlocked", "$1 jugador(es) · $2 título(s) desbloqueado(s)", "$1 jogador(es) · $2 título(s) desbloqueado(s)"],
     [/^Pic ([\d,]+) g\/L( · Sam)?$/, "Peak $1 g/L$2", "Pico $1 g/L$2", "Pico $1 g/L$2"],

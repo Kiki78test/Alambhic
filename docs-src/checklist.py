@@ -71,7 +71,7 @@ A_TESTER = [
     ("test", "<b>Récap</b> : créer le lien, l'ouvrir sur un autre appareil, décocher « Apparaître » et vérifier qu'on disparaît."),
     ("test", "<b>APK de test</b> : GitHub → Releases → « Appli Android (test) » (après la première fabrication), installer sur un Android ; vérifier la connexion (Google peut refuser la vue intégrée)."),
     ("test", "<b>Langues et aide</b> : passer en English / Español / Português (Profil → Langue) ; poser une question dans l'aide ; lancer la démo et suivre la visite."),
-    ("test", "<b>Nouvel accueil</b> : noter un verre hors soirée, voir la session en cours, l'onglet Sessions puis une session ; l'agenda du mois ; créer un groupe, inviter un ami avec le lien, naviguer par 48 h ; créer une soirée datée et vérifier que la courbe va du début à la fin."),
+    ("test", "<b>Nouvel accueil</b> : noter un verre hors soirée, voir la session en cours, l'onglet Soirées (historique, filtre) puis une session ; l'agenda du mois ; créer un groupe, inviter un ami avec le lien, naviguer par 48 h ; créer une soirée datée et vérifier que la courbe va du début à la fin."),
     ("test", "<b>Vraie soirée entre amis</b> : validation de l'étape 1 avant de passer à l'APK."),
 ]
 A_FAIRE = [

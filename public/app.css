@@ -256,8 +256,7 @@ details.hq p{margin:8px 0 0;color:var(--muted);font-size:14px}
 .google iframe{color-scheme:light;background:transparent!important;border-radius:999px}
 
 /* accueil : 5 onglets */
-nav #navHub{grid-template-columns:repeat(5,1fr)}
-nav #navHub button{font-size:12px;padding-inline:2px}
+nav #navHub{grid-template-columns:repeat(4,1fr)}
 /* listes de sessions, groupes, soirées */
 .slist{display:flex;flex-direction:column;gap:8px}
 .scard{display:flex;align-items:center;gap:10px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;color:var(--fg);font:inherit;cursor:pointer;min-width:0}
@@ -316,3 +315,14 @@ nav #navHub button{font-size:12px;padding-inline:2px}
 .alertbtn.on{animation:none;box-shadow:0 0 0 3px var(--fg)}
 @keyframes alpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 @media (prefers-reduced-motion:reduce){.alertbtn{animation:none}}
+
+/* groupe : membres et taux actuel */
+.gmem{display:flex;flex-direction:column;gap:8px}
+.gm{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 12px 8px 0;overflow:hidden;min-width:0}
+.gbar{width:5px;align-self:stretch;flex:none}
+.gx{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.gv{display:flex;flex-direction:column;align-items:flex-end;flex:none}
+.gv b{font-family:var(--display);font-size:24px;line-height:1}
+.gv b small{font-size:11px;margin-left:2px;color:var(--muted)}
+.gv span{font-size:11px;font-weight:600}
+.pchip.solo{color:var(--muted);background:var(--surface2)}

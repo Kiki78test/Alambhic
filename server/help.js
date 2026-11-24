@@ -32,7 +32,7 @@ const KB = [
     a: "Onglet Soirées : donnez un nom, le début et la fin prévus, puis « Créer la soirée ». Partagez le code de 4 lettres (« Copier l'invitation ») ; vos amis le saisissent dans « Rejoindre avec un code ». La courbe va du début à la fin prévus ; vos verres notés pendant la soirée s'y rattachent tout seuls." },
   { id: "sessions", k: ["session", "sessions", "courbe", "historique", "large", "hier", "retour a 0"],
     q: "Qu'est-ce qu'une session ?",
-    a: "Une session va de votre premier verre d'alcool jusqu'au retour à 0 g/L. Alamb'hic les découpe tout seul ; l'onglet Sessions les liste sur 60 jours, avec pour chacune sa propre courbe, son pic et ses verres." },
+    a: "Une session va de votre premier verre d'alcool jusqu'au retour à 0 g/L. Alamb'hic les découpe tout seul ; l'onglet Soirées (rubrique Historique) les liste sur 60 jours, avec les soirées à code, avec pour chacune sa propre courbe, son pic et ses verres." },
   { id: "agenda", k: ["agenda", "calendrier", "couleur", "vert", "orange", "rouge", "mois", "trop", "abus"],
     q: "Que veulent dire les couleurs de l'agenda ?",
     a: "Chaque jour est coloré selon vos verres standard : vert de 1 à 2, orange de 3 à 5, rouge à 6 et plus. Une carte vous prévient avec bienveillance au-delà de 10 verres sur 7 jours ou d'un jour à 6 et plus. Pour en parler : Alcool info service, 0 980 980 930 (7 j/7, 8 h-2 h)." },

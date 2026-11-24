@@ -141,7 +141,11 @@ async function groupView(gid, end) {
     const sim = YD.simulate({ ...p, drinks, meals }, Math.min(now, end));
     const win = drinks.filter(d => d.t >= start && d.abv > 0);
     /* titre actuel : le dernier titre gagné sur le créneau (pas les simples infos) */
-    const ev = YD.events({ ...p, drinks, meals }, sim, Math.min(now, end)).filter(e => e.kind !== "info" && e.t >= start && e.t <= end).sort((a, b) => b.t - a.t);
+    /* … de la dernière session seulement (sinon un « Retour sur Terre » d'hier masquerait la session en cours) */
+    const ses = splitSessions(p, drinks.filter(d => d.t <= end), meals), last = ses[ses.length - 1] || [];
+    const lastD = last.length ? drinks.filter(d => d.t >= last[0].t - 30 * MIN && d.t <= end) : [];
+    const tNow = Math.min(now, end), simL = YD.simulate({ ...p, drinks: lastD, meals }, tNow);
+    const ev = lastD.length ? YD.events({ ...p, drinks: lastD, meals, joined: last[0].t }, simL, tNow).filter(e => e.kind !== "info" && e.t >= start && e.t <= end).sort((a, b) => b.t - a.t) : [];
     return { id: m.id, pseudo: m.pseudo, cap: m.cap, sim: { pts: thin(sim.pts, start, end), cur: end >= now ? sim.cur : 0, prev: sim.prev, peak: sim.peak, peakT: sim.peakT, zeroT: sim.zeroT },
       title: ev[0] ? { title: ev[0].title, kind: ev[0].kind, t: ev[0].t } : null,
       std: Math.round(win.reduce((s, d) => s + STD(d), 0) * 10) / 10, n: win.length, water: drinks.filter(d => d.water && d.t >= start).length };

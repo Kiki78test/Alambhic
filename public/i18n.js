@@ -377,6 +377,10 @@ terminée|finished|terminada|terminada
 Aller à l'accueil|Go to home|Ir al inicio|Ir para o início
 Vos verres se notent maintenant depuis l'accueil (onglet Moi).|Your drinks are now logged from home (Me tab).|Tus copas se anotan ahora desde el inicio (pestaña Yo).|Seus copos agora são anotados no início (aba Eu).
 Titre actuel, visible par vos potes|Current title, visible to your mates|Título actual, visible para tus colegas|Título atual, visível para a galera
+Frise des taux|Level timeline|Línea de tasas|Linha das taxas
+Les membres|Members|Los miembros|Os membros
+Les membres en ce moment|Members right now|Los miembros ahora|Os membros agora
+Chaque membre, où qu'il boive. Trait plein : jusqu'à maintenant ; pointillés : redescente prévue.|Every member, wherever they drink. Solid: until now; dotted: expected decline.|Cada miembro, beba donde beba. Continuo: hasta ahora; punteado: bajada prevista.|Cada membro, onde quer que beba. Contínuo: até agora; pontilhado: descida prevista.
 `;
   const MAP = {}; const L = { en: 0, es: 1, pt: 2 };
   DICT.trim().split("\n").forEach(l => { const p = l.split("|"); if (p.length === 4) MAP[p[0].trim()] = p.slice(1).map(x => x.trim()); });

@@ -2,7 +2,8 @@
 /* Alamb'hic — notifications push du navigateur (Web Push).
    Clés VAPID : variables VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY si elles existent, sinon générées une fois et gardées en base
    (table settings) : rien à configurer sur Render.
-   Catégories réglables par l'utilisateur (users.notif_prefs) : alertes, titres, amis, repas, badges. Coupée = pas de push. */
+   Catégories réglables par l'utilisateur (users.notif_prefs) : alertes, titres, amis, repas, badges. Coupée = pas de push.
+   Plus « expr » : expressions des potes (tout, amis, groupes ou rien), voir server/expr.js. */
 const webpush = require("web-push");
 const { q } = require("./db");
 
@@ -13,6 +14,8 @@ const CATS = {
   repas: "Rappel « avez-vous mangé ? » à l'heure du déjeuner et du dîner",
   badges: "Nouveaux badges (bronze, argent, or)",
 };
+/* expressions des potes (server/expr.js) : choix du destinataire */
+const EXPR = { tout: "Amis et groupes", amis: "Amis seulement", groupes: "Groupes seulement", rien: "Rien" };
 let keys = null, ready = null;
 
 async function init() {
@@ -38,19 +41,25 @@ const publicKey = async () => (await init()).pub;
 
 const prefsOf = p => Object.fromEntries(Object.keys(CATS).map(k => [k, !(p && p[k] === false)]));
 
-/* envoie à un utilisateur si la catégorie n'est pas coupée ; supprime les abonnements expirés */
-async function send(uid, cat, payload) {
+/* envoie à tous les appareils d'un utilisateur ; supprime les abonnements expirés */
+async function deliver(uid, tag, payload) {
   try {
     await init();
-    const { rows: u } = await q("SELECT notif_prefs FROM users WHERE id=$1", [uid]);
-    if (!u[0] || !prefsOf(u[0].notif_prefs)[cat]) return 0;
     const { rows } = await q("SELECT endpoint, sub FROM push_subs WHERE user_id=$1", [uid]);
     let n = 0;
     for (const r of rows) {
-      try { await webpush.sendNotification(r.sub, JSON.stringify({ tag: cat, ...payload }), { TTL: 3600 }); n++; }
+      try { await webpush.sendNotification(r.sub, JSON.stringify({ tag, ...payload }), { TTL: 3600 }); n++; }
       catch (e) { if (e.statusCode === 404 || e.statusCode === 410) await q("DELETE FROM push_subs WHERE endpoint=$1", [r.endpoint]); }
     }
     return n;
+  } catch (e) { console.error("[push]", e.message); return 0; }
+}
+/* idem, seulement si la catégorie n'est pas coupée */
+async function send(uid, cat, payload) {
+  try {
+    const { rows: u } = await q("SELECT notif_prefs FROM users WHERE id=$1", [uid]);
+    if (!u[0] || !prefsOf(u[0].notif_prefs)[cat]) return 0;
+    return deliver(uid, cat, payload);
   } catch (e) { console.error("[push]", e.message); return 0; }
 }
 
@@ -94,11 +103,13 @@ function routes(app, { requireUser }) {
   app.get("/api/me/notifs", requireUser, async (req, res) => {
     const { rows } = await q("SELECT notif_prefs FROM users WHERE id=$1", [req.user.id]);
     const { rows: n } = await q("SELECT count(*)::int AS n FROM push_subs WHERE user_id=$1", [req.user.id]);
-    res.json({ prefs: prefsOf(rows[0] && rows[0].notif_prefs), cats: CATS, devices: n[0].n });
+    const np = rows[0] && rows[0].notif_prefs || {};
+    res.json({ prefs: prefsOf(np), cats: CATS, devices: n[0].n, expr: EXPR[np.expr] ? np.expr : "tout", exprModes: EXPR });
   });
   app.put("/api/me/notifs", requireUser, async (req, res) => {
     const p = req.body && req.body.prefs || {}, clean = {};
     for (const k of Object.keys(CATS)) if (k in p) clean[k] = !!p[k];
+    if (EXPR[p.expr]) clean.expr = p.expr;
     await q("UPDATE users SET notif_prefs = notif_prefs || $2::jsonb WHERE id=$1", [req.user.id, JSON.stringify(clean)]);
     res.json({ ok: true });
   });
@@ -124,4 +135,4 @@ function routes(app, { requireUser }) {
   });
 }
 
-module.exports = { routes, send, partyEvents, publicKey, CATS };
+module.exports = { routes, send, deliver, partyEvents, publicKey, CATS };

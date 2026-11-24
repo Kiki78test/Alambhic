@@ -68,6 +68,10 @@ function viewMe(p,now){
   <section><h2>Mes verres</h2>${mine.length?`<div class="list">${mine.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div><button class="x" data-del="${d.id}" aria-label="Supprimer ce verre">×</button></div>`).join("")}</div>`:`<p class="muted">Touchez une boisson ci-dessus pour l'enregistrer. Pensez à l'eau : trois verres débloquent le Chameau.</p>`}</section>`;
 }
 /* Courbes sur une fenêtre : soirée (début → fin prévus), session (premier verre → retour à 0), groupe (48 h). */
+/* Courbes sur une fenêtre : soirée (début → fin prévus), session (premier verre → retour à 0), groupe (48 h).
+   Zoom et déplacement aux doigts : pincer pour zoomer, glisser pour se déplacer, double-toucher pour revenir à la vue entière.
+   La vue choisie est gardée quand l'écran se redessine (CHV). */
+const CH={}, CHV={};
 function viewChart(list,now,o={}){
   const title=o.title||"Courbes de la soirée";
   const withD=list.filter(p=>p.sim.pts.some(x=>x[1]>0&&(o.t0==null||x[0]>=o.t0)&&(o.t1==null||x[0]<=o.t1)));
@@ -75,28 +79,70 @@ function viewChart(list,now,o={}){
   const t0=o.t0!=null?o.t0:Math.min(...withD.map(p=>p.sim.pts[0][0]));
   let t1=o.t1!=null?o.t1:Math.min(Math.max(now+30*MIN,...withD.map(p=>p.sim.zeroT||now)),now+10*3600e3);
   const ymax=Math.max(1.0,...withD.map(p=>Math.max(0,...p.sim.pts.filter(x=>x[0]>=t0&&x[0]<=t1).map(x=>x[1]))))*1.1;
-  const W=Math.max(320,($("#app").clientWidth||340)), H=o.height||260, L=34, R=10, T=12, B=26;
-  const X=t=>L+(t-t0)/(t1-t0)*(W-L-R), Y=b=>T+(1-b/ymax)*(H-T-B);
-  let g="";
-  for(const [v,c,lab] of [[0.5,"var(--warn)","0,5"],[0.8,"var(--accent)","0,8"],[1.2,"var(--bad)","1,2"]]) if(v<ymax) g+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${c}" stroke-opacity=".45" stroke-dasharray="3 4"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" fill="var(--muted)" font-size="11">${lab}</text>`;
+  const W=Math.max(320,($("#app").clientWidth||340)), H=o.height||260;
+  const id=(o.key||title)+"|"+Math.round(t0/MIN);
+  CH[id]={t0,t1,now,ymax,W,H,series:withD.map(p=>({color:p.color,pts:p.sim.pts,cur:p.sim.cur}))};
+  const v=CHV[id];
+  return `<section><h2>${esc(title)}</h2><div class="card" style="padding:12px 8px"><div class="chart zoomable" data-ch="${esc(id)}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${chartBody(CH[id],v?v.a:t0,v?v.b:t1)}</svg><span class="zhint"${v?"":" hidden"}><button type="button" class="link" data-zreset>Vue entière</button></span></div></div>
+  ${list.length>1||o.legend?`<div class="legend">${(o.legend?list:withD).map(p=>`<span><i class="dot" style="background:${p.color}"></i>${o.legend?o.legend(p):`${esc(p.pseudo)} · ${fmt(p.sim.cur)}`}</span>`).join("")}</div>`:""}
+  <p class="muted" style="font-size:13px">${o.note||"Trait plein : taux estimé jusqu'à maintenant. Pointillés : redescente prévue si plus personne ne boit."} Pincez pour zoomer, glissez pour vous déplacer.</p></section>`;
+}
+/* dessin de la courbe entre les instants a et b */
+function chartBody(c,a,b){
+  const {now,ymax,W,H}=c, L=34, R=10, T=12, B=26, span=b-a;
+  const X=t=>L+(t-a)/span*(W-L-R), Y=v=>T+(1-v/ymax)*(H-T-B);
+  let g=`<defs><clipPath id="clp${Math.round(a)%100000}"><rect x="${L}" y="0" width="${W-L-R}" height="${H}"/></clipPath></defs>`;
+  for(const [v,col,lab] of [[0.5,"var(--warn)","0,5"],[0.8,"var(--accent)","0,8"],[1.2,"var(--bad)","1,2"]]) if(v<ymax) g+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${col}" stroke-opacity=".45" stroke-dasharray="3 4"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" fill="var(--muted)" font-size="11">${lab}</text>`;
   g+=`<line x1="${L}" x2="${W-R}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/><text x="${L-6}" y="${Y(0)+4}" text-anchor="end" fill="var(--muted)" font-size="11">0</text>`;
-  const span=t1-t0, stepH=span>30*3600e3?6:span>8*3600e3?2:1; let h0=new Date(t0); h0.setMinutes(0,0,0); let th=h0.getTime()+3600e3;
-  while(new Date(th).getHours()%stepH) th+=3600e3;
-  for(;th<t1;th+=stepH*3600e3){ const dd=new Date(th), lab=stepH>=6&&dd.getHours()===0?dd.toLocaleDateString("fr-FR",{weekday:"short"}):dd.getHours()+"h";
-    if(stepH>=6&&dd.getHours()===0) g+=`<line x1="${X(th)}" x2="${X(th)}" y1="${T}" y2="${Y(0)}" stroke="var(--line)" stroke-dasharray="2 4"/>`;
+  /* graduations : de 10 min à 6 h selon le zoom */
+  const steps=[10,15,30,60,120,180,360].map(m=>m*MIN), st=steps.find(x=>span/x<=7)||6*3600e3;
+  let th=Math.ceil(a/st)*st; if(st>=3600e3){ const d=new Date(a); d.setMinutes(0,0,0); th=d.getTime(); while(th<a||new Date(th).getHours()%(st/3600e3)) th+=3600e3 }
+  for(;th<b;th+=st){ const dd=new Date(th), midnight=dd.getHours()===0&&dd.getMinutes()===0;
+    const lab=midnight&&span>20*3600e3?dd.toLocaleDateString("fr-FR",{weekday:"short"}):st<3600e3?dd.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):dd.getHours()+"h";
+    if(midnight) g+=`<line x1="${X(th)}" x2="${X(th)}" y1="${T}" y2="${Y(0)}" stroke="var(--line)" stroke-dasharray="2 4"/>`;
     g+=`<text x="${X(th)}" y="${H-8}" text-anchor="middle" fill="var(--muted)" font-size="11">${lab}</text>` }
-  const live=now>=t0&&now<=t1;
-  if(live) g+=`<line x1="${X(now)}" x2="${X(now)}" y1="${T}" y2="${Y(0)}" stroke="var(--fg)" stroke-opacity=".35"/><text x="${Math.min(X(now)+4,W-R-60)}" y="${T+10}" fill="var(--muted)" font-size="11">maintenant</text>`;
-  for(const p of withD){
-    const pts=p.sim.pts.filter((x,i)=>(i%3===0||x[0]>=now-MIN&&x[0]<=now+MIN)&&x[0]>=t0&&x[0]<=t1), past=pts.filter(x=>x[0]<=now), fut=pts.filter(x=>x[0]>=now&&x[0]<=t1);
-    const d=a=>a.map((x,i)=>(i?"L":"M")+X(x[0]).toFixed(1)+" "+Y(x[1]).toFixed(1)).join("");
+  const live=now>=a&&now<=b;
+  g+=`<g clip-path="url(#clp${Math.round(a)%100000})">`;
+  if(live) g+=`<line x1="${X(now)}" x2="${X(now)}" y1="${T}" y2="${Y(0)}" stroke="var(--fg)" stroke-opacity=".35"/>`;
+  const every=span>12*3600e3?3:1;   /* moins de points en vue large */
+  for(const p of c.series){
+    const pts=p.pts.filter((x,i)=>(i%every===0||Math.abs(x[0]-now)<=MIN)&&x[0]>=a-30*MIN&&x[0]<=b+30*MIN), past=pts.filter(x=>x[0]<=now), fut=pts.filter(x=>x[0]>=now);
+    const d=arr=>arr.map((x,i)=>(i?"L":"M")+X(x[0]).toFixed(1)+" "+Y(x[1]).toFixed(1)).join("");
     if(past.length>1) g+=`<path d="${d(past)}" fill="none" stroke="${p.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
     if(fut.length>1) g+=`<path d="${d(fut)}" fill="none" stroke="${p.color}" stroke-width="2" stroke-dasharray="4 5" stroke-opacity=".7"/>`;
-    if(live) g+=`<circle cx="${X(now)}" cy="${Y(p.sim.cur)}" r="4.5" fill="${p.color}" stroke="var(--bg)" stroke-width="2"/>`;
+    if(live) g+=`<circle cx="${X(now)}" cy="${Y(p.cur)}" r="4.5" fill="${p.color}" stroke="var(--bg)" stroke-width="2"/>`;
   }
-  return `<section><h2>${esc(title)}</h2><div class="card" style="padding:12px 8px"><div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${g}</svg></div></div>
-  ${list.length>1||o.legend?`<div class="legend">${(o.legend?list:withD).map(p=>`<span><i class="dot" style="background:${p.color}"></i>${o.legend?o.legend(p):`${esc(p.pseudo)} · ${fmt(p.sim.cur)}`}</span>`).join("")}</div>`:""}
-  <p class="muted" style="font-size:13px">${o.note||"Trait plein : taux estimé jusqu'à maintenant. Pointillés : redescente prévue si plus personne ne boit."}</p></section>`;
+  g+=`</g>`;
+  if(live) g+=`<text x="${Math.min(X(now)+4,W-R-60)}" y="${T+10}" fill="var(--muted)" font-size="11">maintenant</text>`;
+  return g;
+}
+/* gestes : 2 doigts = zoom autour du milieu, 1 doigt = déplacement (horizontal ; le défilement vertical de la page reste libre) */
+function bindCharts(){
+  document.querySelectorAll(".chart.zoomable").forEach(el=>{
+    const id=el.dataset.ch, c=CH[id]; if(!c||el._z) return; el._z=1;
+    const svg=el.querySelector("svg"), hint=el.querySelector(".zhint"), full=c.t1-c.t0, minSpan=Math.min(full,20*MIN);
+    let v=CHV[id]||{a:c.t0,b:c.t1}; const P=new Map(); let g0=null, lastTap=0, raf=0;
+    const clamp=(a,b)=>{ let s=Math.min(full,Math.max(minSpan,b-a)); if(a<c.t0){a=c.t0} if(a+s>c.t1){a=c.t1-s} return {a,b:a+s} };
+    const draw=()=>{ raf=0; svg.innerHTML=chartBody(c,v.a,v.b); const zoomed=v.b-v.a<full-1000; if(zoomed) CHV[id]=v; else delete CHV[id]; hint.hidden=!zoomed };
+    const sched=()=>{ if(!raf) raf=requestAnimationFrame(draw) };
+    const tAt=x=>{ const r=svg.getBoundingClientRect(), L=34/c.W*r.width, w=r.width-(44/c.W)*r.width; return v.a+Math.min(1,Math.max(0,(x-r.left-L)/w))*(v.b-v.a) };
+    const start=()=>{ const pts=[...P.values()];
+      g0=pts.length>=2?{two:1,d:Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)||1,mid:tAt((pts[0].x+pts[1].x)/2),v:{...v}}:{two:0,x:pts[0].x,y:pts[0].y,v:{...v},moved:0} };
+    el.addEventListener("pointerdown",e=>{ if(e.target.closest("[data-zreset]")) return; P.set(e.pointerId,{x:e.clientX,y:e.clientY}); try{el.setPointerCapture(e.pointerId)}catch(_){}; start() });
+    el.addEventListener("pointermove",e=>{ if(!P.has(e.pointerId)||!g0) return; P.set(e.pointerId,{x:e.clientX,y:e.clientY}); const pts=[...P.values()];
+      if(g0.two&&pts.length>=2){ const d=Math.hypot(pts[0].x-pts[1].x,pts[0].y-pts[1].y)||1, k=g0.d/d, s=(g0.v.b-g0.v.a)*k, f=(g0.mid-g0.v.a)/(g0.v.b-g0.v.a);
+        v=clamp(g0.mid-f*s,g0.mid-f*s+s); sched(); e.preventDefault() }
+      else if(!g0.two){ const dx=e.clientX-g0.x, dy=e.clientY-g0.y; if(!g0.moved&&Math.abs(dx)<6) return; if(!g0.moved&&Math.abs(dy)>Math.abs(dx)){ P.delete(e.pointerId); g0=null; return }
+        g0.moved=1; const r=svg.getBoundingClientRect(), dt=-dx/(r.width*0.88)*(g0.v.b-g0.v.a); v=clamp(g0.v.a+dt,g0.v.b+dt); sched(); e.preventDefault() } });
+    const end=e=>{ if(!P.has(e.pointerId)) return; P.delete(e.pointerId);
+      if(g0&&!g0.two&&!g0.moved&&e.type==="pointerup"){ const t=Date.now(); if(t-lastTap<320){ v={a:c.t0,b:c.t1}; sched(); lastTap=0 } else lastTap=t }
+      if(P.size) start(); else g0=null };
+    el.addEventListener("pointerup",end); el.addEventListener("pointercancel",end);
+    el.addEventListener("wheel",e=>{ if(!e.ctrlKey&&!e.shiftKey&&Math.abs(e.deltaX)<Math.abs(e.deltaY)&&!e.altKey) return; e.preventDefault();
+      if(e.shiftKey||Math.abs(e.deltaX)>Math.abs(e.deltaY)){ const dt=(e.deltaX||e.deltaY)/600*(v.b-v.a); v=clamp(v.a+dt,v.b+dt) }
+      else{ const m=tAt(e.clientX), k=Math.exp(e.deltaY/300), s=(v.b-v.a)*k, f=(m-v.a)/(v.b-v.a); v=clamp(m-f*s,m-f*s+s) } sched() },{passive:false});
+    const rb=el.querySelector("[data-zreset]"); if(rb) rb.onclick=()=>{ v={a:c.t0,b:c.t1}; sched() };
+  });
 }
 /* ---------- animations ---------- */
 const REDUCE=(()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}})();
@@ -433,6 +479,7 @@ function viewNotifs(){
   <div class="card" style="display:flex;flex-direction:column;gap:10px">
    <div class="row" style="justify-content:space-between"><span>${N.here?"Activées sur cet appareil":"Désactivées sur cet appareil"}</span>${N.here?`<div class="row" style="gap:6px"><button class="btn ghost small" id="pushTest">Tester</button><button class="btn ghost small" id="pushOff">Couper</button></div>`:`<button class="btn small" id="pushOn">Activer sur cet appareil</button>`}</div>
    ${Object.entries(N.cats).map(([k,l])=>`<label class="toggle"><span>${esc(l)}</span><input type="checkbox" data-nc="${k}" ${N.prefs[k]?"checked":""}></label>`).join("")}
+   ${N.exprModes?`<div class="field" style="margin:0"><span class="label">Expressions des potes (« Max remet le facteur sur le vélo »)</span><select id="exprSel">${Object.entries(N.exprModes).map(([k,l])=>`<option value="${k}" ${N.expr===k?"selected":""}>${esc(l)}</option>`).join("")}</select></div>`:""}
    <p class="muted" style="font-size:12px;margin:0">Elles arrivent même appli fermée. ${N.devices>1?`${N.devices} appareils abonnés.`:""}</p>
   </div></section>`;
 }
@@ -715,7 +762,7 @@ function render(){
     document.querySelectorAll("#navHub button").forEach(b=>b.setAttribute("aria-current",b.dataset.htab===S.htab));
     $("#profBtn").hidden=false; $("#friendsBtn").hidden=false; stopFriendsPoll();
     app.innerHTML=viewHub(NOW())+`<p class="note">Taux estimé par la formule de Widmark (eau corporelle de Watson). L'écart avec un éthylotest peut dépasser 0,2 g/L. Ce n'est jamais une autorisation de conduire : après avoir bu, on ne prend pas le volant.</p>`;
-    bindOut(); bindMain(); bindHub(); i18nAll(); return;
+    bindOut(); bindMain(); bindHub(); bindCharts(); i18nAll(); return;
   }
   $("#profBtn").hidden=demo||!ready||S.screen==="profile";
   $("#friendsBtn").hidden=demo||!ready||S.screen==="friends";
@@ -755,7 +802,7 @@ function render(){
     if(S.tab==="moi"&&!demo) h+=`<section><div class="card"><span class="label">${S.snap.name?esc(S.snap.name)+" · ":""}${esc(dShort(S.snap.startsAt))} ${hm(S.snap.startsAt)} → ${hm(S.snap.endsAt)}</span><span class="label" style="margin-top:6px">Code de la soirée</span><div class="row" style="justify-content:space-between;margin-top:6px"><b style="font-family:var(--display);font-size:30px;letter-spacing:.15em">${esc(S.code)}</b><button class="btn ghost small" id="copyCode">Copier l'invitation</button></div><p class="muted" style="font-size:13px;margin:8px 0 0">Vos amis ouvrent Alamb'hic et entrent ce code.</p></div></section>`;
   }
   h+=`<p class="note">Taux estimé par la formule de Widmark (eau corporelle de Watson). L'écart avec un éthylotest peut dépasser 0,2 g/L. Ce n'est jamais une autorisation de conduire : après avoir bu, on ne prend pas le volant.</p>`;
-  app.innerHTML=h; bindMain(); bindHub(); i18nAll();
+  app.innerHTML=h; bindMain(); bindHub(); bindCharts(); i18nAll();
 }
 function viewFeed(list,log){
   const all=list.flatMap(p=>p.ev).concat(log||[]).sort((a,b)=>b.t-a.t);
@@ -791,6 +838,7 @@ function bindOut(){
   on("pushOn",()=>run(async()=>{ await enablePush(); await loadNotifs(); render(); snack("Notifications activées","Vous les recevrez même appli fermée.") }));
   on("pushOff",()=>run(async()=>{ await disablePush(); await loadNotifs(); render(); snack("Notifications coupées sur cet appareil") }));
   on("pushTest",()=>run(async()=>{ const r=await api("POST","/api/push/test"); snack(r.sent?"Notification de test envoyée":"Aucun appareil joignable",r.sent?"Elle doit apparaître dans quelques secondes.":"Réactivez les notifications.",{err:!r.sent}) }));
+  const xs=$("#exprSel"); if(xs) xs.onchange=async()=>{ const old=S.notifs.expr; try{ await api("PUT","/api/me/notifs",{prefs:{expr:xs.value}}); S.notifs.expr=xs.value; snack("Réglage enregistré") }catch(e){ xs.value=old; snack("Réglage non enregistré",e.message,{err:1}) } };
   document.querySelectorAll("[data-nc]").forEach(c=>c.onchange=async()=>{ try{ await api("PUT","/api/me/notifs",{prefs:{[c.dataset.nc]:c.checked}}); S.notifs.prefs[c.dataset.nc]=c.checked; snack("Réglage enregistré") }catch(e){ c.checked=!c.checked; snack("Réglage non enregistré",e.message,{err:1}) } });
   on("openDocs",openDocs); on("friendsBtn2",openFriends); on("demoBtn2",startDemo); on("demoBtn3",startDemo); bindFriends();
   on("logout",()=>run(async()=>{ await api("POST","/api/auth/logout"); closeWs(); Object.assign(S,{user:null,code:null,snap:null,screen:"auth"}); render() }));

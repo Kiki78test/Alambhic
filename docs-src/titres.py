@@ -77,7 +77,7 @@ body = f"""<div class="page">{band("Titres et expressions", "Le jeu")}
 <h2>2. Expressions proposées comme nouveaux titres</h2>
 <p style="font-size:9pt">À trancher : la colonne « Décision » est laissée vide.</p>
 <table class="t"><tr><th>Titre proposé</th><th>Type</th><th>Quand il se débloquerait</th><th>À prévoir</th><th>Décision</th></tr>{pro}</table>
-<div class="note"><b>Prévu</b> : ces expressions serviront aussi de texte aux notifications envoyées aux amis (membres des groupes, joueurs de la soirée, liste d'amis), par exemple « Max remet le facteur sur le vélo » le lendemain d'une soirée.</div>
+<div class="note"><b>En place</b> : ces expressions servent de texte aux notifications envoyées aux amis et aux membres des groupes (« Max remet le facteur sur le vélo », « tue le ver », « a du vent dans les voiles », « a sûrement mal aux cheveux ce matin »…). Chacun choisit ce qu'il reçoit : amis, groupes, tout ou rien.</div>
 <h2>3. Lexique des expressions</h2>
 <p style="font-size:9pt">Liste des expressions courantes, à compléter au fil des idées ; il en existe beaucoup d'autres selon les régions.</p>
 {lex}

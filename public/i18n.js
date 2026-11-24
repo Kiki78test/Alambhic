@@ -381,6 +381,12 @@ Frise des taux|Level timeline|Línea de tasas|Linha das taxas
 Les membres|Members|Los miembros|Os membros
 Les membres en ce moment|Members right now|Los miembros ahora|Os membros agora
 Chaque membre, où qu'il boive. Trait plein : jusqu'à maintenant ; pointillés : redescente prévue.|Every member, wherever they drink. Solid: until now; dotted: expected decline.|Cada miembro, beba donde beba. Continuo: hasta ahora; punteado: bajada prevista.|Cada membro, onde quer que beba. Contínuo: até agora; pontilhado: descida prevista.
+Vue entière|Full view|Vista completa|Visão completa
+Expressions des potes (« Max remet le facteur sur le vélo »)|Friends' expressions ("Max is back on the sauce")|Expresiones de los amigos («Max vuelve a las andadas»)|Expressões dos amigos («Max voltou à pinga»)
+Amis et groupes|Friends and groups|Amigos y grupos|Amigos e grupos
+Amis seulement|Friends only|Solo amigos|Só amigos
+Groupes seulement|Groups only|Solo grupos|Só grupos
+Rien|Nothing|Nada|Nada
 `;
   const MAP = {}; const L = { en: 0, es: 1, pt: 2 };
   DICT.trim().split("\n").forEach(l => { const p = l.split("|"); if (p.length === 4) MAP[p[0].trim()] = p.slice(1).map(x => x.trim()); });
@@ -416,6 +422,7 @@ Chaque membre, où qu'il boive. Trait plein : jusqu'à maintenant ; pointillés 
     [/^(.+) en est à 6 verres d'eau\.$/, "$1 is up to 6 glasses of water.", "$1 va por 6 vasos de agua.", "$1 já está em 6 copos de água."],
     [/^(.+) reste à zéro et veille sur tout le monde\.$/, "$1 stays at zero and looks after everyone.", "$1 se queda a cero y cuida de todos.", "$1 fica no zero e cuida de todo mundo."],
     [/^Titres de la session \((\d+)\)$/, "Session titles ($1)", "Títulos de la sesión ($1)", "Títulos da sessão ($1)"],
+    [/^(.+) Pincez pour zoomer, glissez pour vous déplacer\.$/, "{t:$1} Pinch to zoom, swipe to move.", "{t:$1} Pellizca para ampliar, desliza para moverte.", "{t:$1} Faça pinça para ampliar, deslize para mover."],
     [/^Notre soirée du (.+)$/, "Our night: $1", "Nuestra noche del $1", "Nossa noite de $1"],
     [/^(\d+) joueurs? · (\d+) titres? débloqués?$/, "$1 player(s) · $2 title(s) unlocked", "$1 jugador(es) · $2 título(s) desbloqueado(s)", "$1 jogador(es) · $2 título(s) desbloqueado(s)"],
     [/^Pic ([\d,]+) g\/L( · Sam)?$/, "Peak $1 g/L$2", "Pico $1 g/L$2", "Pico $1 g/L$2"],

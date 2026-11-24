@@ -141,6 +141,13 @@ S.append(slide("""<div class="k">Architecture et supports</div><h2>Un seul serve
 <div class="card"><b>APK Android</b><span>Première version de test fabriquée par GitHub (enveloppe Capacitor). À venir : notifications natives Firebase, widget écran d'accueil (jauge, retour à 0, + bière / + vin / + eau).</span></div>
 <div class="card"><b>Montre Wear OS</b><span>Ajouter un verre au poignet, taux en complication, vibration aux seuils et quand un ami est en alerte, gorgées détectées.</span></div></div>"""))
 
+S.append(slide("""<div class="k">Seul, en soirée, entre potes</div><h2>Les verres se notent partout</h2>
+<div class="cards" style="grid-template-columns:repeat(4,1fr)">
+<div class="card"><b>Sessions</b><span>Du premier verre au retour à 0, découpées toutes seules : une courbe nette par session, son pic et ses verres.</span></div>
+<div class="card"><b>Agenda</b><span>Chaque jour en vert (1-2 verres), orange (3-5) ou rouge (6 et +), total par semaine, alertes bienveillantes et Alcool info service.</span></div>
+<div class="card"><b>Groupes de potes</b><span>Un lien d'invitation, puis les courbes de tous les membres en continu, par créneaux de 48 h.</span></div>
+<div class="card"><b>Soirées à code</b><span>Début et fin prévus à l'avance ; la courbe couvre la soirée, les verres s'y rattachent tout seuls.</span></div></div>"""))
+
 S.append(slide("""<div class="k">La soirée en grand</div><h2>Écran TV, récap à partager, et pour tout le monde</h2>
 <div class="cards" style="grid-template-columns:repeat(3,1fr)">
 <div class="card"><b>Écran TV</b><span>Code à 6 caractères sur alambhic.onrender.com/tv : avatars, courbes et fil en grand, titres annoncés au milieu de l'écran. Le téléphone sert de télécommande. Idéal pour le mode « soirée du bar ».</span></div>

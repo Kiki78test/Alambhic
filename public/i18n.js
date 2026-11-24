@@ -316,6 +316,66 @@ Ce lien a expiré ou a déjà servi. Refaites une demande.|This link has expired
 Ce pseudo n'est pas accepté : choisissez-en un autre.|This nickname isn't allowed: choose another one.|Este apodo no está permitido: elige otro.|Este apelido não é aceito: escolha outro.
 Un pseudo ne peut pas contenir d'adresse, de numéro ni de lien.|A nickname can't contain an address, a number or a link.|Un apodo no puede contener una dirección, un número ni un enlace.|Um apelido não pode conter endereço, número nem link.
 Partager|Share|Compartir|Compartilhar
+Sessions|Sessions|Sesiones|Sessões
+Agenda|Calendar|Agenda|Agenda
+Groupes|Groups|Grupos|Grupos
+Soirées|Parties|Fiestas|Festas
+Mes sessions|My sessions|Mis sesiones|Minhas sessões
+Une session commence au premier verre d'alcool et se termine quand le taux revient à 0. 60 derniers jours.|A session starts with the first alcoholic drink and ends when your level is back to 0. Last 60 days.|Una sesión empieza con la primera copa de alcohol y termina cuando la tasa vuelve a 0. Últimos 60 días.|Uma sessão começa no primeiro copo com álcool e termina quando a taxa volta a 0. Últimos 60 dias.
+Aucune session pour l'instant. Elles apparaîtront ici dès votre premier verre d'alcool.|No sessions yet. They will appear here from your first alcoholic drink.|Aún no hay sesiones. Aparecerán aquí con tu primera copa de alcohol.|Ainda sem sessões. Elas vão aparecer aqui a partir do seu primeiro copo com álcool.
+‹ Toutes les sessions|‹ All sessions|‹ Todas las sesiones|‹ Todas as sessões
+Début|Start|Inicio|Início
+Fin|End|Fin|Fim
+Retour à 0|Back to 0|Vuelta a 0|Volta a 0
+Retour à 0 prévu|Expected back to 0|Vuelta a 0 prevista|Volta a 0 prevista
+Pic|Peak|Pico|Pico
+Verres d'alcool|Alcoholic drinks|Copas de alcohol|Copos com álcool
+Verres d'eau|Glasses of water|Vasos de agua|Copos de água
+Courbe de la session|Session curve|Curva de la sesión|Curva da sessão
+Verres de la session|Drinks in this session|Copas de la sesión|Copos da sessão
+Ma session en cours|My current session|Mi sesión en curso|Minha sessão atual
+La session a commencé à votre premier verre d'alcool ; elle se terminera quand votre taux sera revenu à 0.|The session started with your first alcoholic drink; it will end when your level is back to 0.|La sesión empezó con tu primera copa de alcohol; terminará cuando tu tasa vuelva a 0.|A sessão começou no seu primeiro copo com álcool; vai terminar quando sua taxa voltar a 0.
+Du premier verre au retour à 0.|From the first drink to back to 0.|De la primera copa a la vuelta a 0.|Do primeiro copo à volta a 0.
+en cours|ongoing|en curso|em andamento
+Soirée en cours|Party in progress|Fiesta en curso|Festa em andamento
+Vos verres comptent aussi dans cette soirée.|Your drinks also count in this party.|Tus copas también cuentan en esta fiesta.|Seus copos também contam nesta festa.
+Ouvrir|Open|Abrir|Abrir
+Ce mois-ci|This month|Este mes|Este mês
+Jours avec alcool|Days with alcohol|Días con alcohol|Dias com álcool
+Jours sans alcool|Alcohol-free days|Días sin alcohol|Dias sem álcool
+Jours à 6 et +|Days with 6+|Días con 6 o más|Dias com 6 ou mais
+verres standard par jour|standard drinks per day|copas estándar por día|doses padrão por dia
+Jour sans alcool.|Alcohol-free day.|Día sin alcohol.|Dia sem álcool.
+Voir les sessions|See sessions|Ver las sesiones|Ver as sessões
+Voir mon agenda|See my calendar|Ver mi agenda|Ver minha agenda
+Prenez soin de vous|Take care of yourself|Cuídate|Cuide-se
+Un œil sur votre conso|Keep an eye on your drinking|Ojo con tu consumo|De olho no seu consumo
+Dans les repères|Within the guidelines|Dentro de las referencias|Dentro das referências
+Mes groupes de potes|My groups of mates|Mis grupos de colegas|Meus grupos da galera
+Les membres d'un groupe voient les courbes de tout le monde, quel que soit l'endroit où chacun boit, par créneaux de 48 h. Quitter le groupe arrête le partage.|Group members see everyone's curves, wherever each person drinks, in 48-hour windows. Leaving the group stops sharing.|Los miembros de un grupo ven las curvas de todos, beba donde beba cada uno, en franjas de 48 h. Salir del grupo detiene el intercambio.|Os membros de um grupo veem as curvas de todos, onde quer que cada um beba, em janelas de 48 h. Sair do grupo encerra o compartilhamento.
+Aucun groupe pour l'instant.|No groups yet.|Aún no hay grupos.|Ainda sem grupos.
+Nouveau groupe|New group|Nuevo grupo|Novo grupo
+Créer|Create|Crear|Criar
+‹ Mes groupes|‹ My groups|‹ Mis grupos|‹ Meus grupos
+Les courbes du groupe|The group's curves|Las curvas del grupo|As curvas do grupo
+Chaque membre, où qu'il boive. Nombre de verres standard sur les 48 h.|Every member, wherever they drink. Number of standard drinks over the 48 hours.|Cada miembro, beba donde beba. Número de copas estándar en las 48 h.|Cada membro, onde quer que beba. Número de doses padrão nas 48 h.
+Inviter dans le groupe|Invite to the group|Invitar al grupo|Convidar para o grupo
+Quitter le groupe|Leave the group|Salir del grupo|Sair do grupo
+Quitter ce groupe ?|Leave this group?|¿Salir de este grupo?|Sair deste grupo?
+Les autres ne verront plus vos courbes.|The others will no longer see your curves.|Los demás ya no verán tus curvas.|Os outros não vão mais ver suas curvas.
+Oui, quitter|Yes, leave|Sí, salir|Sim, sair
+Groupe créé|Group created|Grupo creado|Grupo criado
+Groupe rejoint|Group joined|Te has unido al grupo|Você entrou no grupo
+Mes soirées|My parties|Mis fiestas|Minhas festas
+Aucune soirée en cours ou à venir.|No party in progress or coming up.|Ninguna fiesta en curso o próxima.|Nenhuma festa em andamento ou por vir.
+Un code de 4 lettres à partager ; la courbe de la soirée va du début à la fin prévus.|A 4-letter code to share; the party curve runs from the planned start to the planned end.|Un código de 4 letras para compartir; la curva de la fiesta va del inicio al final previstos.|Um código de 4 letras para compartilhar; a curva da festa vai do início ao fim previstos.
+Nom (facultatif)|Name (optional)|Nombre (opcional)|Nome (opcional)
+Créer la soirée|Create the party|Crear la fiesta|Criar a festa
+Soirées passées|Past parties|Fiestas pasadas|Festas passadas
+à venir|upcoming|próxima|em breve
+terminée|finished|terminada|terminada
+Aller à l'accueil|Go to home|Ir al inicio|Ir para o início
+Vos verres se notent maintenant depuis l'accueil (onglet Moi).|Your drinks are now logged from home (Me tab).|Tus copas se anotan ahora desde el inicio (pestaña Yo).|Seus copos agora são anotados no início (aba Eu).
 `;
   const MAP = {}; const L = { en: 0, es: 1, pt: 2 };
   DICT.trim().split("\n").forEach(l => { const p = l.split("|"); if (p.length === 4) MAP[p[0].trim()] = p.slice(1).map(x => x.trim()); });

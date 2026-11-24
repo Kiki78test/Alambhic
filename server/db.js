@@ -109,6 +109,24 @@ async function migrate() {
     created_by UUID REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
   await pool.query("ALTER TABLE party_members ADD COLUMN IF NOT EXISTS recap_ok BOOLEAN NOT NULL DEFAULT false");
+  /* 24/11 : soirées datées (début et fin prévus), verres hors soirée, groupes de potes, repas du jour validés hors soirée */
+  await pool.query("ALTER TABLE parties ADD COLUMN IF NOT EXISTS name TEXT");
+  await pool.query("ALTER TABLE parties ADD COLUMN IF NOT EXISTS starts_at TIMESTAMPTZ");
+  await pool.query("ALTER TABLE parties ADD COLUMN IF NOT EXISTS ends_at TIMESTAMPTZ");
+  await pool.query("UPDATE parties SET starts_at=created_at, ends_at=created_at + interval '12 hours' WHERE starts_at IS NULL");
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS meals_day DATE");
+  await pool.query("CREATE INDEX IF NOT EXISTS drinks_user_t ON drinks(user_id, t)");
+  await pool.query(`CREATE TABLE IF NOT EXISTS groups (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    code CHAR(6) UNIQUE NOT NULL,
+    created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now())`);
+  await pool.query(`CREATE TABLE IF NOT EXISTS group_members (
+    group_id BIGINT REFERENCES groups(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    joined_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (group_id, user_id))`);
 }
 
 module.exports = { pool, migrate, q: (text, params) => pool.query(text, params) };

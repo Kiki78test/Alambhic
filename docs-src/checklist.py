@@ -50,6 +50,11 @@ FAIT = [
     ("ok", "<b>Appli Android</b> (23/11) : enveloppe Capacitor dans <code>mobile/</code>, APK de test fabriqué par GitHub Actions (Releases → « Appli Android (test) »)."),
     ("ok", "<b>Écran TV</b> (23/11) : <code>/tv</code> avec un code à 6 caractères ; vues Avatars, Courbes, Fil ou Auto ; le téléphone sert de télécommande ; titres annoncés en grand."),
     ("ok", "<b>Récap à partager</b> (23/11) : lien public <code>/r/…</code> avec avatars, courbes et titres ; seuls les joueurs volontaires y figurent (pseudo seulement)."),
+    ("ok", "<b>Verres notés partout</b> (24/11) : nouvel accueil à cinq onglets (Moi, Sessions, Agenda, Groupes, Soirées) ; un verre noté pendant une soirée en cours s'y rattache tout seul."),
+    ("ok", "<b>Sessions</b> (24/11) : découpage automatique du premier verre au retour à 0, une courbe par session (fini la courbe trop large)."),
+    ("ok", "<b>Agenda</b> (24/11) : jours en vert (1-2), orange (3-5) ou rouge (6 et +), total par semaine, alertes bienveillantes avec Alcool info service."),
+    ("ok", "<b>Groupes de potes</b> (24/11) : code ou lien d'invitation, courbes de tous les membres par créneaux de 48 h, navigation dans le temps."),
+    ("ok", "<b>Soirées à code datées</b> (24/11) : début et fin prévus, courbe limitée à la soirée, liste des soirées à venir, en cours et passées."),
     ("ok", "<b>Onglet Documentation</b> (10/11) réservé aux admins : présentation complète, guide complet, check-list, services externes."),
 ]
 A_TESTER = [
@@ -66,6 +71,7 @@ A_TESTER = [
     ("test", "<b>Récap</b> : créer le lien, l'ouvrir sur un autre appareil, décocher « Apparaître » et vérifier qu'on disparaît."),
     ("test", "<b>APK de test</b> : GitHub → Releases → « Appli Android (test) » (après la première fabrication), installer sur un Android ; vérifier la connexion (Google peut refuser la vue intégrée)."),
     ("test", "<b>Langues et aide</b> : passer en English / Español / Português (Profil → Langue) ; poser une question dans l'aide ; lancer la démo et suivre la visite."),
+    ("test", "<b>Nouvel accueil</b> : noter un verre hors soirée, voir la session en cours, l'onglet Sessions puis une session ; l'agenda du mois ; créer un groupe, inviter un ami avec le lien, naviguer par 48 h ; créer une soirée datée et vérifier que la courbe va du début à la fin."),
     ("test", "<b>Vraie soirée entre amis</b> : validation de l'étape 1 avant de passer à l'APK."),
 ]
 A_FAIRE = [

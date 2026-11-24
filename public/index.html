@@ -16,11 +16,13 @@
 </head>
 <body>
 <div class="wrap">
-<header><img src="/logo.png" alt="Alamb'hic"><div class="row" style="gap:8px"><span class="chip" id="codeChip" hidden></span><button class="chip" id="friendsBtn" hidden>Amis</button><button class="chip" id="demoHdr">Démo</button><button class="chip" id="profBtn" hidden>Profil</button></div></header>
+<header><img src="/logo.png" alt="Alamb'hic"><div class="row" style="gap:8px"><button class="chip" id="codeChip" hidden title="Retour à l'accueil"></button><button class="chip" id="friendsBtn" hidden>Amis</button><button class="chip" id="demoHdr">Démo</button><button class="chip" id="profBtn" hidden>Profil</button></div></header>
 <main id="app"></main>
 </div>
-<nav id="nav" hidden><div class="in">
+<nav id="nav" hidden><div class="in" id="navParty">
 <button data-tab="moi">Moi</button><button data-tab="courbes">Courbes</button><button data-tab="classement">Potes</button><button data-tab="fil">Fil<span class="n" id="feedN" hidden></span></button>
+</div><div class="in" id="navHub" hidden>
+<button data-htab="moi">Moi</button><button data-htab="sessions">Sessions</button><button data-htab="agenda">Agenda</button><button data-htab="groupes">Groupes</button><button data-htab="soirees">Soirées</button>
 </div></nav>
 <div class="demo" id="demoBar" hidden><div class="in">
 <div class="top"><span class="label" style="color:var(--accent)">Démo · soirée fictive</span><span class="clock" id="demoClock">19:00</span><div class="row" style="gap:6px"><button class="btn small" id="demoPlay">Lecture</button><button class="btn ghost small" id="demoTour">Visite</button><button class="btn ghost small" id="demoQuit">Quitter</button></div></div>

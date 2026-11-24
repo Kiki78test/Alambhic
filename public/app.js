@@ -8,8 +8,8 @@ const ls={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.par
 const COLORS=["#f7941d","#5ab0ff","#5bc88a","#e879f9","#f2c94c","#ff7a6e","#7dd3fc","#c4b5fd","#fda4af","#a3e635"];
 
 /* état */
-const S={screen:"boot",user:null,me:null,code:null,snap:null,tab:"moi",cfg:{},week:null,ws:null,wsTry:0,err:"",authMode:"login"};
-let ago=0, feedUnread=0, seen=new Set(), bootT=Date.now(), my={};
+const S={screen:"boot",htab:"moi",user:null,me:null,code:null,snap:null,tab:"moi",cfg:{},week:null,ws:null,wsTry:0,err:"",authMode:"login"};
+let noAdd=false, ago=0, feedUnread=0, seen=new Set(), bootT=Date.now(), my={};
 let demo=false, demoStart=0, demoT=0, demoSeen=new Set(), demoTimer=null, demoPlayers={};
 const NOW=()=>demo?demoT:Date.now();
 
@@ -49,7 +49,7 @@ function viewMe(p,now){
   const sub=s.peakT?`Pic ${fmt(s.peak)} à ${hm(s.peakT)} · ${std} verres standard`+(s.cur>0&&s.zeroT?` · retour à 0 vers ${hm(s.zeroT)}`:""):"Aucun verre d'alcool pour l'instant";
   const mine=(my.drinks||[]).slice().sort((a,b)=>b.t-a.t);
   const titles=p.ev.filter(e=>e.kind!=="info");
-  const needMeals=!demo&&!p.mealsOk&&!(my.drinks||[]).some(d=>d.abv>0)&&!my.sam;
+  const needMeals=!demo&&!noAdd&&!p.mealsOk&&!(my.drinks||[]).some(d=>d.abv>0)&&!my.sam;
   return `${needMeals?viewMealsFirst():mealQuestion()}<section>
   <div class="card" style="display:flex;flex-direction:column;gap:12px">
     <div class="row" style="justify-content:space-between"><span class="label">${esc(my.pseudo)} · taux estimé</span><span class="state" style="color:${col}">${lab}</span></div>
@@ -58,7 +58,7 @@ function viewMe(p,now){
   </div></section>
   <section><h2>${my.sam?"Sam boit de l'eau":"Ajouter un verre"}</h2>
   <div class="field"><span class="label">Bu</span><div class="seg" id="ago">${[[0,"Maintenant"],[15,"il y a 15 min"],[30,"30 min"],[60,"1 h"]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${ago===v}">${l}</button>`).join("")}</div></div>
-  ${demo?"":`<label class="toggle"><span>Je suis Sam ce soir (zéro alcool)</span><input type="checkbox" id="samT" ${my.sam?"checked":""}></label>`}
+  ${demo||S.screen!=="party"?"":`<label class="toggle"><span>Je suis Sam ce soir (zéro alcool)</span><input type="checkbox" id="samT" ${my.sam?"checked":""}></label>`}
   ${needMeals?`<div class="banner">Indiquez d'abord vos repas du jour, juste au-dessus : ils changent beaucoup le calcul. L'eau reste disponible.</div>`:""}
   <div class="drinks${needMeals?" locked":""}">${PRESETS.filter(d=>!my.sam||d.water).map((d,i)=>`<button class="drink${d.water?" water":""}${pend["p"+PRESETS.indexOf(d)]?" "+pend["p"+PRESETS.indexOf(d)]:""}" data-p="${PRESETS.indexOf(d)}" ${pend["p"+PRESETS.indexOf(d)]==="sending"?'aria-busy="true"':""}><b>${d.l}</b><span>${d.d}</span></button>`).join("")}</div>
   ${my.sam?"":`<div class="row"><div class="field" style="flex:1;min-width:90px"><span class="label">Volume (cl)</span><input id="cml" type="number" inputmode="decimal" min="1" max="100" placeholder="15"></div><div class="field" style="flex:1;min-width:90px"><span class="label">Degré (%)</span><input id="cabv" type="number" inputmode="decimal" min="0" max="80" placeholder="13"></div><button class="btn${pend.perso?" "+pend.perso:""}" id="cadd" style="align-self:flex-end">${pend.perso==="ok"?"✓ Noté":pend.perso==="sending"?"Envoi…":"Ajouter"}</button></div>`}
@@ -67,30 +67,36 @@ function viewMe(p,now){
   ${titles.length?`<section><h2>Mes titres</h2><div class="badges">${titles.map(e=>`<span class="badge ${e.kind}">${esc(e.title)}</span>`).join("")}</div></section>`:""}
   <section><h2>Mes verres</h2>${mine.length?`<div class="list">${mine.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div><button class="x" data-del="${d.id}" aria-label="Supprimer ce verre">×</button></div>`).join("")}</div>`:`<p class="muted">Touchez une boisson ci-dessus pour l'enregistrer. Pensez à l'eau : trois verres débloquent le Chameau.</p>`}</section>`;
 }
-function viewChart(list,now){
-  const withD=list.filter(p=>p.sim.pts.length);
-  if(!withD.length) return `<section><h2>Courbes de la soirée</h2><p class="muted">Les courbes apparaissent dès le premier verre d'alcool enregistré.</p></section>`;
-  const t0=Math.min(...withD.map(p=>p.sim.pts[0][0]));
-  let t1=Math.max(now+30*MIN,...withD.map(p=>p.sim.zeroT||now)); t1=Math.min(t1,now+10*3600e3);
-  const ymax=Math.max(1.0,...withD.map(p=>Math.max(...p.sim.pts.filter(x=>x[0]<=t1).map(x=>x[1]))))*1.1;
+/* Courbes sur une fenêtre : soirée (début → fin prévus), session (premier verre → retour à 0), groupe (48 h). */
+function viewChart(list,now,o={}){
+  const title=o.title||"Courbes de la soirée";
+  const withD=list.filter(p=>p.sim.pts.some(x=>x[1]>0&&(o.t0==null||x[0]>=o.t0)&&(o.t1==null||x[0]<=o.t1)));
+  if(!withD.length) return `<section><h2>${esc(title)}</h2><p class="muted">${o.empty||"Les courbes apparaissent dès le premier verre d'alcool enregistré."}</p></section>`;
+  const t0=o.t0!=null?o.t0:Math.min(...withD.map(p=>p.sim.pts[0][0]));
+  let t1=o.t1!=null?o.t1:Math.min(Math.max(now+30*MIN,...withD.map(p=>p.sim.zeroT||now)),now+10*3600e3);
+  const ymax=Math.max(1.0,...withD.map(p=>Math.max(0,...p.sim.pts.filter(x=>x[0]>=t0&&x[0]<=t1).map(x=>x[1]))))*1.1;
   const W=Math.max(320,($("#app").clientWidth||340)), H=260, L=34, R=10, T=12, B=26;
   const X=t=>L+(t-t0)/(t1-t0)*(W-L-R), Y=b=>T+(1-b/ymax)*(H-T-B);
   let g="";
   for(const [v,c,lab] of [[0.5,"var(--warn)","0,5"],[0.8,"var(--accent)","0,8"],[1.2,"var(--bad)","1,2"]]) if(v<ymax) g+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${c}" stroke-opacity=".45" stroke-dasharray="3 4"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" fill="var(--muted)" font-size="11">${lab}</text>`;
   g+=`<line x1="${L}" x2="${W-R}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/><text x="${L-6}" y="${Y(0)+4}" text-anchor="end" fill="var(--muted)" font-size="11">0</text>`;
-  const span=t1-t0, stepH=span>8*3600e3?2:1; let h0=new Date(t0); h0.setMinutes(0,0,0); let th=h0.getTime()+3600e3;
-  for(;th<t1;th+=stepH*3600e3) g+=`<text x="${X(th)}" y="${H-8}" text-anchor="middle" fill="var(--muted)" font-size="11">${new Date(th).getHours()}h</text>`;
-  g+=`<line x1="${X(now)}" x2="${X(now)}" y1="${T}" y2="${Y(0)}" stroke="var(--fg)" stroke-opacity=".35"/><text x="${X(now)+4}" y="${T+10}" fill="var(--muted)" font-size="11">maintenant</text>`;
+  const span=t1-t0, stepH=span>30*3600e3?6:span>8*3600e3?2:1; let h0=new Date(t0); h0.setMinutes(0,0,0); let th=h0.getTime()+3600e3;
+  while(new Date(th).getHours()%stepH) th+=3600e3;
+  for(;th<t1;th+=stepH*3600e3){ const dd=new Date(th), lab=stepH>=6&&dd.getHours()===0?dd.toLocaleDateString("fr-FR",{weekday:"short"}):dd.getHours()+"h";
+    if(stepH>=6&&dd.getHours()===0) g+=`<line x1="${X(th)}" x2="${X(th)}" y1="${T}" y2="${Y(0)}" stroke="var(--line)" stroke-dasharray="2 4"/>`;
+    g+=`<text x="${X(th)}" y="${H-8}" text-anchor="middle" fill="var(--muted)" font-size="11">${lab}</text>` }
+  const live=now>=t0&&now<=t1;
+  if(live) g+=`<line x1="${X(now)}" x2="${X(now)}" y1="${T}" y2="${Y(0)}" stroke="var(--fg)" stroke-opacity=".35"/><text x="${Math.min(X(now)+4,W-R-60)}" y="${T+10}" fill="var(--muted)" font-size="11">maintenant</text>`;
   for(const p of withD){
-    const pts=p.sim.pts.filter((x,i)=>i%3===0||x[0]>=now-MIN&&x[0]<=now+MIN), past=pts.filter(x=>x[0]<=now), fut=pts.filter(x=>x[0]>=now&&x[0]<=t1);
+    const pts=p.sim.pts.filter((x,i)=>(i%3===0||x[0]>=now-MIN&&x[0]<=now+MIN)&&x[0]>=t0&&x[0]<=t1), past=pts.filter(x=>x[0]<=now), fut=pts.filter(x=>x[0]>=now&&x[0]<=t1);
     const d=a=>a.map((x,i)=>(i?"L":"M")+X(x[0]).toFixed(1)+" "+Y(x[1]).toFixed(1)).join("");
     if(past.length>1) g+=`<path d="${d(past)}" fill="none" stroke="${p.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
     if(fut.length>1) g+=`<path d="${d(fut)}" fill="none" stroke="${p.color}" stroke-width="2" stroke-dasharray="4 5" stroke-opacity=".7"/>`;
-    g+=`<circle cx="${X(now)}" cy="${Y(p.sim.cur)}" r="4.5" fill="${p.color}" stroke="var(--bg)" stroke-width="2"/>`;
+    if(live) g+=`<circle cx="${X(now)}" cy="${Y(p.sim.cur)}" r="4.5" fill="${p.color}" stroke="var(--bg)" stroke-width="2"/>`;
   }
-  return `<section><h2>Courbes de la soirée</h2><div class="card" style="padding:12px 8px"><div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Taux estimés de chaque joueur au fil de la soirée">${g}</svg></div></div>
-  <div class="legend">${withD.map(p=>`<span><i class="dot" style="background:${p.color}"></i>${esc(p.pseudo)} · ${fmt(p.sim.cur)}</span>`).join("")}</div>
-  <p class="muted" style="font-size:13px">Trait plein : taux estimé jusqu'à maintenant. Pointillés : redescente prévue si plus personne ne boit.</p></section>`;
+  return `<section><h2>${esc(title)}</h2><div class="card" style="padding:12px 8px"><div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${g}</svg></div></div>
+  ${list.length>1||o.legend?`<div class="legend">${(o.legend?list:withD).map(p=>`<span><i class="dot" style="background:${p.color}"></i>${o.legend?o.legend(p):`${esc(p.pseudo)} · ${fmt(p.sim.cur)}`}</span>`).join("")}</div>`:""}
+  <p class="muted" style="font-size:13px">${o.note||"Trait plein : taux estimé jusqu'à maintenant. Pointillés : redescente prévue si plus personne ne boit."}</p></section>`;
 }
 /* ---------- animations ---------- */
 const REDUCE=(()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}})();
@@ -207,7 +213,7 @@ function viewMeals(){
 async function addMeals(list){
   if(demo){ const p=demoPlayers[S.me]; p.meals=[...(p.meals||[]),...list]; render(); return }
   for(const m of list) await api("POST","/api/me/meals",m);
-  await api("PUT",`/api/parties/${S.code}/me`,{mealsOk:true});
+  await api("PUT","/api/me/meals-ok");
   await loadMeals(); await refresh();
 }
 async function loadMeals(){ if(demo) return; try{ S.meals=(await api("GET","/api/me/meals")).meals }catch(e){} }
@@ -481,12 +487,199 @@ function viewShare(me){
   </div></section>`;
 }
 
+
+/* ---------- accueil hors soirée : Moi (verres partout), Sessions, Agenda, Groupes, Soirées ---------- */
+const H_MS=3600e3;
+const curMonth=()=>new Date().toLocaleDateString("sv-SE").slice(0,7);
+const dShort=t=>new Date(t).toLocaleDateString(I18N.lang==="fr"?"fr-FR":I18N.lang,{weekday:"short",day:"numeric",month:"short"});
+const dLong=t=>new Date(t).toLocaleDateString(I18N.lang==="fr"?"fr-FR":I18N.lang,{weekday:"long",day:"numeric",month:"long"});
+const stdF=v=>(Math.round(v*10)/10).toString().replace(".",",");
+let liveTimer=null;
+const hubStale=t=>!S["_h_"+t];
+function hubDirty(...tabs){ tabs.forEach(t=>{S["_h_"+t]=0}) }
+async function loadLive(){ S.live=await api("GET","/api/me/live"); S._h_moi=Date.now() }
+async function loadCal(m){ S.cal=await api("GET","/api/me/calendar?month="+(m||S.calMonth||curMonth())); S.calMonth=S.cal.month; S._h_agenda=Date.now() }
+async function loadGroup(){ S.group=await api("GET",`/api/groups/${S.gid}`+(S.gEnd?`?end=${S.gEnd}`:"")) }
+async function loadHub(t){
+  if(t==="moi"){ await Promise.all([loadLive(),loadMeals(),S.cal?null:loadCal()]); }
+  if(t==="sessions"){ S.sessions=(await api("GET","/api/me/sessions")).sessions; S._h_sessions=Date.now() }
+  if(t==="agenda") await loadCal();
+  if(t==="groupes"){ S.groups=(await api("GET","/api/groups")).groups; if(S.gid) await loadGroup(); S._h_groupes=Date.now() }
+  if(t==="soirees"){ S.parties=(await api("GET","/api/parties")).parties; S._h_soirees=Date.now() }
+  S["_h_"+t]=Date.now();   // jamais de rechargement en boucle
+}
+function ensureHub(){
+  const t=S.htab=S.htab||"moi"; if(!hubStale(t)||S.hubBusy) return;
+  S.hubBusy=true; loadHub(t).catch(e=>{ S.err=e.message; S["_h_"+t]=Date.now() }).finally(()=>{ S.hubBusy=false; if(S.screen==="home") render() });
+}
+function openHub(tab){
+  clearToasts(); S.err=""; S.screen="home"; if(tab){ S.htab=tab; hubDirty(tab) } S.htab=S.htab||"moi"; render();
+  clearInterval(liveTimer); liveTimer=setInterval(()=>{ if(S.screen==="home"&&S.htab==="moi"&&!demo&&document.visibilityState==="visible")
+    loadLive().then(()=>{ if(!(document.activeElement&&/INPUT|SELECT/.test(document.activeElement.tagName))) render() }).catch(()=>{}) },60000);
+}
+const loading=()=>`<section>${loader("Chargement…")}</section>`;
+function viewHub(now){
+  ensureHub();
+  const t=S.htab; let h=S.err?`<div class="banner" style="margin-top:14px">${esc(S.err)}</div>`:"";
+  if(t==="moi") h+=viewSolo(now);
+  if(t==="sessions") h+=viewSessions(now);
+  if(t==="agenda") h+=viewAgenda();
+  if(t==="groupes") h+=S.gid?viewGroup(now):viewGroups();
+  if(t==="soirees") h+=viewParties(now);
+  return h;
+}
+
+/* Moi : la session en cours, où que l'on boive */
+function viewSolo(now){
+  if(!S.live) return loading();
+  const p={...S.live.me,color:COLORS[0]}, pa=S.live.party;
+  my={pseudo:p.pseudo,cap:p.cap,sam:p.sam,mealsOk:p.mealsOk,drinks:p.drinks};
+  return `<div class="hero" style="padding-bottom:0"><h1>Salut ${esc(S.user.pseudo)} !</h1></div>
+  ${pa?`<section><div class="card pnow"><div><span class="label" style="color:var(--accent)">Soirée en cours</span><b>${esc(pa.name||"Soirée "+pa.code)} · ${esc(pa.code)}</b><span class="muted" style="font-size:13px">Vos verres comptent aussi dans cette soirée.</span></div><button class="btn small" data-open="${esc(pa.code)}">Ouvrir</button></div></section>`:""}
+  ${alertsCard(true)}
+  ${viewMe(p,now)}
+  ${p.sim.pts.length>1?viewChart([p],now,{title:"Ma session en cours",t0:p.sessionStart-10*MIN,note:"La session a commencé à votre premier verre d'alcool ; elle se terminera quand votre taux sera revenu à 0."}):""}`;
+}
+
+/* Sessions : du premier verre au retour à 0 */
+function sparkS(s){
+  const pts=s.pts||[]; if(pts.length<2) return "";
+  const W=84,Hh=30,t0=pts[0][0],t1=pts[pts.length-1][0],m=Math.max(0.3,...pts.map(x=>x[1]));
+  const d=pts.map((x,i)=>(i?"L":"M")+((x[0]-t0)/Math.max(1,t1-t0)*W).toFixed(1)+" "+(Hh-2-x[1]/m*(Hh-4)).toFixed(1)).join("");
+  return `<svg class="sspark" viewBox="0 0 ${W} ${Hh}" aria-hidden="true"><path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/></svg>`;
+}
+function viewSessions(now){
+  if(!S.sessions) return loading();
+  if(S.sesOpen){ const s=S.sessions.find(x=>x.id===S.sesOpen); if(s) return viewSession(s,now) }
+  return `<section><h2>Mes sessions</h2><p class="muted" style="font-size:13px;margin:0">Une session commence au premier verre d'alcool et se termine quand le taux revient à 0. 60 derniers jours.</p>
+  ${S.sessions.length?`<div class="slist">${S.sessions.map(s=>`<button class="scard${s.ongoing?" on":""}" data-ses="${s.id}">
+    <div class="sd"><b>${esc(dShort(s.start))}</b><span>${hm(s.start)} → ${s.ongoing?"en cours":hm(s.end)}</span>${s.party?`<span class="pchip">${esc(s.partyName||"Soirée "+s.party)}</span>`:""}</div>
+    ${sparkS(s)}<div class="sv"><b>${fmt(s.peak)}</b><span>pic · ${stdF(s.std)} v.</span></div></button>`).join("")}</div>`
+  :`<p class="muted">Aucune session pour l'instant. Elles apparaîtront ici dès votre premier verre d'alcool.</p>`}</section>`;
+}
+function viewSession(s,now){
+  const p={id:S.me,pseudo:S.user.pseudo,color:COLORS[0],sim:{pts:s.pts,cur:s.cur,zeroT:s.end}};
+  const dr=(s.drinks||[]).slice().sort((a,b)=>b.t-a.t);
+  return `<section><button class="link" id="sesBack">‹ Toutes les sessions</button><h2>${esc(dLong(s.start))}</h2>
+  ${s.party?`<span class="pchip" style="align-self:flex-start">${esc(s.partyName||"Soirée "+s.party)}</span>`:""}
+  <div class="stats">
+   <div><span>Début</span><b>${hm(s.start)}</b></div><div><span>${s.ongoing?"Retour à 0 prévu":"Retour à 0"}</span><b>${hm(s.end)}</b></div>
+   <div><span>Pic</span><b>${fmt(s.peak)}</b>${s.peakT?`<small>à ${hm(s.peakT)}</small>`:""}</div><div><span>Verres standard</span><b>${stdF(s.std)}</b></div>
+   <div><span>Verres d'alcool</span><b>${s.n}</b></div><div><span>Verres d'eau</span><b>${s.water}</b></div></div></section>
+  ${viewChart([p],now,{title:"Courbe de la session",t0:s.start-10*MIN,t1:s.end+10*MIN,note:s.ongoing?"Trait plein : jusqu'à maintenant. Pointillés : redescente prévue si vous ne buvez plus.":"Du premier verre au retour à 0."})}
+  <section><h2>Verres de la session</h2><div class="list">${dr.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div></div>`).join("")}</div></section>`;
+}
+
+/* Agenda : verres standard par jour, vert 1-2, orange 3-5, rouge 6+ */
+const dayCls=std=>{ if(!std) return ""; const r=Math.round(std); return r>=6?"red":r>=3?"orange":"green" };
+function alertsCard(compact){
+  const C=S.cal; if(!C) return "";
+  if(!C.alerts.length) return compact?"":`<div class="card okc"><b>Dans les repères</b><span class="muted" style="font-size:13px">${C.week?`${stdF(C.week)} verre${C.week>=2?"s":""} standard ces 7 derniers jours (repère : 10 au plus, 2 par jour, et des jours sans alcool).`:"Aucun verre d'alcool ces 7 derniers jours."}</span></div>`;
+  const red=C.alerts.some(a=>a.level==="red");
+  return `<section><div class="card alc ${red?"red":"orange"}"><b>${red?"Prenez soin de vous":"Un œil sur votre conso"}</b>
+  <ul>${C.alerts.map(a=>`<li>${esc(a.text)}</li>`).join("")}</ul>
+  <span class="muted" style="font-size:13px">Envie d'en parler, sans jugement ? Alcool info service : <b>0 980 980 930</b> (7 j/7, 8 h-2 h, anonyme et non surtaxé) · <a href="https://www.alcool-info-service.fr" target="_blank" rel="noopener">alcool-info-service.fr</a></span>
+  ${compact?`<button class="link" data-htab-go="agenda" style="align-self:flex-start">Voir mon agenda</button>`:""}</div></section>`;
+}
+function viewAgenda(){
+  const C=S.cal; if(!C) return loading();
+  const [y,m]=C.month.split("-").map(Number), first=new Date(y,m-1,1), off=(first.getDay()+6)%7, start=new Date(y,m-1,1-off);
+  const today=new Date().toLocaleDateString("sv-SE"); let rows="", tot=0, on=0, heavy=0, off0=0;
+  for(let w=0;w<6;w++){
+    let cells="", ws=0;
+    for(let i=0;i<7;i++){
+      const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+w*7+i), k=d.toLocaleDateString("sv-SE"), v=C.days[k], inM=d.getMonth()===m-1;
+      const std=v?v.std:0; ws+=std;
+      if(inM){ tot+=std; if(std) on++; if(Math.round(std)>=6) heavy++; if(!std&&k<=today) off0++ }
+      cells+=`<button class="cday ${dayCls(std)}${inM?"":" out"}${k===today?" today":""}${S.calDay===k?" sel":""}" data-day="${k}" aria-label="${esc(dLong(d))} : ${stdF(std)} verres standard"><span>${d.getDate()}</span>${std?`<i>${Math.round(std)||"<1"}</i>`:""}</button>`;
+    }
+    if(w>=4&&new Date(start.getFullYear(),start.getMonth(),start.getDate()+w*7).getMonth()!==m-1) break;
+    rows+=`<div class="cweek">${cells}<span class="cwt${ws>10?" over":""}">${ws?stdF(ws):""}</span></div>`;
+  }
+  const sel=S.calDay&&C.days[S.calDay];
+  const title=first.toLocaleDateString(I18N.lang==="fr"?"fr-FR":I18N.lang,{month:"long",year:"numeric"});
+  return `<section><div class="row" style="justify-content:space-between"><button class="btn ghost small" data-cal="-1" aria-label="Mois précédent">‹</button><h2 style="margin:0;text-transform:capitalize">${esc(title)}</h2><button class="btn ghost small" data-cal="1" aria-label="Mois suivant" ${C.month>=curMonth()?"disabled":""}>›</button></div>
+  <div class="cal"><div class="cweek head">${["L","M","M","J","V","S","D"].map(x=>`<span>${x}</span>`).join("")}<span class="cwt">Sem.</span></div>${rows}</div>
+  <div class="clegend"><span><i class="green"></i>1-2</span><span><i class="orange"></i>3-5</span><span><i class="red"></i>6 et +</span><span class="muted">verres standard par jour</span></div>
+  ${S.calDay?`<div class="card">${sel?`<b>${esc(dLong(S.calDay+"T12:00"))}</b><span>${stdF(sel.std)} verre${sel.std>=2?"s":""} standard · ${sel.n} verre${sel.n>1?"s":""} d'alcool</span><button class="link" data-htab-go="sessions" style="align-self:flex-start">Voir les sessions</button>`:`<b>${esc(dLong(S.calDay+"T12:00"))}</b><span class="muted">Jour sans alcool.</span>`}</div>`:""}
+  <div class="stats"><div><span>Ce mois-ci</span><b>${stdF(tot)}</b><small>verres standard</small></div><div><span>Jours avec alcool</span><b>${on}</b></div><div><span>Jours sans alcool</span><b>${off0}</b></div><div><span>Jours à 6 et +</span><b>${heavy}</b></div></div>
+  ${alertsCard(false)}
+  <p class="muted" style="font-size:12px;margin:0">Repères de Santé publique France : 10 verres standard par semaine au plus, 2 par jour au plus, et des jours sans alcool. Un verre standard = 10 g d'alcool pur (un demi de bière, un verre de vin, un shot). Semaine au-delà de 10 : chiffre en orange.</p></section>`;
+}
+
+/* Groupes de potes : les courbes de tout le monde, par créneaux de 48 h */
+function viewGroups(){
+  if(!S.groups) return loading();
+  return `<section><h2>Mes groupes de potes</h2><p class="muted" style="font-size:13px;margin:0">Les membres d'un groupe voient les courbes de tout le monde, quel que soit l'endroit où chacun boit, par créneaux de 48 h. Quitter le groupe arrête le partage.</p>
+  ${S.groups.length?`<div class="slist">${S.groups.map(g=>`<button class="scard" data-grp="${g.id}"><div class="sd"><b>${esc(g.name)}</b><span>${g.n} membre${g.n>1?"s":""}</span></div><span class="muted">›</span></button>`).join("")}</div>`:`<p class="muted">Aucun groupe pour l'instant.</p>`}
+  <div class="row"><div class="field" style="flex:1;min-width:150px"><span class="label">Nouveau groupe</span><input id="gName" maxlength="40" placeholder="Les potes du jeudi"></div><button class="btn" id="gCreate" style="align-self:flex-end">Créer</button></div>
+  <div class="row"><div class="field" style="flex:1;min-width:150px"><span class="label">Rejoindre avec un code</span><input id="gCode" maxlength="6" autocapitalize="characters" placeholder="ABC123" style="text-transform:uppercase;letter-spacing:.15em"></div><button class="btn ghost" id="gJoin" style="align-self:flex-end">Rejoindre</button></div></section>`;
+}
+function viewGroup(now){
+  const G=S.group; if(!G||G.id!==S.gid) return loading();
+  const list=G.members.map((m,i)=>({...m,color:COLORS[i%COLORS.length]})), latest=!S.gEnd;
+  const lab=`${dShort(G.start)} ${hm(G.start)} → ${dShort(G.end)} ${hm(G.end)}`;
+  return `<section><button class="link" id="gBack">‹ Mes groupes</button><h2>${esc(G.name)}</h2>
+  <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><button class="btn ghost small nowrap" id="gPrev">‹ 48 h</button><span class="muted" style="font-size:13px;text-align:center">${esc(lab)}</span><button class="btn ghost small nowrap" id="gNext" ${latest?"disabled":""}>48 h ›</button></div></section>
+  ${viewChart(list,now,{title:"Les courbes du groupe",t0:G.start,t1:G.end,legend:p=>`${esc(p.pseudo)} · ${stdF(p.std)} v.${latest&&p.sim.cur>0?` · ${fmt(p.sim.cur)} g/L`:""}`,note:"Chaque membre, où qu'il boive. Nombre de verres standard sur les 48 h."})}
+  <section><div class="card"><span class="label">Inviter dans le groupe</span><div class="row" style="justify-content:space-between;margin-top:6px"><b class="code" style="font-family:var(--display);font-size:26px;letter-spacing:.15em">${esc(G.code)}</b><button class="btn ghost small" id="gShare">Partager le lien</button></div></div>
+  <div class="list">${list.map(m=>`<div class="item"><i class="dot" style="background:${m.color}"></i><div class="grow"><b data-noi18n>${esc(m.pseudo)}</b> <span class="muted">${stdF(m.std)} verre${m.std>=2?"s":""} standard · ${m.water} eau</span></div></div>`).join("")}</div>
+  ${S.gLeave?`<div class="card"><b>Quitter ce groupe ?</b><span class="muted" style="font-size:13px">Les autres ne verront plus vos courbes.</span><div class="row"><button class="btn small" id="gLeaveYes">Oui, quitter</button><button class="btn ghost small" id="gLeaveNo">Annuler</button></div></div>`:`<button class="link danger" id="gLeave" style="align-self:flex-start">Quitter le groupe</button>`}</section>`;
+}
+
+/* Soirées à code : début et fin prévus */
+const dtLocal=t=>{ const d=new Date(t-new Date(t).getTimezoneOffset()*60000); return d.toISOString().slice(0,16) };
+function defaultStart(){ const d=new Date(); if(d.getHours()<20){ d.setHours(20,0,0,0); return +d } d.setMinutes(Math.ceil(d.getMinutes()/15)*15,0,0); return +d }
+function viewParties(now){
+  if(!S.parties) return loading();
+  const cur=S.parties.filter(p=>p.endsAt>now-6*H_MS), past=S.parties.filter(p=>p.endsAt<=now-6*H_MS);
+  const row=p=>`<button class="scard" data-open="${esc(p.code)}"><div class="sd"><b>${esc(p.name||"Soirée "+p.code)}</b><span>${esc(dShort(p.startsAt))} ${hm(p.startsAt)} → ${p.endsAt-p.startsAt>20*H_MS?esc(dShort(p.endsAt))+" ":""}${hm(p.endsAt)}</span></div><div class="sv"><b>${esc(p.code)}</b><span>${now<p.startsAt?"à venir":now<=p.endsAt?"en cours":"terminée"} · ${p.n} joueur${p.n>1?"s":""}</span></div></button>`;
+  const st=S.pStart||defaultStart(), en=S.pEnd||st+8*H_MS;
+  return `<section><h2>Mes soirées</h2>${cur.length?`<div class="slist">${cur.map(row).join("")}</div>`:`<p class="muted" style="margin:0">Aucune soirée en cours ou à venir.</p>`}</section>
+  <section><h2>Créer une soirée</h2><p class="muted" style="font-size:13px;margin:0">Un code de 4 lettres à partager ; la courbe de la soirée va du début à la fin prévus.</p>
+  <div class="field"><span class="label">Nom (facultatif)</span><input id="pName" maxlength="40" placeholder="Anniversaire de Léa" value="${esc(S.pName||"")}"></div>
+  <div class="row"><div class="field" style="flex:1;min-width:150px"><span class="label">Début</span><input id="pStart" type="datetime-local" value="${dtLocal(st)}"></div><div class="field" style="flex:1;min-width:150px"><span class="label">Fin</span><input id="pEnd" type="datetime-local" value="${dtLocal(en)}"></div></div>
+  <button class="btn" id="create">Créer la soirée</button></section>
+  <section><div class="row"><div class="field" style="flex:1;min-width:120px"><span class="label">Rejoindre avec un code</span><input id="joinCode" maxlength="4" autocapitalize="characters" placeholder="ABCD" style="text-transform:uppercase;letter-spacing:.2em"></div><button class="btn ghost" id="join" style="align-self:flex-end">Rejoindre</button></div>
+  <div class="row"><button class="btn ghost" id="friendsBtn2" style="flex:1">Mes amis</button><button class="btn ghost" id="demoBtn3" style="flex:1">Voir la démo</button></div></section>
+  ${past.length?`<section><h2>Soirées passées</h2><div class="slist">${past.map(row).join("")}</div></section>`:""}`;
+}
+function bindHub(){
+  const on=(id,f)=>{const el=$("#"+id); if(el) el.onclick=f};
+  document.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>enterParty(b.dataset.open));
+  document.querySelectorAll("[data-htab-go]").forEach(b=>b.onclick=()=>{ openHub(b.dataset.htabGo); window.scrollTo(0,0) });
+  document.querySelectorAll("[data-ses]").forEach(b=>b.onclick=()=>{ S.sesOpen=+b.dataset.ses; render(); window.scrollTo(0,0) });
+  on("sesBack",()=>{ S.sesOpen=null; render() });
+  document.querySelectorAll("[data-cal]").forEach(b=>b.onclick=()=>run(async()=>{ const [y,m]=S.calMonth.split("-").map(Number), d=new Date(y,m-1+(+b.dataset.cal),1); S.calDay=null; await loadCal(d.toLocaleDateString("sv-SE").slice(0,7)); render() }));
+  document.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{ S.calDay=S.calDay===b.dataset.day?null:b.dataset.day; render() });
+  document.querySelectorAll("[data-grp]").forEach(b=>b.onclick=()=>run(async()=>{ S.gid=+b.dataset.grp; S.gEnd=null; S.gLeave=false; render(); await loadGroup(); render(); window.scrollTo(0,0) }));
+  on("gBack",()=>{ S.gid=null; S.group=null; hubDirty("groupes"); render() });
+  on("gPrev",()=>run(async()=>{ S.gEnd=(S.group.end)-48*H_MS; await loadGroup(); render() }));
+  on("gNext",()=>run(async()=>{ const e=S.group.end+48*H_MS; S.gEnd=e>=Date.now()+5*H_MS?null:e; await loadGroup(); render() }));
+  on("gCreate",()=>run(async()=>{ const n=$("#gName").value.trim(); if(!n) throw new Error("Donnez un nom au groupe."); const r=await api("POST","/api/groups",{name:n}); S.gid=r.id; S.gEnd=null; await loadHub("groupes"); render(); snack("Groupe créé","Partagez son code pour inviter vos potes.") }));
+  on("gJoin",()=>run(async()=>{ const c=$("#gCode").value.trim().toUpperCase(); if(!/^[A-Z2-9]{6}$/.test(c)) throw new Error("Le code de groupe fait 6 caractères."); const r=await api("POST","/api/groups/join",{code:c}); S.gid=r.id; S.gEnd=null; await loadHub("groupes"); render(); snack("Groupe rejoint") }));
+  on("gShare",async()=>{ const url=`${location.origin}/?groupe=${S.group.code}`, txt=`Rejoins mon groupe « ${S.group.name} » sur Alamb'hic : ${url}`;
+    try{ if(navigator.share){ await navigator.share({title:"Alamb'hic",text:txt}); return } await navigator.clipboard.writeText(txt); snack("Lien copié","Collez-le dans votre conversation.") }catch(e){ snack("Lien du groupe",url) } });
+  on("gLeave",()=>{ S.gLeave=true; render() }); on("gLeaveNo",()=>{ S.gLeave=false; render() });
+  on("gLeaveYes",()=>run(async()=>{ await api("DELETE",`/api/groups/${S.gid}/me`); S.gid=null; S.group=null; S.gLeave=false; await loadHub("groupes"); render(); snack("Vous avez quitté le groupe") }));
+  const ps=$("#pStart"), pe=$("#pEnd"), pn=$("#pName");
+  if(ps) ps.onchange=()=>{ const v=+new Date(ps.value); if(v){ const d=(S.pEnd||+new Date(pe.value))-(S.pStart||v); S.pStart=v; S.pEnd=v+(d>0?d:8*H_MS); render() } };
+  if(pe) pe.onchange=()=>{ const v=+new Date(pe.value); if(v){ S.pEnd=v; S.pStart=S.pStart||+new Date(ps.value) } };
+  if(pn) pn.oninput=()=>{ S.pName=pn.value };
+}
+
 /* ---------- rendu ---------- */
 const i18nAll=()=>{ I18N.apply($("#app")); I18N.apply(document.querySelector("header")); I18N.apply($("#nav")); I18N.apply($("#demoBar")) };
 function render(){
   const app=$("#app"), inParty=demo||(S.screen==="party"&&S.code);
-  const ready=!!S.user&&profileReady(S.user);
-  $("#nav").hidden=!inParty; $("#codeChip").hidden=!inParty; $("#demoHdr").hidden=demo||(ready&&!!S.code);
+  const ready=!!S.user&&profileReady(S.user), hub=!demo&&ready&&S.screen==="home";
+  $("#nav").hidden=!(inParty||hub); $("#navParty").hidden=!inParty; $("#navHub").hidden=!hub; $("#codeChip").hidden=!inParty; $("#demoHdr").hidden=demo||(ready&&!!S.code);
+  if(hub){
+    document.querySelectorAll("#navHub button").forEach(b=>b.setAttribute("aria-current",b.dataset.htab===S.htab));
+    $("#profBtn").hidden=false; $("#friendsBtn").hidden=false; stopFriendsPoll();
+    app.innerHTML=viewHub(NOW())+`<p class="note">Taux estimé par la formule de Widmark (eau corporelle de Watson). L'écart avec un éthylotest peut dépasser 0,2 g/L. Ce n'est jamais une autorisation de conduire : après avoir bu, on ne prend pas le volant.</p>`;
+    bindOut(); bindMain(); bindHub(); i18nAll(); return;
+  }
   $("#profBtn").hidden=demo||!ready||S.screen==="profile";
   $("#friendsBtn").hidden=demo||!ready||S.screen==="friends";
   if(S.screen!=="friends") stopFriendsPoll();
@@ -507,21 +700,25 @@ function render(){
   notify(list,log);
   const meP=list.find(p=>p.id===S.me);
   my=meP?{pseudo:meP.pseudo,cap:meP.cap,sam:meP.sam,mealsOk:meP.mealsOk,drinks:meP.drinks}:{pseudo:S.user?.pseudo,cap:S.user?.cap||0.8,drinks:[]};
-  document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-current",b.dataset.tab===S.tab));
+  document.querySelectorAll("#navParty button").forEach(b=>b.setAttribute("aria-current",b.dataset.tab===S.tab));
   if(S.tab==="fil") feedUnread=0;
   $("#feedN").hidden=!feedUnread; $("#feedN").textContent=feedUnread;
   let h=S.err?`<div class="banner" style="margin-top:14px">${esc(S.err)}</div>`:"";
   if(!demo&&!S.snap) h+=`<section>${loader("Chargement de la soirée…")}</section>`;
   else{
+    noAdd=false;
+    if(S.tab==="moi"&&!demo&&S.snap){ const sa=S.snap.startsAt, ea=S.snap.endsAt;
+      if(now<sa-H_MS){ noAdd=true; h+=`<section><div class="card"><b>La soirée commence ${esc(dLong(sa))} à ${hm(sa)}</b><span class="muted" style="font-size:13px">D'ici là, vos verres se notent depuis l'accueil (onglet Moi) et ne comptent pas dans la soirée.</span></div></section>` }
+      else if(now>ea){ noAdd=true; h+=`<section><div class="card"><b>Soirée terminée ${esc(dLong(ea))} à ${hm(ea)}</b><span class="muted" style="font-size:13px">Vos verres se notent maintenant depuis l'accueil (onglet Moi).</span><button class="btn ghost small" data-htab-go="moi" style="align-self:flex-start">Aller à l'accueil</button></div></section>` } }
     if(S.tab==="moi") h+= meP?viewMe(meP,now):"";
-    if(S.tab==="courbes") h+=viewChart(list,now);
+    if(S.tab==="courbes") h+=viewChart(list,now,demo?{}:{t0:S.snap.startsAt,t1:S.snap.endsAt,title:S.snap.name?"Courbes · "+S.snap.name:"Courbes de la soirée"});
     if(S.tab==="classement") h+=viewRank(list,now);
     if(S.tab==="fil") h+=viewFeed(list,log);
     if(S.tab==="moi"&&!demo) h+=viewShare(meP);
-    if(S.tab==="moi"&&!demo) h+=`<section><div class="card"><span class="label">Code de la soirée</span><div class="row" style="justify-content:space-between;margin-top:6px"><b style="font-family:var(--display);font-size:30px;letter-spacing:.15em">${esc(S.code)}</b><button class="btn ghost small" id="copyCode">Copier l'invitation</button></div><p class="muted" style="font-size:13px;margin:8px 0 0">Vos amis ouvrent Alamb'hic et entrent ce code.</p></div></section>`;
+    if(S.tab==="moi"&&!demo) h+=`<section><div class="card"><span class="label">${S.snap.name?esc(S.snap.name)+" · ":""}${esc(dShort(S.snap.startsAt))} ${hm(S.snap.startsAt)} → ${hm(S.snap.endsAt)}</span><span class="label" style="margin-top:6px">Code de la soirée</span><div class="row" style="justify-content:space-between;margin-top:6px"><b style="font-family:var(--display);font-size:30px;letter-spacing:.15em">${esc(S.code)}</b><button class="btn ghost small" id="copyCode">Copier l'invitation</button></div><p class="muted" style="font-size:13px;margin:8px 0 0">Vos amis ouvrent Alamb'hic et entrent ce code.</p></div></section>`;
   }
   h+=`<p class="note">Taux estimé par la formule de Widmark (eau corporelle de Watson). L'écart avec un éthylotest peut dépasser 0,2 g/L. Ce n'est jamais une autorisation de conduire : après avoir bu, on ne prend pas le volant.</p>`;
-  app.innerHTML=h; bindMain(); i18nAll();
+  app.innerHTML=h; bindMain(); bindHub(); i18nAll();
 }
 function viewFeed(list,log){
   const all=list.flatMap(p=>p.ev).concat(log||[]).sort((a,b)=>b.t-a.t);
@@ -563,7 +760,9 @@ function bindOut(){
   on("leave",()=>run(async()=>{ await api("POST",`/api/parties/${S.code}/leave`); closeWs(); S.code=null; S.snap=null; S.screen="home"; render() }));
   on("delAcc",()=>{$("#delConfirm").hidden=false}); on("delNo",()=>{$("#delConfirm").hidden=true});
   on("delYes",()=>run(async()=>{ await api("DELETE","/api/me"); closeWs(); Object.assign(S,{user:null,code:null,snap:null,screen:"auth"}); render(); flash("Compte supprimé","Toutes vos données ont été effacées.") }));
-  on("create",()=>run(async()=>{ const r=await api("POST","/api/parties"); enterParty(r.code) }));
+  on("create",()=>run(async()=>{ const ps=$("#pStart"), pe=$("#pEnd"), st=ps?+new Date(ps.value):Date.now(), en=pe?+new Date(pe.value):st+10*3600e3;
+    if(!st||!en) throw new Error("Indiquez le début et la fin de la soirée."); if(en<=st) throw new Error("La fin doit être après le début.");
+    const r=await api("POST","/api/parties",{name:($("#pName")?.value||"").trim(),startsAt:st,endsAt:en}); S.pName="";S.pStart=S.pEnd=null; hubDirty("soirees"); enterParty(r.code) }));
   on("join",()=>run(async()=>{ const c=$("#joinCode").value.trim().toUpperCase(); if(!/^[A-Z]{4}$/.test(c)) throw new Error("Le code de soirée fait 4 lettres."); const r=await api("POST",`/api/parties/${c}/join`); enterParty(r.code) }));
 }
 /* Ajout d'un verre : état « envoi » immédiat, coche verte quand c'est enregistré, puis bandeau avec Annuler. */
@@ -576,9 +775,9 @@ async function addDrink(d,key,rect){
     buzz(25); setPend(key,"ok",1300); if(!d.water) flyDrop(rect); snack("Verre enregistré",`${d.l} · ${hm(when)}`,{undo:()=>{p.drinks=p.drinks.filter(x=>x.id!==when);render();snack("Verre retiré")}}); return }
   setPend(key,"sending");
   try{
-    const r=await api("POST",`/api/parties/${S.code}/drinks`,{label:d.l,ml:d.ml,abv:d.abv,agoMin:a});
+    const r=await api("POST","/api/me/drinks",{label:d.l,ml:d.ml,abv:d.abv,agoMin:a}); hubDirty("sessions","agenda");
     ago=0; buzz(25); setPend(key,"ok",1300); if(!d.water) flyDrop(rect);
-    snack("Verre enregistré",`${d.l} · ${hm(r.t||when)}`,{undo:async()=>{ try{ await api("DELETE",`/api/parties/${S.code}/drinks/${r.id}?undo=1`); snack("Verre retiré"); refresh() }catch(e){ snack("Impossible d'annuler",e.message,{err:1}) } }});
+    snack("Verre enregistré",`${d.l} · ${hm(r.t||when)}`,{undo:async()=>{ try{ await api("DELETE",`/api/me/drinks/${r.id}?undo=1`); snack("Verre retiré"); refresh() }catch(e){ snack("Impossible d'annuler",e.message,{err:1}) } }});
     refresh();
   }catch(e){ setPend(key,null); snack("Verre non enregistré",e.message,{err:1}); buzz([40,60,40]) }
 }
@@ -592,7 +791,7 @@ function bindMain(){
   document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ const id=+b.dataset.del;
     if(demo){const p=demoPlayers[S.me];p.drinks=p.drinks.filter(d=>d.id!==id);render();snack("Verre supprimé");return}
     b.disabled=true; b.closest(".item")?.classList.add("leaving");
-    api("DELETE",`/api/parties/${S.code}/drinks/${id}`).then(()=>{ snack("Verre supprimé","visible dans le fil de la soirée"); refresh() })
+    api("DELETE",`/api/me/drinks/${id}`).then(()=>{ hubDirty("sessions","agenda"); snack("Verre supprimé",S.screen==="party"?"visible dans le fil de la soirée":""); refresh() })
       .catch(e=>{ b.disabled=false; b.closest(".item")?.classList.remove("leaving"); snack("Suppression impossible",e.message,{err:1}) }) });
   /* écran TV et récap */
   const tvo=$("#tvOn"); if(tvo) tvo.onclick=()=>run(async()=>{ S.tv=await api("POST",`/api/parties/${S.code}/tv`); render() });
@@ -608,7 +807,7 @@ function bindMain(){
 }
 
 /* ---------- soirée en direct ---------- */
-async function refresh(){ if(!S.code||demo) return; try{ S.snap=await api("GET",`/api/parties/${S.code}`); render() }catch(e){ if(e.status===403){S.code=null;S.snap=null;S.screen="home";closeWs()} S.err=e.message; render() } }
+async function refresh(){ if(demo) return; if(S.screen==="home"){ try{ await loadLive() }catch(e){ S.err=e.message } render(); return } if(!S.code) return; try{ S.snap=await api("GET",`/api/parties/${S.code}`); render() }catch(e){ if(e.status===403){S.code=null;S.snap=null;S.screen="home";closeWs()} S.err=e.message; render() } }
 function enterParty(code){
   S.code=code; S.snap=null; S.screen="party"; S.tab="moi"; feedUnread=0; S.tv=null; S.recap=null;
   seen=new Set(ls.get("yd_seen_"+code,[])); bootT=Date.now();
@@ -641,7 +840,8 @@ async function afterLogin(){
   if(!profileReady(S.user)){ S.screen="profile"; render(); return }
   loadWeek().then(()=>{ if(S.screen==="home") render() }); loadBadges();
   const c=await api("GET","/api/parties/current");
-  if(c.code) enterParty(c.code); else { S.screen="home"; render() }
+  if(S.pendingGroup){ try{ const g=await api("POST","/api/groups/join",{code:S.pendingGroup}); S.gid=g.id; S.pendingGroup=null; ls.set("yd_grp",""); openHub("groupes"); snack("Groupe rejoint","Vous voyez maintenant les courbes de ses membres."); return }catch(e){ S.pendingGroup=null; ls.set("yd_grp",""); snack("Groupe",e.message,{err:1}) } }
+  if(c.code) enterParty(c.code); else openHub("moi");
   if(ls.get("yd_ami","")){ openFriends(); snack("Invitation d'un ami","Touchez « Ajouter » pour l'ajouter") }
 }
 
@@ -695,13 +895,16 @@ $("#demoTour").onclick=()=>tour(0);
 $("#demoQuit").onclick=()=>{ tour(-1); stopPlay(); demo=false; $("#demoBar").hidden=true; document.body.classList.remove("isdemo");
   S.me=demoSaved.me; S.tab=demoSaved.tab; feedUnread=0; clearToasts(); hideSnack(); render() };
 
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;render();window.scrollTo(0,0)});
+document.querySelectorAll("#navParty button").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;render();window.scrollTo(0,0)});
+document.querySelectorAll("#navHub button").forEach(b=>b.onclick=()=>{ if(S.htab===b.dataset.htab){ S.sesOpen=null; S.gid=null } openHub(b.dataset.htab); window.scrollTo(0,0) });
+$("#codeChip").onclick=()=>{ if(demo) return; openHub("soirees") };
 function openDocs(){S.err="";S.screen="docs";render();api("GET","/api/docs").then(d=>{S.docs=d;render()}).catch(e=>{S.err=e.message;S.screen=S.code?"party":"home";render()})}
 $("#friendsBtn").onclick=openFriends;
 $("#profBtn").onclick=()=>{S.err="";S.screen="profile";Promise.all([loadWeek(),loadBadges(),loadNotifs()]).then(render);render()};
 setInterval(()=>{ if(document.activeElement&&/INPUT|SELECT/.test(document.activeElement.tagName)) return; if(S.screen==="party"||demo) render() },30000);
 if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(()=>{});
 
+try{ const g=new URLSearchParams(location.search).get("groupe"); if(g&&/^[A-Za-z2-9]{6}$/.test(g)){ ls.set("yd_grp",g.toUpperCase()); history.replaceState(null,"","/") } S.pendingGroup=ls.get("yd_grp","")||null }catch(e){}
 try{ const rt=new URLSearchParams(location.search).get("reset"); if(rt){ S.resetTok=rt.slice(0,80) } }catch(e){}
 try{ const a=new URLSearchParams(location.search).get("ami"); if(a){ ls.set("yd_ami",a.toUpperCase().slice(0,6)); history.replaceState(null,"","/") } }catch(e){}
 (async function init(){

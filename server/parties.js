@@ -5,6 +5,8 @@ const { q } = require("./db");
 const { requireUser, userIdFromReq } = require("./auth");
 const push = require("./push");
 const crypto = require("crypto");
+const conso = require("./conso");
+const H = 3600e3;
 
 const MIN = 60000;
 const ALPHA = "ABCDEFGHJKMNPQRSTUVWXYZ";
@@ -12,36 +14,43 @@ const CODE_RE = /^[A-Z]{4}$/;
 
 /* ---------- instantané d'une soirée (calcul côté serveur) ---------- */
 /* opt.recap : récapitulatif public, seulement les joueurs qui l'ont accepté (même partis), sans trace des suppressions */
+/* Fenêtre de la soirée : début et fin prévus. Le taux de chacun tient compte de TOUS ses verres (même notés avant, ailleurs),
+   mais la courbe et les titres ne couvrent que la soirée. */
 async function snapshot(code, opt = {}) {
   const now = Date.now();
+  const { rows: pr } = await q("SELECT name, starts_at, ends_at FROM parties WHERE code=$1", [code]);
+  const P = pr[0] || {}, ws = +P.starts_at || now - 12 * H, we = +P.ends_at || now + 12 * H;
   const { rows: mem } = await q(`
     SELECT u.id, u.pseudo, u.sex, u.age, u.height, u.weight, u.cap, m.sam, m.fed, m.meals_ok, m.joined_at, m.recap_ok
     FROM party_members m JOIN users u ON u.id = m.user_id
     WHERE m.party_code=$1 AND ${opt.recap ? "m.recap_ok" : "m.left_at IS NULL"} ORDER BY m.joined_at`, [code]);
   const { rows: dr } = await q(`
-    SELECT id, user_id, t, label, ml, abv, fed, water, deleted_at FROM drinks
-    WHERE party_code=$1 ORDER BY t`, [code]);
+    SELECT d.id, d.user_id, d.party_code, d.t, d.label, d.ml, d.abv, d.fed, d.water, d.deleted_at FROM drinks d
+    WHERE d.user_id = ANY($1) AND d.t >= to_timestamp($2/1000.0) AND d.t <= to_timestamp($3/1000.0)
+      AND (d.deleted_at IS NULL OR d.party_code=$4) ORDER BY d.t`, [mem.map(m => m.id), ws - 18 * H, Math.min(we, now + 60000), code]);
   const { rows: ml } = await q(`
     SELECT me.user_id, me.t, me.kind FROM meals me JOIN party_members m ON m.user_id = me.user_id
-    WHERE m.party_code=$1 AND ${opt.recap ? "m.recap_ok" : "m.left_at IS NULL"} AND me.t > now() - interval '30 hours'`, [code]);
+    WHERE m.party_code=$1 AND ${opt.recap ? "m.recap_ok" : "m.left_at IS NULL"} AND me.t > to_timestamp($2/1000.0)`, [code, ws - 30 * H]);
   const log = [];
   const members = mem.map(m => {
-    const drinks = dr.filter(d => d.user_id === m.id && !d.deleted_at)
-      .map(d => ({ id: +d.id, t: +d.t, l: d.label, ml: d.ml, abv: d.abv, fed: d.fed, ...(d.water ? { water: 1 } : {}) }));
+    const all = dr.filter(d => d.user_id === m.id && !d.deleted_at)
+      .map(d => ({ id: +d.id, t: +d.t, l: d.label, ml: d.ml, abv: d.abv, fed: d.fed, party: d.party_code, ...(d.water ? { water: 1 } : {}) }));
+    const drinks = all.filter(d => d.t >= ws - 30 * MIN);   // verres de la soirée (affichés) ; les précédents comptent dans le taux
     if (!opt.recap) dr.filter(d => d.user_id === m.id && d.deleted_at)
       .forEach(d => log.push({ key: "del:" + d.id, pid: m.id, kind: "info", t: +d.deleted_at, title: "Verre supprimé",
         text: `${m.pseudo} a supprimé un verre (${d.label}, noté à ${new Date(+d.t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" })}).` }));
     const meals = ml.filter(x => x.user_id === m.id).map(x => ({ t: +x.t, kind: x.kind }));
-    const p = { id: m.id, pseudo: m.pseudo, sex: m.sex, age: m.age, height: m.height, weight: m.weight, cap: m.cap, sam: m.sam, joined: +m.joined_at, drinks, meals };
-    const { sim, ev, score } = YD.scoreSummary(p, now);
-    const pts = sim.pts.filter((x, i) => i % 5 === 0 || Math.abs(x[0] - now) < MIN || i === sim.pts.length - 1)
+    const p = { id: m.id, pseudo: m.pseudo, sex: m.sex, age: m.age, height: m.height, weight: m.weight, cap: m.cap, sam: m.sam, joined: Math.max(+m.joined_at, ws), drinks: all, meals };
+    const r = YD.scoreSummary(p, Math.min(now, we + 12 * H)), sim = r.sim;   // soirée finie : calcul arrêté 12 h après la fin
+    const ev = r.ev.filter(e => e.t >= ws - MIN && e.t <= we + 6 * H), score = YD.scoreOf(ev);
+    const pts = sim.pts.filter((x, i) => (i % 5 === 0 || Math.abs(x[0] - now) < MIN || i === sim.pts.length - 1) && x[0] >= ws)
       .map(([t, b]) => [t, Math.round(b * 1000) / 1000]);
     return { id: m.id, pseudo: m.pseudo, cap: m.cap, sam: m.sam, fed: m.fed, mealsOk: m.meals_ok, recapOk: m.recap_ok, sex: m.sex, joined: p.joined, drinks,
       sim: { pts, cur: sim.cur, prev: sim.prev, peak: sim.peak, peakT: sim.peakT, zeroT: sim.zeroT, grams: sim.grams }, ev, score };
   });
   if (opt.recap) return { now, members: members.map(({ id, recapOk, ...m }, i) => ({ id: "j" + i, ...m, ev: m.ev.map(e => ({ ...e, pid: "j" + i, key: "j" + i + ":" + e.key.split(":")[1] })) })) };
   persistTrophies(code, members).catch(e => console.error("trophées", e.message));
-  return { code, now, members, log };
+  return { code, name: P.name || null, startsAt: ws, endsAt: we, now, members, log };
 }
 
 /* chaque titre est gardé une fois ; un titre nouveau part en notification push (autres joueurs, amis) */
@@ -135,16 +144,31 @@ async function joinParty(uid, code) {
 }
 
 function routes(app) {
+  /* soirée en cours : rejointe, pas quittée, et pas terminée depuis plus de 6 h */
   app.get("/api/parties/current", requireUser, async (req, res) => {
-    const { rows } = await q(`SELECT party_code FROM party_members WHERE user_id=$1 AND left_at IS NULL ORDER BY joined_at DESC LIMIT 1`, [req.user.id]);
+    const { rows } = await q(`SELECT m.party_code FROM party_members m JOIN parties p ON p.code=m.party_code
+      WHERE m.user_id=$1 AND m.left_at IS NULL AND p.ends_at > now() - interval '6 hours' AND p.starts_at < now() + interval '1 hour' ORDER BY m.joined_at DESC LIMIT 1`, [req.user.id]);
     res.json({ code: rows[0] ? rows[0].party_code : null });
+  });
+  /* mes soirées : à venir, en cours, passées */
+  app.get("/api/parties", requireUser, async (req, res) => {
+    const { rows } = await q(`SELECT p.code, p.name, p.starts_at, p.ends_at, m.left_at,
+      (SELECT count(*)::int FROM party_members x WHERE x.party_code=p.code AND x.left_at IS NULL) AS n
+      FROM party_members m JOIN parties p ON p.code=m.party_code WHERE m.user_id=$1 AND p.ends_at > now() - interval '90 days'
+      ORDER BY p.starts_at DESC LIMIT 60`, [req.user.id]);
+    res.json({ parties: rows.map(r => ({ code: r.code, name: r.name, startsAt: +r.starts_at, endsAt: +r.ends_at, left: !!r.left_at, n: r.n })) });
   });
 
   app.post("/api/parties", requireUser, async (req, res) => {
     if (!profileReady(req.user)) return res.status(400).json({ error: "Complétez d'abord votre profil." });
+    const now = Date.now(), name = String(req.body.name || "").trim().slice(0, 40) || null;
+    const st = +req.body.startsAt || now, en = +req.body.endsAt || st + 10 * H;
+    if (st < now - 6 * H || st > now + 60 * 24 * H) return res.status(400).json({ error: "Le début doit être dans les 60 prochains jours." });
+    if (en <= st + 30 * 60000) return res.status(400).json({ error: "La fin doit être au moins 30 minutes après le début." });
+    if (en - st > 48 * H) return res.status(400).json({ error: "Une soirée dure 48 h au plus." });
     for (let i = 0; i < 20; i++) {
       const code = Array.from({ length: 4 }, () => ALPHA[Math.floor(Math.random() * ALPHA.length)]).join("");
-      const r = await q("INSERT INTO parties(code, created_by) VALUES($1,$2) ON CONFLICT DO NOTHING RETURNING code", [code, req.user.id]);
+      const r = await q("INSERT INTO parties(code, created_by, name, starts_at, ends_at) VALUES($1,$2,$3,to_timestamp($4/1000.0),to_timestamp($5/1000.0)) ON CONFLICT DO NOTHING RETURNING code", [code, req.user.id, name, st, en]);
       if (r.rows[0]) { await joinParty(req.user.id, code); return res.json({ code }); }
     }
     res.status(503).json({ error: "Impossible de créer une soirée pour le moment. Réessayez." });
@@ -154,8 +178,9 @@ function routes(app) {
     if (!profileReady(req.user)) return res.status(400).json({ error: "Complétez d'abord votre profil." });
     const code = String(req.params.code || "").toUpperCase();
     if (!CODE_RE.test(code)) return res.status(400).json({ error: "Le code de soirée fait 4 lettres." });
-    const { rows } = await q("SELECT code FROM parties WHERE code=$1", [code]);
+    const { rows } = await q("SELECT code, ends_at FROM parties WHERE code=$1", [code]);
     if (!rows[0]) return res.status(404).json({ error: "Aucune soirée avec ce code. Vérifiez les 4 lettres." });
+    if (+rows[0].ends_at < Date.now() - 6 * H) return res.status(400).json({ error: "Cette soirée est terminée." });
     await joinParty(req.user.id, code);
     res.json({ code });
     broadcast(code).catch(() => {});
@@ -169,8 +194,10 @@ function routes(app) {
   });
 
   app.get("/api/parties/:code", requireUser, async (req, res) => {
-    const m = await member(req, res); if (!m) return;
-    res.json(await snapshot(m.code));
+    const code = String(req.params.code || "").toUpperCase();
+    const { rows } = await q("SELECT 1 FROM party_members WHERE party_code=$1 AND user_id=$2", [code, req.user.id]);
+    if (!rows[0]) return res.status(403).json({ error: "Vous ne faites pas partie de cette soirée." });
+    res.json(await snapshot(code));
   });
 
   app.put("/api/parties/:code/me", requireUser, async (req, res) => {
@@ -187,7 +214,9 @@ function routes(app) {
     broadcast(m.code).catch(() => {});
   });
 
+  /* ancien chemin, gardé pour compatibilité : le verre suit les mêmes règles que /api/me/drinks */
   app.post("/api/parties/:code/drinks", requireUser, async (req, res) => {
+    try { return res.json(await conso.addDrink(req.user.id, req.body || {})); } catch (e) { return res.status(e.status || 500).json({ error: e.message }); }
     const m = await member(req, res); if (!m) return;
     const b = req.body || {};
     const ml = +b.ml, abv = +b.abv, ago = Math.round(+b.agoMin || 0);
@@ -317,4 +346,10 @@ function routes(app) {
 
 // état en direct pour le tableau de bord de contrôle
 const etatDirect = () => ({ soirees: rooms.size, sockets: [...rooms.values()].reduce((t, s) => t + s.size, 0) });
-module.exports = { routes, attachWs, etatDirect };
+/* soirée à laquelle un verre noté maintenant se rattache : rejointe, pas quittée, et en cours (début − 1 h à la fin) */
+async function activeParty(uid) {
+  const { rows } = await q(`SELECT m.party_code AS code, m.sam, m.meals_ok, p.name, p.starts_at, p.ends_at FROM party_members m JOIN parties p ON p.code=m.party_code
+    WHERE m.user_id=$1 AND m.left_at IS NULL AND now() BETWEEN p.starts_at - interval '1 hour' AND p.ends_at ORDER BY m.joined_at DESC LIMIT 1`, [uid]);
+  return rows[0] ? { code: rows[0].code, sam: rows[0].sam, meals_ok: rows[0].meals_ok, name: rows[0].name, startsAt: +rows[0].starts_at, endsAt: +rows[0].ends_at } : null;
+}
+module.exports = { routes, attachWs, etatDirect, activeParty, broadcast, rebroadcastFor };

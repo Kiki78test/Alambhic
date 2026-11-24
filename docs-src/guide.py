@@ -7,15 +7,36 @@ def ch(title, body): CH.append((title, body))
 def shot(n, cap=""): return f'<figure><img src="img/{n}.png"><figcaption>{cap}</figcaption></figure>'
 
 ch("Démarrer", f"""<div class="split"><div>
-<h3>Créer un compte</h3><p>Ouvrez <b>alambhic.onrender.com</b>, choisissez « Créer un compte », saisissez votre e-mail et un mot de passe d'au moins 8 caractères. La connexion reste active 60 jours sur l'appareil. La connexion Google arrivera quand l'identifiant sera configuré.</p>
+<h3>Créer un compte</h3><p>Ouvrez <b>alambhic.onrender.com</b>, choisissez « Créer un compte », saisissez votre e-mail et un mot de passe d'au moins 8 caractères. La connexion reste active 60 jours sur l'appareil. On peut aussi « Continuer avec Google ». Mot de passe oublié : lien par e-mail.</p>
 <h3>Compléter son profil</h3><p>Pseudo, sexe biologique, âge, taille et poids : ces mesures servent uniquement à estimer votre taux. Les autres joueurs voient votre pseudo, vos verres et vos taux, jamais vos mesures.</p>
 <p>Alamb’hic est <b>réservé aux 18 ans et plus</b> : un âge inférieur est refusé.</p>
 <h3>Choisir son plafond</h3><p>0,5 ; 0,6 ; 0,8 (conseillé) ou 1,0 g/L. Au-delà, les titres positifs s'arrêtent et chaque excès devient un titre de honte.</p>
 <h3>Installer l'appli</h3><p>Dans le navigateur du téléphone : menu → « Ajouter à l'écran d'accueil ». Alamb’hic s'ouvre alors en plein écran avec son icône.</p>
-<div class="note">Sur l'offre gratuite de Render, le serveur s'endort après 15 minutes sans visite : la première ouverture prend alors 30 à 50 secondes.</div>
+<div class="note">Langue : français, anglais, espagnol ou portugais (liens sous l'écran de connexion, ou Profil → Langue).</div>
 </div>{shot("auth", "Écran d'accueil")}</div>""")
 
-ch("Les soirées", """<h3>Créer une soirée</h3><p>Sur l'écran d'accueil, « Créer une soirée » génère un code de 4 lettres (sans I, L ni O pour éviter les confusions). Il s'affiche en haut de l'écran et dans la carte « Code de la soirée ».</p>
+ch("L'accueil : vos verres partout", """<p>Les verres appartiennent au joueur : on les note partout, seul, en soirée ou entre potes. Hors soirée, l'accueil a cinq onglets en bas de l'écran :</p>
+<ul><li><b>Moi</b> : votre taux, l'avatar, la jauge, les boutons de boisson, vos repas et la courbe de la <b>session en cours</b>. Si vous êtes dans une soirée à code en cours, une carte « Soirée en cours » le rappelle : vos verres y comptent aussi.</li>
+<li><b>Sessions</b> : vos sessions des 60 derniers jours.</li><li><b>Agenda</b> : le calendrier de votre consommation.</li>
+<li><b>Groupes</b> : vos groupes de potes et leurs courbes.</li><li><b>Soirées</b> : vos soirées à code (à venir, en cours, passées), créer ou rejoindre.</li></ul>
+<p>Avant le premier verre d'alcool de la journée, Alamb’hic demande vos repas (ou « rien mangé »), où que vous soyez.</p>""" + f"""<div class="shots">{shot("h-moi", "Moi : la session en cours")}{shot("h-sessions", "Sessions")}{shot("h-agenda", "Agenda")}{shot("h-groupe", "Groupe de potes")}</div>""")
+
+ch("Les sessions", """<p>Une <b>session</b> commence à votre premier verre d'alcool et se termine quand votre taux estimé revient à 0. Le découpage est automatique : un verre bu après le retour à 0 ouvre une nouvelle session. Les verres d'une soirée à code font partie de la session (elle porte alors le nom de la soirée).</p>
+<p>La liste montre, pour chaque session : la date, l'heure de début et de fin (ou « en cours »), une mini-courbe, le pic et le nombre de verres standard. En touchant une session : sa courbe seule, du premier verre au retour à 0 (fini les courbes trop larges), le pic et son heure, les verres standard, les verres d'alcool et d'eau, et la liste des verres.</p>""")
+
+ch("L'agenda", """<p>Le calendrier du mois colore chaque jour selon les verres standard bus (heure de Paris), d'après les repères de Santé publique France :</p>
+<table><tr><th>Couleur</th><th>Verres standard dans la journée</th></tr><tr><td>Vert</td><td>1 à 2</td></tr><tr><td>Orange</td><td>3 à 5</td></tr><tr><td>Rouge</td><td>6 et plus (alcoolisation ponctuelle importante)</td></tr></table>
+<p>La colonne « Sem. » donne le total de chaque semaine, en orange au-delà de 10. En touchant un jour : le détail. Dessous : le total du mois, les jours avec et sans alcool, les jours à 6 et plus.</p>
+<p><b>Suivi bienveillant</b> : une carte s'affiche (dans l'agenda et en haut de l'onglet Moi) si vous dépassez 10 verres standard sur 7 jours, si vous avez eu un jour à 6 ou plus ce dernier mois, ou si vous avez bu presque tous les jours de la semaine. Elle rappelle, sans juger, Alcool info service : 0 980 980 930 (7 j/7, 8 h-2 h, anonyme et non surtaxé) et alcool-info-service.fr. Sinon, une carte verte indique que vous êtes dans les repères.</p>""")
+
+ch("Les groupes de potes", """<p>Un groupe réunit des amis qui veulent voir les courbes les uns des autres <b>en continu</b>, sans code de soirée : chaque membre voit les courbes de tous, quel que soit l'endroit où chacun boit.</p>
+<ul><li><b>Créer</b> : onglet Groupes → nom → « Créer ». Un code de 6 caractères est créé.</li>
+<li><b>Inviter</b> : « Partager le lien » (<code>/?groupe=CODE</code>) ; l'ami qui l'ouvre rejoint le groupe après connexion. Ou il saisit le code dans « Rejoindre avec un code ». 30 membres au plus.</li>
+<li><b>Les courbes</b> : par créneaux de 48 h (le dernier va jusqu'à 6 h après maintenant) ; « ‹ 48 h » et « 48 h › » naviguent dans le temps. La légende donne les verres standard de chacun sur le créneau et son taux actuel.</li>
+<li><b>Quitter</b> : « Quitter le groupe » ; les autres ne voient plus vos courbes. Un groupe vide est supprimé.</li></ul>""")
+
+ch("Les soirées à code", """<h3>Créer une soirée</h3><p>Onglet Soirées → nom (facultatif), <b>début et fin prévus</b> (par défaut ce soir 20 h, pour 8 h ; 48 h au plus) → « Créer la soirée ». Un code de 4 lettres est généré (sans I, L ni O pour éviter les confusions). La courbe de la soirée va du début à la fin prévus ; le taux de chacun tient compte de tous ses verres, même notés avant, mais seuls les verres et titres de la soirée y apparaissent.</p>
+<p>Un verre noté pendant la soirée (à partir d'1 h avant le début) s'y rattache automatiquement. Avant : « La soirée commence … » ; après la fin : « Soirée terminée », et les verres se notent depuis l'accueil. Le code en haut de l'écran ramène à l'accueil sans quitter la soirée.</p>
 <h3>Inviter</h3><p>« Copier l'invitation » ouvre le partage du téléphone, ou copie le message « Rejoins ma soirée Alamb’hic avec le code … » à coller dans le groupe.</p>
 <h3>Rejoindre</h3><p>Saisissez le code dans « Rejoindre avec un code ». Rejoindre une soirée vous fait quitter automatiquement la précédente : on ne joue qu'à une soirée à la fois.</p>
 <h3>Quitter</h3><p>Profil → « Quitter la soirée ». Vos verres restent comptés dans votre suivi personnel.</p>
@@ -115,7 +136,7 @@ ch("Le mode démo", """<p>Le bouton « Démo » en haut de l'écran lance une so
 <h3>Banc de test sur ordinateur</h3><p>La page <code>/demo.html</code> (lien « Banc de test (ordinateur) » dans le Profil des admins) affiche la même soirée fictive en grand : les quatre joueurs côte à côte (avatar, alambic, taux, tendance, titres obtenus), les courbes de la soirée et le fil des titres. Une frise en bas fait défiler la soirée de 19 h à 6 h ; chaque point de la frise est un titre, cliquable pour y sauter. Lecture ×1, ×5 ou ×15, touche Espace pour lancer ou arrêter, flèches pour avancer de 5 minutes (30 avec Maj).</p>""")
 
 ch("Suivi des 7 derniers jours", f"""<div class="split"><div>
-<p>La page Profil compte vos verres standard des 7 derniers jours, toutes soirées confondues, et les compare aux repères de Santé publique France : 10 verres par semaine au plus, 2 par jour, et des jours sans alcool.</p>
+<p>Voir aussi l'onglet Agenda, plus complet. La page Profil compte vos verres standard des 7 derniers jours, toutes soirées confondues, et les compare aux repères de Santé publique France : 10 verres par semaine au plus, 2 par jour, et des jours sans alcool.</p>
 <p>Les barres passent en rouge au-delà de 2 verres standard dans la journée ; le nombre de jours sans alcool est indiqué.</p>
 <p>À venir (étape 4) : bilan mensuel, objectifs perso, trophées long terme, défis entre amis.</p>
 </div>{shot("profil", "Profil et suivi")}</div>""")
@@ -165,7 +186,7 @@ ch("Écran TV et récap à partager", """<h3>Écran TV</h3><p>Écran Moi → « 
 <p>Chaque nouveau titre s'annonce en grand au milieu de l'écran. Le téléphone sert de <b>télécommande</b> : les boutons Auto, Avatars, Courbes et Fil changent la vue de la TV immédiatement.</p>
 <h3>Récap à partager</h3><p>« Récap à partager » crée un lien public (<code>/r/…</code>) vers une page avec les joueurs (avatar à leur pic, pic, points, titres), les courbes de la soirée et le fil des titres, plus un bouton « Créer votre soirée sur Alamb'hic ». Seuls les joueurs qui ont coché « Apparaître dans le récap » y figurent, avec leur pseudo seulement ; celui qui crée le lien est coché d'office et peut se décocher. « Supprimer le lien » le désactive. La page n'est pas référencée par les moteurs de recherche.</p>""")
 
-ch("Aide", """<p>Profil → « Aide », ou le lien « Aide » sous l'écran de connexion. On tape sa question (« pourquoi mon pic baisse après un repas ? ») : l'aide montre les réponses les plus proches parmi 17 questions fréquentes (calcul, repas, plafond, titres, badges, avatar, Sam, erreurs de saisie, soirées, amis, notifications, TV, récap, mot de passe, données, installation, malaise d'un ami). Toutes les réponses sont aussi listées dessous.</p>
+ch("Aide", """<p>Profil → « Aide », ou le lien « Aide » sous l'écran de connexion. On tape sa question (« pourquoi mon pic baisse après un repas ? ») : l'aide montre les réponses les plus proches parmi 20 questions fréquentes (calcul, repas, plafond, titres, badges, sessions, agenda, groupes, avatar, Sam, erreurs de saisie, soirées, amis, notifications, TV, récap, mot de passe, données, installation, malaise d'un ami). Toutes les réponses sont aussi listées dessous.</p>
 <p>Avec la variable Render <code>ANTHROPIC_API_KEY</code>, un assistant reformule une réponse sur mesure, uniquement à partir de cette base, dans la langue de l'appli. La base est dans <code>server/help.js</code>, à tenir à jour quand l'appli change.</p>""")
 
 ch("L'appli Android", """<p>Le dossier <code>mobile/</code> contient une enveloppe Capacitor (comme Airmony) qui ouvre l'appli en ligne dans une appli Android : identifiant <code>app.alambhic</code>, icône et écran de démarrage bleu nuit, page « Pas de connexion ».</p>

@@ -34,6 +34,8 @@ const badges = require("./badges");
 require("./push").routes(app, auth);
 badges.routes(app, auth);
 require("./help").routes(app);
+require("./conso").routes(app, { activeParty: parties.activeParty,
+  drinkAdded: (uid, code) => { if (code) parties.broadcast(code).catch(() => {}); parties.rebroadcastFor(uid).catch(() => {}); } });
 
 /* Documentation (réservée aux administrateurs) : docs/index.json + PDF */
 const DOCS = path.join(__dirname, "..", "docs");

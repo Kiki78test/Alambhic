@@ -629,7 +629,7 @@ document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==
 function mountGoogle(){
   const el=$("#gbtn"); if(!el||!S.cfg.googleClientId) return;
   const go=()=>{ try{ google.accounts.id.initialize({client_id:S.cfg.googleClientId,callback:r=>run(async()=>{await api("POST","/api/auth/google",{credential:r.credential});await afterLogin()})});
-    google.accounts.id.renderButton(el,{theme:"filled_black",size:"large",text:"continue_with",locale:"fr",shape:"pill"}) }catch(e){} };
+    google.accounts.id.renderButton(el,{theme:"filled_blue",size:"large",text:"continue_with",locale:I18N.lang,shape:"pill",logo_alignment:"left",width:Math.min(320,el.clientWidth||320)}) }catch(e){} };
   if(window.google?.accounts) return go();
   if(!document.getElementById("gsi")){ const s=document.createElement("script"); s.id="gsi"; s.src="https://accounts.google.com/gsi/client"; s.async=true; s.onload=go; document.head.appendChild(s) }
 }

@@ -402,7 +402,6 @@ Votre dernier repas ?|Your last meal?|¿Tu última comida?|A sua última refeiç
 Un repas ralentit le passage de l'alcool et baisse le pic : l'estimation sera plus juste.|A meal slows alcohol absorption and lowers the peak: the estimate will be more accurate.|Una comida frena el paso del alcohol y baja el pico: la estimación será más precisa.|Uma refeição abranda a passagem do álcool e baixa o pico: a estimativa será mais precisa.
 Noter le repas et le verre|Save meal and drink|Anotar comida y copa|Registar refeição e bebida
 Rien mangé depuis ce matin|Nothing eaten since this morning|Nada desde esta mañana|Nada desde esta manhã
-Passer|Skip|Omitir|Passar
 Oui|Yes|Sí|Sim
 Vos lieux favoris apparaîtront ici.|Your favourite places will appear here.|Tus lugares favoritos aparecerán aquí.|Os seus locais favoritos aparecerão aqui.
 Amis seulement|Friends only|Solo amigos|Só amigos

@@ -21,6 +21,8 @@ const profileOf = u => ({ id: u.id, pseudo: u.pseudo, sex: u.sex, age: u.age, he
 const mapDrink = d => ({ id: +d.id, t: +d.t, l: d.label, ml: d.ml, abv: d.abv, fed: d.fed, party: d.party_code || null, ...(d.water ? { water: 1 } : {}), ...(d.place ? { place: d.place } : {}) });
 /* lieu d'une liste de verres : le dernier lieu noté */
 const placeOf = list => { for (let i = list.length - 1; i >= 0; i--) if (list[i].place) return list[i].place; return null; };
+/* vu par les autres : « Chez moi » devient « Chez lui » / « Chez elle » */
+const placeForOthers = (p, sex) => p && /^chez moi$/i.test(p.trim()) ? (String(sex).toUpperCase() === "F" ? "Chez elle" : "Chez lui") : p;
 const PLACE_TTL = 10 * 3600e3;   // le lieu choisi vaut pour les verres des 10 h qui suivent
 const cleanPlace = v => String(v || "").replace(/[\u0000-\u001f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 40);
 async function drinksOf(uids, from, to) {
@@ -172,7 +174,7 @@ async function groupView(gid, end) {
     const tNow = Math.min(now, end), simL = YD.simulate({ ...p, drinks: lastD, meals }, tNow);
     const ev = lastD.length ? YD.events({ ...p, drinks: lastD, meals, joined: last[0].t }, simL, tNow).filter(e => e.kind !== "info" && e.t >= start && e.t <= end).sort((a, b) => b.t - a.t) : [];
     return { id: m.id, pseudo: m.pseudo, cap: m.cap, sim: { pts: thin(sim.pts, start, end), cur: end >= now ? sim.cur : 0, prev: sim.prev, peak: sim.peak, peakT: sim.peakT, zeroT: sim.zeroT },
-      title: ev[0] ? { title: ev[0].title, kind: ev[0].kind, t: ev[0].t } : null, place: end >= now && simL.cur > 0 ? placeOf(lastD) : null,
+      title: ev[0] ? { title: ev[0].title, kind: ev[0].kind, t: ev[0].t } : null, place: end >= now && simL.cur > 0 ? placeForOthers(placeOf(lastD), m.sex) : null,
       std: Math.round(win.reduce((s, d) => s + STD(d), 0) * 10) / 10, n: win.length, water: drinks.filter(d => d.water && d.t >= start).length };
   });
   return { id: +g[0].id, name: g[0].name, code: g[0].code, start, end, now, members };
@@ -255,4 +257,4 @@ function routes(app, h) {
   });
 }
 
-module.exports = { routes, live, splitSessions, addDrink, delDrink, calendar, STD, parisDay, placeOf };
+module.exports = { routes, live, splitSessions, addDrink, delDrink, calendar, STD, parisDay, placeOf, placeForOthers };

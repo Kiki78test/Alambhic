@@ -10,6 +10,7 @@ ACTIFS = [
     ("Resend", "E-mails : lien de nouveau mot de passe.", "Gratuit jusqu'à 3 000 e-mails/mois", "Adresse e-mail du joueur", "Même équipe Resend qu'Airmony et Hermaion. Variables <code>RESEND_API_KEY</code>, <code>MAIL_FROM</code> (expéditeur sur un domaine vérifié dans Resend), <code>BASE_URL</code>. <b>À renseigner</b> : sans clé, le mot de passe oublié affiche « envoi pas encore activé »."),
     ("GitHub Actions", "Contrôle de sécurité des dépendances chaque lundi ; fabrication de l'APK de test.", "Gratuit (minutes incluses)", "Code uniquement", "Fichiers <code>.github/workflows/securite.yml</code> et <code>android.yml</code>. APK dans Releases → « Appli Android (test) »."),
     ("Anthropic (facultatif)", "Assistant de l'aide : reformule une réponse à partir des questions fréquentes.", "Au message (quelques centimes par jour au plus)", "Texte de la question, sans identité", "Variable <code>ANTHROPIC_API_KEY</code> (et <code>ANTHROPIC_MODEL</code>, par défaut claude-sonnet-5-5). Sans clé, l'aide fonctionne avec les réponses toutes prêtes."),
+    ("OpenStreetMap (Overpass)", "« Autour de moi » : bars, restaurants, cafés et boîtes de nuit proches, pour choisir le lieu de la session.", "Gratuit (usage raisonnable)", "Position approximative, envoyée par notre serveur seulement au moment de la recherche (ni identité ni adresse IP du joueur ; rien n'est enregistré)", "Aucune clé. Serveur principal overpass-api.de, secours overpass.kumi.systems ; résultats gardés 10 min par zone d'environ 100 m, 20 recherches par joueur et par 10 min. Si le service est indisponible, la saisie libre et les favoris restent possibles. Alternative payante plus complète : Google Places."),
     ("Google Fonts", "Polices Bricolage Grotesque et Inter de l'interface.", "Gratuit", "Adresse IP du visiteur (chargement des polices)", "À héberger nous-mêmes avant l'ouverture publique pour ne plus rien envoyer à Google."),
 ]
 PREVUS = [
@@ -24,7 +25,7 @@ def table(rows):
         f"<tr><td><b>{a}</b></td><td>{b}</td><td>{c}</td><td>{d}</td><td>{e}</td></tr>" for a, b, c, d, e in rows) + "</table>"
 
 body = f"""<div class="page">{band("Services externes", "Pilotage du projet")}
-<p class="lead">Alamb’hic tourne sur GitHub, Render (service web et base), la connexion Google, les services de notification des navigateurs et, une fois la clé renseignée, Resend pour les e-mails. L'assistant IA de l'aide est facultatif.</p>
+<p class="lead">Alamb’hic tourne sur GitHub, Render (service web et base), la connexion Google, les services de notification des navigateurs et, une fois la clé renseignée, Resend pour les e-mails. OpenStreetMap fournit les lieux proches. L'assistant IA de l'aide est facultatif.</p>
 <h2>En service</h2>{table(ACTIFS)}
 <h2>Prévus</h2>{table(PREVUS)}
 <div class="note warn"><b>Données sensibles.</b> Les consommations d'alcool sont des données de santé au sens du RGPD. Tous les sous-traitants qui les reçoivent devront être listés dans la politique de confidentialité avant l'ouverture publique.</div>

@@ -9,7 +9,7 @@ for root, dirs, files in os.walk(res):
         rel = os.path.relpath(os.path.join(root, f), res); dst = os.path.join(app, 'src', 'main', 'res', rel)
         os.makedirs(os.path.dirname(dst), exist_ok=True); shutil.copy(os.path.join(root, f), dst)
 man = os.path.join(app, 'src', 'main', 'AndroidManifest.xml'); s = open(man).read()
-perms = ['INTERNET', 'VIBRATE', 'POST_NOTIFICATIONS', 'ACCESS_NETWORK_STATE']
+perms = ['INTERNET', 'VIBRATE', 'POST_NOTIFICATIONS', 'ACCESS_NETWORK_STATE', 'ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION']
 s = s.replace('</manifest>', ''.join('    <uses-permission android:name="android.permission.%s" />\n' % p for p in perms if 'android.permission.%s"' % p not in s) + '</manifest>')
 open(man, 'w').write(s)
 sty = os.path.join(app, 'src', 'main', 'res', 'values', 'styles.xml')

@@ -18,7 +18,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 const parisHour = t => +new Date(t).toLocaleString("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", hour12: false }).slice(0, 2);
 
 /* « – à La Folie Douce », mais « – chez Paul », « – au Bistrot » tels quels */
-const where = p => !p ? "" : " – " + (/^(à|a|au|aux|chez|en|dans|sur|sous|devant|place|rue)\s/i.test(p) ? p : "à " + p);
+const where = p => !p ? "" : " – " + (/^(à|a|au|aux|chez|en|dans|sur|sous|devant|place|rue)\s/i.test(p) ? p.charAt(0).toLowerCase() + p.slice(1) : "à " + p);
 
 const LEVELS = [
   [1.2, "lvl3", "est rond comme une queue de pelle", "Un grand verre d'eau pour lui ?"],
@@ -45,8 +45,9 @@ async function audience(uid) {
 async function emit(uid, key, phrase, body, place) {
   if (sent.has(key)) return 0;
   sent.add(key); if (sent.size > 50000) sent.clear();
-  const { rows } = await q("SELECT pseudo FROM users WHERE id=$1", [uid]);
+  const { rows } = await q("SELECT pseudo, sex FROM users WHERE id=$1", [uid]);
   const name = (rows[0] && rows[0].pseudo) || "Un pote";
+  place = conso.placeForOthers(place, rows[0] && rows[0].sex);
   let n = 0;
   for (const to of await audience(uid)) {
     const k = uid + ">" + to, last = lastTo.get(k) || 0;

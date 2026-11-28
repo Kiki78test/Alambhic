@@ -45,26 +45,59 @@ function stateOf(b,cap){
 /* Lieu de la session : sélecteur avec favoris ; repris par l'historique, les groupes et les notifications des potes */
 const PIN=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`;
 async function loadPlace(){ try{ S.place=await api("GET","/api/me/place") }catch(e){} }
+/* position des favoris, gardée seulement sur ce téléphone (jamais envoyée) : pour proposer « Chez moi » quand on y revient */
+const geoFavs=()=>ls.get("yd_placegeo",{});
+const fmtD=d=>d<1000?`${Math.round(d/10)*10||10} m`:`${(d/1000).toFixed(1).replace(".",",")} km`;
+function distM(a,b,c,d){ const R=6371e3,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,h=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2; return 2*R*Math.asin(Math.sqrt(h)) }
+function favHere(pos){ if(!pos) return null; const G=geoFavs(); let best=null;
+  for(const f of (S.place?.places||[])){ const g=G[f.toLowerCase()]; if(!g) continue; const d=distM(pos.lat,pos.lon,g[0],g[1]); if(d<=Math.max(120,pos.acc||0)&&(!best||d<best.d)) best={name:f,d} }
+  return best }
+function locate(silent){
+  if(!navigator.geolocation){ if(!silent) S.near={err:"La localisation n'est pas disponible sur cet appareil."}; render(); return }
+  S.near={busy:1}; render();
+  navigator.geolocation.getCurrentPosition(async p=>{
+    const pos={lat:p.coords.latitude,lon:p.coords.longitude,acc:Math.round(p.coords.accuracy||0),t:Date.now()}; S.pos=pos;
+    try{ const r=await api("GET",`/api/places/near?lat=${pos.lat.toFixed(5)}&lon=${pos.lon.toFixed(5)}`); S.near={list:r.places,acc:pos.acc} }
+    catch(e){ S.near={err:e.message,list:[]} }
+    render();
+  },e=>{ S.near=silent?null:{err:e.code===1?"Localisation refusée : autorisez-la dans les réglages du navigateur, ou choisissez un favori.":"Position introuvable pour l'instant. Choisissez un favori ou tapez le lieu."}; render() },
+  {enableHighAccuracy:true,timeout:12000,maximumAge:60000});
+}
 function viewPlace(){
   const P=S.place; if(!P) return "";
   const head=`<button class="placebtn${P.place?" set":""}" id="placeBtn" aria-expanded="${!!S.placeOpen}">${PIN}<span data-noi18n>${P.place?esc(P.place):""}</span>${P.place?"":"<span>Où êtes-vous ?</span>"}<small>${S.placeOpen?"Fermer":P.place?"Changer":"Indiquer le lieu"}</small></button>`;
   if(!S.placeOpen) return head;
+  const N=S.near, here=favHere(S.pos&&Date.now()-S.pos.t<10*MIN?S.pos:null);
+  const favs=P.places.some(f=>f.toLowerCase()==="chez moi")?P.places:[...P.places,"Chez moi"];
   return head+`<div class="card placecard">
-   ${P.places.length?`<span class="label">Favoris${S.placeEdit?" · touchez × pour retirer":""}</span><div class="pfavs">${P.places.map((f,i)=>`<span class="pfav${P.place===f?" on":""}"><button data-pl="${i}" data-noi18n>${esc(f)}</button>${S.placeEdit?`<button class="x" data-plx="${i}" aria-label="Retirer ce favori">×</button>`:""}</span>`).join("")}</div>`:`<span class="muted" style="font-size:13px">Vos lieux favoris apparaîtront ici.</span>`}
-   <div class="row" style="flex-wrap:nowrap"><input id="placeIn" maxlength="40" placeholder="Autre lieu : bar, chez Paul…" style="flex:1;min-width:0"><button class="btn small" id="placeOk">OK</button></div>
+   ${here&&P.place!==here.name?`<button class="phere" data-plname="${esc(here.name)}">${PIN}<span>Vous êtes <b data-noi18n>${esc(here.name)}</b> ?</span><small>Oui</small></button>`:""}
+   <button class="btn ghost small" id="placeNear" ${N&&N.busy?"disabled":""}>${N&&N.busy?"Recherche autour de vous…":"Autour de moi : bars, restaurants…"}</button>
+   ${N&&N.err?`<span class="muted" style="font-size:13px">${esc(N.err)}</span>`:""}
+   ${N&&N.list?(N.list.length?`<div class="plist">${N.list.map((x,i)=>`<button data-pn="${i}"><b data-noi18n>${esc(x.name)}</b><span>${esc(x.kind)} · ${fmtD(x.d)}</span></button>`).join("")}</div>${N.acc>150?`<span class="muted" style="font-size:12px">Position approximative (± ${fmtD(N.acc)}) : vérifiez le lieu.</span>`:""}`:`<span class="muted" style="font-size:13px">Aucun bar ni restaurant connu tout près. Lieu privé ? Choisissez « Chez moi » ou tapez-le.</span>`):""}
+   <span class="label">Favoris${S.placeEdit?" · touchez × pour retirer":""}</span><div class="pfavs">${favs.map(f=>{ const i=P.places.indexOf(f); return `<span class="pfav${P.place===f?" on":""}"><button data-plname="${esc(f)}" data-noi18n>${esc(f)}</button>${S.placeEdit&&i>=0?`<button class="x" data-plx="${i}" aria-label="Retirer ce favori">×</button>`:""}</span>` }).join("")}</div>
+   <div class="row" style="flex-wrap:nowrap"><input id="placeIn" maxlength="40" placeholder="Autre lieu : chez Paul, camping…" style="flex:1;min-width:0"><button class="btn small" id="placeOk">OK</button></div>
    <label class="toggle"><span>Ajouter aux favoris</span><input type="checkbox" id="placeFav" checked></label>
    <div class="row" style="justify-content:space-between">${P.place?`<button class="link" id="placeNone">Aucun lieu</button>`:"<span></span>"}${P.places.length?`<button class="link" id="placeEdit">${S.placeEdit?"Terminé":"Gérer les favoris"}</button>`:""}</div>
-   <span class="muted" style="font-size:12px">Le lieu vaut pour la session en cours et les verres des 10 h qui suivent. Vos amis et vos groupes le voient (« Kiki remet le facteur sur le vélo – à La Folie Douce »).</span>
+   <span class="muted" style="font-size:12px">Le lieu vaut pour la session en cours et les verres des 10 h qui suivent. Vos amis et vos groupes le voient (« Kiki remet le facteur sur le vélo – à La Folie Douce »). Votre position sert seulement à la recherche : elle n'est pas enregistrée ; celle de vos favoris reste sur ce téléphone.</span>
   </div>`;
 }
 async function setPlace(body,msg){
-  try{ S.place=await api("PUT","/api/me/place",body); S.placeOpen=false; S.placeEdit=false; hubDirty("soirees","groupes"); if(msg) snack(msg,S.place.place||""); if(S.screen==="home") loadLive().then(render).catch(render); else render() }
+  try{
+    S.place=await api("PUT","/api/me/place",body);
+    /* retient la position de ce favori sur le téléphone, si on vient de se localiser */
+    if(body.place&&S.pos&&Date.now()-S.pos.t<10*MIN&&S.pos.acc<=200&&S.place.places.includes(body.place)){ const G=geoFavs(); G[body.place.toLowerCase()]=[+S.pos.lat.toFixed(5),+S.pos.lon.toFixed(5)]; ls.set("yd_placegeo",G) }
+    S.placeOpen=false; S.placeEdit=false; S.near=null; hubDirty("soirees","groupes"); if(msg) snack(msg,S.place.place||"");
+    if(S.screen==="home") loadLive().then(render).catch(render); else render() }
   catch(e){ snack("Lieu non enregistré",e.message,{err:1}) }
 }
 function bindPlace(){
   const b=$("#placeBtn"); if(!b) return; const on=(id,f)=>{const el=$("#"+id); if(el) el.onclick=f};
-  b.onclick=()=>{ S.placeOpen=!S.placeOpen; S.placeEdit=false; render(); if(S.placeOpen&&!S.place.places.length) $("#placeIn")?.focus() };
-  document.querySelectorAll("[data-pl]").forEach(x=>x.onclick=()=>setPlace({place:S.place.places[+x.dataset.pl]},"Lieu noté"));
+  b.onclick=()=>{ S.placeOpen=!S.placeOpen; S.placeEdit=false; S.near=null; render();
+    /* localisation déjà autorisée et des favoris situés : on cherche tout de suite, sans rien demander */
+    if(S.placeOpen&&navigator.permissions&&Object.keys(geoFavs()).length) navigator.permissions.query({name:"geolocation"}).then(r=>{ if(r.state==="granted"&&S.placeOpen) locate(true) }).catch(()=>{}) };
+  on("placeNear",()=>locate(false));
+  document.querySelectorAll("[data-pn]").forEach(x=>x.onclick=()=>setPlace({place:S.near.list[+x.dataset.pn].name,fav:$("#placeFav").checked},"Lieu noté"));
+  document.querySelectorAll("[data-plname]").forEach(x=>x.onclick=()=>setPlace({place:x.dataset.plname,fav:true},"Lieu noté"));
   document.querySelectorAll("[data-plx]").forEach(x=>x.onclick=()=>{ const favs=S.place.places.filter((_,i)=>i!==+x.dataset.plx); api("PUT","/api/me/place",{favs}).then(r=>{S.place=r;render()}).catch(e=>snack("Favori non retiré",e.message,{err:1})) });
   const ok=()=>{ const v=($("#placeIn").value||"").trim(); if(!v){ flash("Lieu vide","Tapez un nom de lieu ou choisissez un favori."); return } setPlace({place:v,fav:$("#placeFav").checked},"Lieu noté") };
   on("placeOk",ok); const i=$("#placeIn"); if(i) i.onkeydown=e=>{ if(e.key==="Enter") ok() };

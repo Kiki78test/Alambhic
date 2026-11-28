@@ -15,7 +15,7 @@ app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("X-Frame-Options", "DENY");
-  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(self)");
   next();
 });
 
@@ -36,6 +36,7 @@ require("./push").routes(app, auth);
 badges.routes(app, auth);
 require("./help").routes(app);
 const expr = require("./expr");
+require("./places").routes(app);
 require("./conso").routes(app, { activeParty: parties.activeParty,
   drinkAdded: (uid, code) => { if (code) parties.broadcast(code).catch(() => {}); parties.rebroadcastFor(uid).catch(() => {}); expr.check(uid); } });
 

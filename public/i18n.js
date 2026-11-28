@@ -394,6 +394,10 @@ Gérer les favoris|Manage favourites|Gestionar favoritos|Gerir favoritos
 Terminé|Done|Hecho|Concluído
 Lieu noté|Place saved|Lugar guardado|Local guardado
 Lieu retiré|Place removed|Lugar quitado|Local removido
+Autour de moi : bars, restaurants…|Near me: bars, restaurants…|Cerca de mí: bares, restaurantes…|Perto de mim: bares, restaurantes…
+Recherche autour de vous…|Searching around you…|Buscando a tu alrededor…|A procurar à sua volta…
+Chez moi|At home|En casa|Em casa
+Oui|Yes|Sí|Sim
 Vos lieux favoris apparaîtront ici.|Your favourite places will appear here.|Tus lugares favoritos aparecerán aquí.|Os seus locais favoritos aparecerão aqui.
 Amis seulement|Friends only|Solo amigos|Só amigos
 Groupes seulement|Groups only|Solo grupos|Só grupos

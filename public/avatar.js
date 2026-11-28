@@ -66,14 +66,18 @@ const AV_CSS=`<style>.av-p{transform-box:view-box;transform-origin:60px 116px;an
 .av-pw{animation:avpw 2.6s ease-in-out infinite}@keyframes avpw{25%{transform:translate(.9px,-.3px)}75%{transform:translate(-.9px,.4px)}}
 .av-bu{animation:avbu 2.2s linear infinite}@keyframes avbu{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(-16px);opacity:0}}
 .av-arm{transform-box:view-box;transform-origin:86px 124px}
-.av-glass{transform-box:view-box;transform-origin:93px 80px}
+.av-glass{transform-box:view-box;transform-origin:92px 64px}
 .avw.sip .av-arm{animation:avsip 1.7s cubic-bezier(.45,0,.3,1) var(--sel,0s) both}
 .avw.sip .av-glass{animation:avsipg 1.7s cubic-bezier(.45,0,.3,1) var(--sel,0s) both}
+.avw.sip .av-ink{animation:avink 1.7s ease-in-out var(--sel,0s) both}
+@keyframes avink{0%,100%{opacity:1}22%,72%{opacity:0}}
 .avw.sip .av-hd{animation:avsiph 1.7s cubic-bezier(.45,0,.3,1) var(--sel,0s) both}
-@keyframes avsip{0%,100%{transform:none}35%,62%{transform:rotate(-24deg)}}
-@keyframes avsipg{0%,100%{transform:none}35%,62%{transform:rotate(-38deg)}}
-@keyframes avsiph{0%,100%{transform:none}35%,62%{transform:rotate(-5deg) translateY(-1px)}}
-@media (prefers-reduced-motion:reduce){.av-p,.av-fl,.av-fl2,.av-wb,.av-sp,.av-br,.av-bl,.av-hic,.av-pw,.av-bu,.avw.sip .av-arm,.avw.sip .av-glass,.avw.sip .av-hd{animation:none}}</style>`;
+@keyframes avsip{0%,100%{transform:none}30%,66%{transform:translate(-6px,6px) rotate(-31deg)}}
+@keyframes avsipg{0%,100%{transform:none}30%,66%{transform:rotate(-42deg)}}
+@keyframes avsiph{0%,100%{transform:none}30%,66%{transform:translateY(-.8px)}}
+@media (prefers-reduced-motion:reduce){.av-p,.av-fl,.av-fl2,.av-wb,.av-sp,.av-br,.av-bl,.av-hic,.av-pw,.av-bu,.avw.sip .av-arm,.avw.sip .av-glass,.avw.sip .av-ink{animation:avink 1.7s ease-in-out var(--sel,0s) both}
+@keyframes avink{0%,100%{opacity:1}22%,72%{opacity:0}}
+.avw.sip .av-hd{animation:none}}</style>`;
 
 function avatar(p,size){
   const n=++AVN, s=p.sim||{cur:0,prev:0,peak:0}, b=s.cur, c=p.color||"#2f8cff", st=avStage(b);
@@ -177,7 +181,7 @@ function avatar(p,size){
    ${st>=5?`<path d="M28 110q6 3 10 1M84 111q6-1 9 2" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="1.5" stroke-linecap="round"/>`:""}
    ${st>=6?`<circle cx="77" cy="113" r="3.2" fill="#8c1d32" opacity=".55"/><circle cx="81" cy="117" r="1.5" fill="#8c1d32" opacity=".5"/>`:""}`;
   /* bras levé : manche, poignet, main qui entoure le verre (doigts devant, pouce sur le côté) */
-  const arm=k?`<g class="av-arm"><path d="M86.5 126Q89.6 110 92.6 99" fill="none" stroke="${INK}" stroke-width="12.4" stroke-linecap="round"/><path d="M86.5 126Q89.6 110 92.6 99" fill="none" stroke="${c}" stroke-width="9.8" stroke-linecap="round"/>
+  const arm=k?`<g class="av-arm"><path d="M86.5 126Q89.6 110 92.6 99" fill="none" stroke="${INK}" stroke-width="12.4" stroke-linecap="round" class="av-ink"/><path d="M86.5 126Q89.6 110 92.6 99" fill="none" stroke="${c}" stroke-width="9.8" stroke-linecap="round"/>
    <path d="M90.6 112Q91.4 106 92.8 101" fill="none" stroke="#000" stroke-opacity=".18" stroke-width="3" stroke-linecap="round"/>
    <path d="M87.4 99.4q5.2 2.2 10.4 0" fill="none" stroke="${INK}" stroke-width="1.1" opacity=".6"/>
    <g class="av-glass">${heldGlass(k,n)}

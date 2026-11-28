@@ -145,7 +145,7 @@ body.isdemo{padding-bottom:200px}
 .meals1{border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
 .mq{border-color:color-mix(in srgb,var(--care) 55%,transparent)}
 .mrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(96px,132px) minmax(0,1.5fr);gap:8px;align-items:center}
-.mrow.add{grid-template-columns:minmax(100px,132px) 1fr auto;margin-top:10px}
+.mrow.add{grid-template-columns:minmax(100px,132px) 1fr;margin-top:10px}
 .mrow input,.mrow select{box-sizing:border-box;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 8px;color:var(--fg);font:inherit;font-size:14px;min-width:0;width:100%}
 @media (max-width:380px){.mrow{grid-template-columns:1fr 1fr}.mrow b{grid-column:1/-1}.mrow.add{grid-template-columns:1fr 1fr}.mrow.add button{grid-column:1/-1}}
 .consent{align-items:flex-start;justify-content:flex-start;font-size:13px;line-height:1.45}.consent input{flex:none;margin-top:2px}.consent a,.note a,#app .muted a{color:var(--accent)}
@@ -375,3 +375,12 @@ nav #navHub{grid-template-columns:repeat(4,1fr)}
 .cpulse{transform-box:fill-box;transform-origin:center;opacity:0;animation:cpulse 1.2s ease-out both}
 @keyframes cpulse{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(4.5)}}
 @media (prefers-reduced-motion:reduce){.cpulse{display:none}}
+/* zones de l'écran Moi */
+.zone{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--zc);border-radius:18px;padding:14px 14px 16px;margin-block:14px 0;gap:12px;box-shadow:0 8px 22px rgba(0,0,0,.18)}
+.zone .zh{display:flex;align-items:center;gap:10px;margin:0;font-size:19px}
+.zone .zi{width:32px;height:32px;flex:none;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--zc) 18%,transparent)}
+.zone .zi svg{width:19px;height:19px;fill:none;stroke:var(--zc);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.zone .list .item:last-child{border-bottom:0}
+.zone .chartbox{margin:0 -6px}
+.zone details.hq summary{font-weight:700}
+.mrow.add .btn{grid-column:1/-1}

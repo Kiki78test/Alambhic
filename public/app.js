@@ -103,7 +103,17 @@ function bindPlace(){
   on("placeOk",ok); const i=$("#placeIn"); if(i) i.onkeydown=e=>{ if(e.key==="Enter") ok() };
   on("placeNone",()=>setPlace({place:""},"Lieu retiré")); on("placeEdit",()=>{ S.placeEdit=!S.placeEdit; render() });
 }
-function viewMe(p,now){
+/* zones de l'écran Moi : carte avec pastille d'icône et couleur propre, pour bien séparer les blocs */
+const ZI={
+ verre:'<path d="M7 3h10l-1.2 7.5a3.8 3.8 0 0 1-7.6 0z"/><path d="M12 14.5V20M8.5 20h7"/>',
+ repas:'<path d="M7 3v7a2 2 0 0 0 2 2v9M7 3v5M10 3v5M11 3v7a2 2 0 0 1-2 2"/><path d="M17 21V3c-2 1.5-3 4-3 7h3"/>',
+ liste:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+ courbe:'<path d="M3 20h18"/><path d="M4 16c3-9 6-9 8-4s4 5 8-6"/>',
+ titre:'<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7"/>'};
+const ZC={verre:"#2f8cff",repas:"#ff9f43",liste:"#5bc88a",courbe:"#c77dff",titre:"#ffcf4a"};
+const zh=(k,t,extra="")=>`<h2 class="zh"><span class="zi"><svg viewBox="0 0 24 24" aria-hidden="true">${ZI[k]}</svg></span><span>${t}</span>${extra}</h2>`;
+const zs=k=>`<section class="zone" style="--zc:${ZC[k]}">`;
+function viewMe(p,now,mid=""){
   const s=p.sim, cap=+my.cap||0.8, [lab,col]=stateOf(s.cur,cap), maxB=Math.max(1.6,cap+0.4);
 
   const std=(s.grams/10).toFixed(1).replace(".",",");
@@ -115,8 +125,8 @@ function viewMe(p,now){
     <div class="row" style="justify-content:space-between"><span class="label">${esc(my.pseudo)} · taux estimé</span><span class="state" style="color:${col}">${lab}</span></div>
     <div class="row merow"><div class="avcol">${alertBtn()}${avx(p,88,lab,"me")}<span class="curt ${cur?cur.kind:""}" title="Titre actuel, visible par vos potes">${cur?esc(cur.title):"Pas encore de titre"}</span></div>${gauge(s.cur,maxB,cap,col,s.cur<s.prev-0.004)}<div class="bac">${fmt(s.cur)}<small>g/L</small></div></div>
     <div class="muted" style="font-size:13px">${sub}. Plafond perso : ${fmt(cap)} g/L.</div>
-  </div></section>${S.alertOpen&&S.cal&&S.cal.alerts.length&&!demo?alertsCard(true):""}
-  <section><h2>${my.sam?"Sam boit de l'eau":"Ajouter un verre"}</h2>
+  </div></section>${S.alertOpen&&S.cal&&S.cal.alerts.length&&!demo?alertsCard(true):""}${mid}
+  ${zs("verre")}${zh("verre",my.sam?"Sam boit de l'eau":"Ajouter un verre")}
   ${demo?"":viewPlace()}
   <div class="field"><span class="label">Bu</span><div class="seg" id="ago">${[[0,"Maintenant"],[15,"il y a 15 min"],[30,"30 min"],[60,"1 h"]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${ago===v}">${l}</button>`).join("")}</div></div>
   ${demo||S.screen!=="party"?"":`<label class="toggle"><span>Je suis Sam ce soir (zéro alcool)</span><input type="checkbox" id="samT" ${my.sam?"checked":""}></label>`}
@@ -124,8 +134,8 @@ function viewMe(p,now){
   ${my.sam?"":`<div class="row"><div class="field" style="flex:1;min-width:90px"><span class="label">Volume (cl)</span><input id="cml" type="number" inputmode="decimal" min="1" max="100" placeholder="15"></div><div class="field" style="flex:1;min-width:90px"><span class="label">Degré (%)</span><input id="cabv" type="number" inputmode="decimal" min="0" max="80" placeholder="13"></div><button class="btn${pend.perso?" "+pend.perso:""}" id="cadd" style="align-self:flex-end">${pend.perso==="ok"?"✓ Noté":pend.perso==="sending"?"Envoi…":"Ajouter"}</button></div>`}
   </section>
   ${viewMeals()}
-  ${titles.length>1?`<section><details class="hq"><summary>Titres de la session (${titles.length})</summary><div class="badges" style="margin-top:8px">${titles.map(e=>`<span class="badge ${e.kind}">${esc(e.title)} · ${hm(e.t)}</span>`).join("")}</div></details></section>`:""}
-  <section><h2>Mes verres</h2>${mine.length?`<div class="list">${mine.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div><button class="x" data-del="${d.id}" aria-label="Supprimer ce verre">×</button></div>`).join("")}</div>`:`<p class="muted">Touchez une boisson ci-dessus pour l'enregistrer. Pensez à l'eau : trois verres débloquent le Chameau.</p>`}</section>${viewMealPop()}`;
+  ${titles.length>1?`${zs("titre")}<details class="hq"><summary>Titres de la session (${titles.length})</summary><div class="badges" style="margin-top:8px">${titles.map(e=>`<span class="badge ${e.kind}">${esc(e.title)} · ${hm(e.t)}</span>`).join("")}</div></details></section>`:""}
+  ${zs("liste")}${zh("liste","Mes verres")}${mine.length?`<div class="list">${mine.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div><button class="x" data-del="${d.id}" aria-label="Supprimer ce verre">×</button></div>`).join("")}</div>`:`<p class="muted">Touchez une boisson ci-dessus pour l'enregistrer. Pensez à l'eau : trois verres débloquent le Chameau.</p>`}</section>${viewMealPop()}`;
 }
 /* Courbes sur une fenêtre : soirée (début → fin prévus), session (premier verre → retour à 0), groupe (48 h). */
 /* Courbes sur une fenêtre : soirée (début → fin prévus), session (premier verre → retour à 0), groupe (48 h).
@@ -143,7 +153,7 @@ function viewChart(list,now,o={}){
   const id=(o.key||title)+"|"+Math.round(t0/MIN);
   CH[id]={t0,t1,now,ymax,W,H,series:withD.map(p=>({id:p.id,color:p.color,pts:p.sim.pts,cur:p.sim.cur}))};
   const v=CHV[id];
-  return `<section><h2>${esc(title)}</h2><div class="card" style="padding:12px 8px"><div class="chart zoomable" data-ch="${esc(id)}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${chartBody(CH[id],v?v.a:t0,v?v.b:t1)}</svg><span class="zhint"${v?"":" hidden"}><button type="button" class="link" data-zreset>Vue entière</button></span></div></div>
+  return `${o.zone?`${zs("courbe")}${zh("courbe",esc(title))}<div class="chartbox">`:`<section><h2>${esc(title)}</h2><div class="card" style="padding:12px 8px">`}<div class="chart zoomable" data-ch="${esc(id)}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${chartBody(CH[id],v?v.a:t0,v?v.b:t1)}</svg><span class="zhint"${v?"":" hidden"}><button type="button" class="link" data-zreset>Vue entière</button></span></div></div>
   ${list.length>1||o.legend?`<div class="legend">${(o.legend?list:withD).map(p=>`<span><i class="dot" style="background:${p.color}"></i>${o.legend?o.legend(p):`${esc(p.pseudo)} · ${fmt(p.sim.cur)}`}</span>`).join("")}</div>`:""}
   <p class="muted" style="font-size:13px">${o.note||"Trait plein : taux estimé jusqu'à maintenant. Pointillés : redescente prévue si plus personne ne boit."} Pincez pour zoomer, glissez pour vous déplacer.</p></section>`;
 }
@@ -337,7 +347,7 @@ function mealQuestion(){
 }
 function viewMeals(){
   const ms=myMeals().slice().sort((a,b)=>b.t-a.t);
-  return `<section><h2>Mes repas</h2>
+  return `${zs("repas")}${zh("repas","Mes repas")}
   ${ms.length?`<div class="list">${ms.map(m=>`<div class="item"><span class="t">${hm(m.t)}</span><div class="grow"><b>${MEALS[m.kind]?.l||m.kind}</b> <span class="muted">${MEALS[m.kind]?.d||""}</span></div><button class="x" data-mdel="${m.id??m.t}" aria-label="Supprimer ce repas">×</button></div>`).join("")}</div>`:`<p class="muted" style="margin:0">Aucun repas noté ces dernières 24 h : l'alcool est compté à jeun.</p>`}
   <div class="mrow add"><input type="time" id="mAddT" value="" aria-label="Heure du repas">${kindSelect("mAddK","full",false)}<button class="btn small" id="mAdd">Ajouter un repas</button></div></section>`;
 }
@@ -668,8 +678,7 @@ function viewSolo(now){
   my={pseudo:p.pseudo,cap:p.cap,sam:p.sam,mealsOk:p.mealsOk,drinks:p.drinks};
   return `<div class="hero" style="padding-bottom:0"><h1>Salut ${esc(S.user.pseudo)} !</h1></div>
   ${pa?`<section><div class="card pnow"><div><span class="label" style="color:var(--accent)">Soirée en cours</span><b>${esc(pa.name||"Soirée "+pa.code)} · ${esc(pa.code)}</b><span class="muted" style="font-size:13px">Vos verres comptent aussi dans cette soirée.</span></div><button class="btn small" data-open="${esc(pa.code)}">Ouvrir</button></div></section>`:""}
-  ${viewMe(p,now)}
-  ${p.sim.pts.length>1?viewChart([p],now,{title:"Ma session en cours",t0:p.sessionStart-10*MIN,note:"La session a commencé à votre premier verre d'alcool ; elle se terminera quand votre taux sera revenu à 0."}):""}`;
+  ${viewMe(p,now,p.sim.pts.length>1?viewChart([p],now,{title:"Ma session en cours",zone:1,t0:p.sessionStart-10*MIN,note:"La session a commencé à votre premier verre d'alcool ; elle se terminera quand votre taux sera revenu à 0."}):"")}`;
 }
 
 /* Sessions : du premier verre au retour à 0 */

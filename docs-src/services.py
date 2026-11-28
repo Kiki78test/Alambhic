@@ -17,6 +17,7 @@ PREVUS = [
     ("Cloudflare", "Nom de domaine, DNS, protection.", "Domaine ~10 à 15 €/an", "Trafic du site (proxy)", "Comme airmonylive.com."),
     ("Firebase Cloud Messaging", "Notifications natives dans l'appli Android (l'enveloppe ne reçoit pas les push du navigateur).", "Gratuit", "Jeton de l'appareil, texte des notifications", "Projet Firebase, fichier <code>google-services.json</code>, variable <code>FCM_SERVICE_ACCOUNT</code>, comme Airmony."),
     ("UptimeRobot", "Alerte par e-mail si le site ne répond plus.", "Gratuit", "Aucune", "Sonde sur <code>https://alambhic.onrender.com/healthz</code>, comme Airmony."),
+    ("Rive", "Avatar animé (personnage articulé, 10 stades, gorgée) lu par le moteur web de Rive.", "Offre gratuite pour l'éditeur au départ ; animation à faire réaliser (devis)", "Aucune (fichier d'animation servi par notre site)", "Cahier des charges : docs « Cahier des charges Rive ». Bibliothèque @rive-app/canvas (environ 150 Ko) à charger seulement si le fichier existe."),
     ("Google Play Console", "Publication de l'APK.", "25 $ une fois", "Fiche de l'appli", "Compte déjà utilisé pour vos autres applis."),
 ]
 

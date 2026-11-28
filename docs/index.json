@@ -42,6 +42,13 @@
   "cat": "🎤 Présentation et guides"
  },
  {
+  "file": "02-presentation/cahier-des-charges-rive.pdf",
+  "title": "Cahier des charges Rive",
+  "desc": "Avatar animé à faire réaliser dans Rive : personnage, 10 stades, gestes, verres, entrées de la machine à états, contraintes, étapes",
+  "date": "2026-11-28",
+  "cat": "🎤 Présentation et guides"
+ },
+ {
   "file": "03-business/business-plan.pdf",
   "title": "Business plan",
   "desc": "Cibles, sources de revenus (Premium, achats, publicité cohérente, bars, événements, sponsors), hypothèses chiffrées, mise sur le marché, risques, idées à creuser",

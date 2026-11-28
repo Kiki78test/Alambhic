@@ -94,6 +94,7 @@ A_FAIRE = [
     ("ok", "<b>Lieu des sessions</b> : sélecteur avec favoris (écran Moi), affiché dans l'historique, les groupes et les notifications des potes."),
     ("ok", "<b>Lieu autour de moi</b> : bars et restaurants proches (OpenStreetMap), « Chez moi », position des favoris gardée sur le téléphone."),
     ("ok", "<b>Repas facultatifs</b> : fenêtre « Votre dernier repas ? » au premier verre d'une session (passer ou fermer possible)."),
+    ("todo", "<b>Avatar animé Rive</b> : envoyer le cahier des charges (docs « Cahier des charges Rive ») à 2-3 animateurs, choisir, valider le dessin des 10 stades ; ensuite intégration dans l'appli (l'avatar actuel reste en attendant)."),
     ("todo", "<b>Tester « Autour de moi »</b> en vrai (le serveur de test ne joint pas OpenStreetMap) : dans un bar, chez soi, et sur l'APK (nouvelle autorisation de localisation)."),
     ("todo", "<b>Tester les expressions des potes</b> sur deux téléphones (un ami, un groupe) : réglage amis / groupes / tout / rien respecté, pas de rafale (30 min)."),
     ("todo", "<b>Tester le zoom des courbes</b> au doigt (pincer, glisser, double-toucher) sur Android et iPhone."),

@@ -42,6 +42,34 @@ function stateOf(b,cap){
   return ["Sobre","var(--ok)"];
 }
 
+/* Lieu de la session : sélecteur avec favoris ; repris par l'historique, les groupes et les notifications des potes */
+const PIN=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`;
+async function loadPlace(){ try{ S.place=await api("GET","/api/me/place") }catch(e){} }
+function viewPlace(){
+  const P=S.place; if(!P) return "";
+  const head=`<button class="placebtn${P.place?" set":""}" id="placeBtn" aria-expanded="${!!S.placeOpen}">${PIN}<span data-noi18n>${P.place?esc(P.place):""}</span>${P.place?"":"<span>Où êtes-vous ?</span>"}<small>${S.placeOpen?"Fermer":P.place?"Changer":"Indiquer le lieu"}</small></button>`;
+  if(!S.placeOpen) return head;
+  return head+`<div class="card placecard">
+   ${P.places.length?`<span class="label">Favoris${S.placeEdit?" · touchez × pour retirer":""}</span><div class="pfavs">${P.places.map((f,i)=>`<span class="pfav${P.place===f?" on":""}"><button data-pl="${i}" data-noi18n>${esc(f)}</button>${S.placeEdit?`<button class="x" data-plx="${i}" aria-label="Retirer ce favori">×</button>`:""}</span>`).join("")}</div>`:`<span class="muted" style="font-size:13px">Vos lieux favoris apparaîtront ici.</span>`}
+   <div class="row" style="flex-wrap:nowrap"><input id="placeIn" maxlength="40" placeholder="Autre lieu : bar, chez Paul…" style="flex:1;min-width:0"><button class="btn small" id="placeOk">OK</button></div>
+   <label class="toggle"><span>Ajouter aux favoris</span><input type="checkbox" id="placeFav" checked></label>
+   <div class="row" style="justify-content:space-between">${P.place?`<button class="link" id="placeNone">Aucun lieu</button>`:"<span></span>"}${P.places.length?`<button class="link" id="placeEdit">${S.placeEdit?"Terminé":"Gérer les favoris"}</button>`:""}</div>
+   <span class="muted" style="font-size:12px">Le lieu vaut pour la session en cours et les verres des 10 h qui suivent. Vos amis et vos groupes le voient (« Kiki remet le facteur sur le vélo – à La Folie Douce »).</span>
+  </div>`;
+}
+async function setPlace(body,msg){
+  try{ S.place=await api("PUT","/api/me/place",body); S.placeOpen=false; S.placeEdit=false; hubDirty("soirees","groupes"); if(msg) snack(msg,S.place.place||""); if(S.screen==="home") loadLive().then(render).catch(render); else render() }
+  catch(e){ snack("Lieu non enregistré",e.message,{err:1}) }
+}
+function bindPlace(){
+  const b=$("#placeBtn"); if(!b) return; const on=(id,f)=>{const el=$("#"+id); if(el) el.onclick=f};
+  b.onclick=()=>{ S.placeOpen=!S.placeOpen; S.placeEdit=false; render(); if(S.placeOpen&&!S.place.places.length) $("#placeIn")?.focus() };
+  document.querySelectorAll("[data-pl]").forEach(x=>x.onclick=()=>setPlace({place:S.place.places[+x.dataset.pl]},"Lieu noté"));
+  document.querySelectorAll("[data-plx]").forEach(x=>x.onclick=()=>{ const favs=S.place.places.filter((_,i)=>i!==+x.dataset.plx); api("PUT","/api/me/place",{favs}).then(r=>{S.place=r;render()}).catch(e=>snack("Favori non retiré",e.message,{err:1})) });
+  const ok=()=>{ const v=($("#placeIn").value||"").trim(); if(!v){ flash("Lieu vide","Tapez un nom de lieu ou choisissez un favori."); return } setPlace({place:v,fav:$("#placeFav").checked},"Lieu noté") };
+  on("placeOk",ok); const i=$("#placeIn"); if(i) i.onkeydown=e=>{ if(e.key==="Enter") ok() };
+  on("placeNone",()=>setPlace({place:""},"Lieu retiré")); on("placeEdit",()=>{ S.placeEdit=!S.placeEdit; render() });
+}
 function viewMe(p,now){
   const s=p.sim, cap=+my.cap||0.8, [lab,col]=stateOf(s.cur,cap), maxB=Math.max(1.6,cap+0.4);
 
@@ -57,6 +85,7 @@ function viewMe(p,now){
     <div class="muted" style="font-size:13px">${sub}. Plafond perso : ${fmt(cap)} g/L.</div>
   </div></section>${S.alertOpen&&S.cal&&S.cal.alerts.length&&!demo?alertsCard(true):""}
   <section><h2>${my.sam?"Sam boit de l'eau":"Ajouter un verre"}</h2>
+  ${demo?"":viewPlace()}
   <div class="field"><span class="label">Bu</span><div class="seg" id="ago">${[[0,"Maintenant"],[15,"il y a 15 min"],[30,"30 min"],[60,"1 h"]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${ago===v}">${l}</button>`).join("")}</div></div>
   ${demo||S.screen!=="party"?"":`<label class="toggle"><span>Je suis Sam ce soir (zéro alcool)</span><input type="checkbox" id="samT" ${my.sam?"checked":""}></label>`}
   ${needMeals?`<div class="banner">Indiquez d'abord vos repas du jour, juste au-dessus : ils changent beaucoup le calcul. L'eau reste disponible.</div>`:""}
@@ -544,7 +573,7 @@ const stdF=v=>(Math.round(v*10)/10).toString().replace(".",",");
 let liveTimer=null;
 const hubStale=t=>!S["_h_"+t];
 function hubDirty(...tabs){ tabs.forEach(t=>{S["_h_"+t]=0}) }
-async function loadLive(){ S.live=await api("GET","/api/me/live"); S._h_moi=Date.now() }
+async function loadLive(){ S.live=await api("GET","/api/me/live"); S._h_moi=Date.now(); S.place={place:S.live.me.place,places:S.live.me.places||[]} }
 async function loadCal(m){ S.cal=await api("GET","/api/me/calendar?month="+(m||S.calMonth||curMonth())); S.calMonth=S.cal.month; S._h_agenda=Date.now() }
 async function loadGroup(){ S.group=await api("GET",`/api/groups/${S.gid}`+(S.gEnd?`?end=${S.gEnd}`:"")) }
 async function loadHub(t){
@@ -608,6 +637,7 @@ function viewSession(s,now){
   const dr=(s.drinks||[]).slice().sort((a,b)=>b.t-a.t);
   return `<section><button class="link" id="sesBack">‹ Mes soirées</button><h2>${esc(dLong(s.start))}</h2>
   ${s.party?`<div class="row" style="justify-content:space-between"><span class="pchip">Soirée ${esc(s.party)}${s.partyName?" · "+esc(s.partyName):""}</span><button class="btn ghost small" data-open="${esc(s.party)}">Voir la soirée</button></div>`:`<span class="pchip solo" style="align-self:flex-start">Solo</span>`}
+  ${s.place?`<span class="pplace big" data-noi18n>${PIN}${esc(s.place)}</span>`:""}
   <div class="stats">
    <div><span>Début</span><b>${hm(s.start)}</b></div><div><span>${s.ongoing?"Retour à 0 prévu":"Retour à 0"}</span><b>${hm(s.end)}</b></div>
    <div><span>Pic</span><b>${fmt(s.peak)}</b>${s.peakT?`<small>à ${hm(s.peakT)}</small>`:""}</div><div><span>Verres standard</span><b>${stdF(s.std)}</b></div>
@@ -678,7 +708,7 @@ function viewGroup(now){
   <section><h2>Les membres${latest?" en ce moment":""}</h2>
   <div class="gmem">${sorted.map(m=>{ const [lab2,col]=stateOf(m.sim.cur,+m.cap||0.8);
     return `<div class="gm"><span class="gbar" style="background:${m.color}"></span>${avx({...m,drinks:[]},52,lab2,"g"+m.id)}
-    <div class="gx"><b data-noi18n>${esc(m.pseudo)}</b>${m.title?`<span class="ltitle ${m.title.kind}">${esc(m.title.title)}</span>`:""}<span class="muted" style="font-size:12px">${stdF(m.std)} verre${m.std>=2?"s":""} standard sur 48 h · ${m.water} eau</span></div>
+    <div class="gx"><b data-noi18n>${esc(m.pseudo)}</b>${m.title?`<span class="ltitle ${m.title.kind}">${esc(m.title.title)}</span>`:""}${m.place?`<span class="pplace" data-noi18n>${PIN}${esc(m.place)}</span>`:""}<span class="muted" style="font-size:12px">${stdF(m.std)} verre${m.std>=2?"s":""} standard sur 48 h · ${m.water} eau</span></div>
     <div class="gv">${latest?`<b style="color:${col}">${fmt(m.sim.cur)}<small>g/L</small></b><span style="color:${col}">${lab2}</span>`:`<b>${fmt(m.sim.peak)}<small>g/L</small></b><span class="muted">pic</span>`}</div></div>` }).join("")}</div></section>
   <section><div class="card"><span class="label">Inviter dans le groupe</span><div class="row" style="justify-content:space-between;margin-top:6px"><b class="code" style="font-family:var(--display);font-size:26px;letter-spacing:.15em">${esc(G.code)}</b><button class="btn ghost small" id="gShare">Partager le lien</button></div></div>
   ${S.gLeave?`<div class="card"><b>Quitter ce groupe ?</b><span class="muted" style="font-size:13px">Les autres ne verront plus vos courbes.</span><div class="row"><button class="btn small" id="gLeaveYes">Oui, quitter</button><button class="btn ghost small" id="gLeaveNo">Annuler</button></div></div>`:`<button class="link danger" id="gLeave" style="align-self:flex-start">Quitter le groupe</button>`}</section>`;
@@ -694,7 +724,7 @@ function viewNights(now){
   const items=[...S.sessions.map(s=>({t:s.start,s})),...S.parties.filter(p=>p.endsAt<=now-6*H_MS&&!mine.has(p.code)).map(p=>({t:p.startsAt,p}))]
     .filter(x=>f==="tout"||(f==="solo"?x.s&&!x.s.party:(x.p||x.s.party))).sort((a,b)=>b.t-a.t);
   const pRow=p=>`<button class="scard" data-open="${esc(p.code)}"><div class="sd"><b>${esc(p.name||"Soirée "+p.code)}</b><span>${esc(dShort(p.startsAt))} ${hm(p.startsAt)} → ${p.endsAt-p.startsAt>20*H_MS?esc(dShort(p.endsAt))+" ":""}${hm(p.endsAt)}</span><span class="pchip">Soirée ${esc(p.code)} · ${p.n} joueur${p.n>1?"s":""}</span></div><div class="sv"><b>${now<p.startsAt?"à venir":now<=p.endsAt?"en cours":"terminée"}</b><span>${now<=p.endsAt?"ouvrir":"pas de verre noté"}</span></div></button>`;
-  const sRow=s=>`<button class="scard${s.ongoing?" on":""}" data-ses="${s.id}"><div class="sd"><b>${esc(dShort(s.start))}</b><span>${hm(s.start)} → ${s.ongoing?"en cours":hm(s.end)}</span>${s.party?`<span class="pchip">Soirée ${esc(s.party)}${s.partyName?" · "+esc(s.partyName):""}</span>`:`<span class="pchip solo">Solo</span>`}</div>${sparkS(s)}<div class="sv"><b>${fmt(s.peak)}</b><span>pic · ${stdF(s.std)} v.</span></div></button>`;
+  const sRow=s=>`<button class="scard${s.ongoing?" on":""}" data-ses="${s.id}"><div class="sd"><b>${esc(dShort(s.start))}</b><span>${hm(s.start)} → ${s.ongoing?"en cours":hm(s.end)}</span>${s.party?`<span class="pchip">Soirée ${esc(s.party)}${s.partyName?" · "+esc(s.partyName):""}</span>`:`<span class="pchip solo">Solo</span>`}${s.place?`<span class="pplace" data-noi18n>${PIN}${esc(s.place)}</span>`:""}</div>${sparkS(s)}<div class="sv"><b>${fmt(s.peak)}</b><span>pic · ${stdF(s.std)} v.</span></div></button>`;
   const st=S.pStart||defaultStart(), en=S.pEnd||st+8*H_MS;
   return `<section><h2>Soirées</h2>${cur.length?`<div class="slist">${cur.map(pRow).join("")}</div>`:""}
   <div class="row"><button class="btn${S.pForm?" ghost":""}" id="pFormBtn" style="flex:1">${S.pForm?"Fermer":"Créer une soirée"}</button></div>
@@ -869,7 +899,7 @@ async function addDrink(d,key,rect){
 function bindMain(){
   document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>addDrink(PRESETS[+b.dataset.p],"p"+b.dataset.p,b.getBoundingClientRect()));
   document.querySelectorAll("#ago button").forEach(b=>b.onclick=()=>{ago=+b.dataset.v;render()});
-  bindMeals(); animateGauge(); rememberStates();
+  bindMeals(); bindPlace(); animateGauge(); rememberStates();
   document.querySelectorAll("[data-tk]").forEach(e=>{const [id,k]=e.dataset.tk.split("|");trendPrev[id]=k});
   document.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{S.rankMode=b.dataset.rm;render()});
   const ca=$("#cadd"); if(ca) ca.onclick=()=>{const ml=parseFloat($("#cml").value.replace(",","."))*10, abv=parseFloat($("#cabv").value.replace(",","."));if(!(ml>0&&ml<=1000&&abv>=0&&abv<=80)){flash("Verre incomplet","Indiquez un volume en cl et un degré entre 0 et 80 %.");return}addDrink({l:abv?"Verre perso":"Sans alcool",ml,abv,water:abv?0:1},"perso")};
@@ -923,7 +953,7 @@ async function afterLogin(){
   const r=await api("GET","/api/me"); S.user=r.user; S.me=r.user.id; S.err="";
   if(r.user.lang&&r.user.lang!==I18N.lang) I18N.set(r.user.lang); else if(!r.user.lang) api("PUT","/api/me/lang",{lang:I18N.lang}).catch(()=>{});
   if(!profileReady(S.user)){ S.screen="profile"; render(); return }
-  loadWeek().then(()=>{ if(S.screen==="home") render() }); loadBadges();
+  loadWeek().then(()=>{ if(S.screen==="home") render() }); loadBadges(); loadPlace().then(()=>render());
   const c=await api("GET","/api/parties/current");
   if(S.pendingGroup){ try{ const g=await api("POST","/api/groups/join",{code:S.pendingGroup}); S.gid=g.id; S.pendingGroup=null; ls.set("yd_grp",""); openHub("groupes"); snack("Groupe rejoint","Vous voyez maintenant les courbes de ses membres."); return }catch(e){ S.pendingGroup=null; ls.set("yd_grp",""); snack("Groupe",e.message,{err:1}) } }
   if(c.code) enterParty(c.code); else openHub("moi");

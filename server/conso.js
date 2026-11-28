@@ -4,6 +4,7 @@
    - les SESSIONS : du premier verre d'alcool jusqu'au retour à 0 g/L (découpage automatique) ;
    - les SOIRÉES à code : début et fin prévus à l'avance (server/parties.js) ;
    - les GROUPES de potes : les courbes de tous les membres par créneaux de 48 h.
+   Chaque verre garde le LIEU choisi (sélecteur avec favoris), repris par la session, les groupes et les notifications.
    Plus l'AGENDA : verres standard par jour, en couleur (vert 1-2, orange 3-5, rouge 6+), et alertes bienveillantes. */
 const YD = require("../public/engine.js");
 const { q } = require("./db");
@@ -17,9 +18,13 @@ const parisDay = t => new Date(t).toLocaleDateString("sv-SE", { timeZone: "Europ
 let hooks = { drinkAdded: () => {}, activeParty: async () => null };
 
 const profileOf = u => ({ id: u.id, pseudo: u.pseudo, sex: u.sex, age: u.age, height: u.height, weight: u.weight, cap: u.cap });
-const mapDrink = d => ({ id: +d.id, t: +d.t, l: d.label, ml: d.ml, abv: d.abv, fed: d.fed, party: d.party_code || null, ...(d.water ? { water: 1 } : {}) });
+const mapDrink = d => ({ id: +d.id, t: +d.t, l: d.label, ml: d.ml, abv: d.abv, fed: d.fed, party: d.party_code || null, ...(d.water ? { water: 1 } : {}), ...(d.place ? { place: d.place } : {}) });
+/* lieu d'une liste de verres : le dernier lieu noté */
+const placeOf = list => { for (let i = list.length - 1; i >= 0; i--) if (list[i].place) return list[i].place; return null; };
+const PLACE_TTL = 10 * 3600e3;   // le lieu choisi vaut pour les verres des 10 h qui suivent
+const cleanPlace = v => String(v || "").replace(/[\u0000-\u001f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 40);
 async function drinksOf(uids, from, to) {
-  const { rows } = await q(`SELECT id, user_id, party_code, t, label, ml, abv, fed, water FROM drinks
+  const { rows } = await q(`SELECT id, user_id, party_code, t, label, ml, abv, fed, water, place FROM drinks
     WHERE user_id = ANY($1) AND deleted_at IS NULL AND t >= to_timestamp($2/1000.0) AND t <= to_timestamp($3/1000.0) ORDER BY t`, [uids, from, to]);
   return rows;
 }
@@ -53,11 +58,13 @@ function sessionView(p, list, allDrinks, meals, now, withPts) {
   list.forEach(d => { if (d.party) parties[d.party] = (parties[d.party] || 0) + 1; });
   const party = Object.keys(parties).sort((a, b) => parties[b] - parties[a])[0] || null;
   return { id: start, start, end, ongoing, peak: Math.round(sim.peak * 1000) / 1000, peakT: sim.peakT, cur: ongoing ? sim.cur : 0,
-    std: Math.round(list.reduce((s, d) => s + STD(d), 0) * 10) / 10, n: list.length, water: inWin.filter(d => d.water).length, party,
+    std: Math.round(list.reduce((s, d) => s + STD(d), 0) * 10) / 10, n: list.length, water: inWin.filter(d => d.water).length, party, place: placeOf(inWin),
     ...(withPts ? { pts: thin(sim.pts, start, end), drinks: inWin } : {}) };
 }
 
-async function userRow(uid) { const { rows } = await q("SELECT id, pseudo, sex, age, height, weight, cap, meals_day::text AS meals_day FROM users WHERE id=$1", [uid]); return rows[0]; }
+async function userRow(uid) { const { rows } = await q("SELECT id, pseudo, sex, age, height, weight, cap, meals_day::text AS meals_day, places, cur_place, cur_place_t FROM users WHERE id=$1", [uid]); return rows[0]; }
+/* lieu en cours : celui choisi il y a moins de 10 h */
+const curPlace = (u, now = Date.now()) => u.cur_place && u.cur_place_t && now - +u.cur_place_t < PLACE_TTL ? u.cur_place : null;
 
 /* état en direct « solo » : la session en cours (ou rien si on est à 0) */
 async function live(uid, now = Date.now()) {
@@ -73,7 +80,8 @@ async function live(uid, now = Date.now()) {
   const mealsOk = u.meals_day === parisDay(now) || meals.some(m => m.t > now - 16 * H) || (party && party.meals_ok);
   return { now, party, me: { id: uid, pseudo: u.pseudo, cap: u.cap, sam: !!(party && party.sam), mealsOk: !!mealsOk, drinks: curDrinks,
     sim: { pts: view && view.ongoing ? view.pts : [], cur: sim.cur, prev: sim.prev, peak: sim.peak, peakT: sim.peakT, zeroT: sim.zeroT, grams: sim.grams },
-    ev: view && view.ongoing ? ev : [], score, sessionStart: view && view.ongoing ? view.start : null } };
+    ev: view && view.ongoing ? ev : [], score, sessionStart: view && view.ongoing ? view.start : null,
+    place: (view && view.ongoing && view.place) || curPlace(u, now), places: u.places || [] } };
 }
 
 /* ajout d'un verre (seul ou en soirée) : mêmes règles anti-triche partout */
@@ -91,8 +99,9 @@ async function addDrink(uid, b) {
     const { rows: recent } = await q(`SELECT count(*)::int AS n FROM drinks WHERE user_id=$1 AND abv>0 AND deleted_at IS NULL AND created_at > now() - interval '10 minutes'`, [uid]);
     if (recent[0].n >= 6) throw Object.assign(new Error("Six verres d'alcool en dix minutes : ce rythme n'est pas crédible. Patientez un peu."), { status: 429 });
   }
-  const { rows } = await q(`INSERT INTO drinks(user_id, party_code, t, label, ml, abv, fed, water) VALUES($1,$2, now() - make_interval(mins => $3), $4,$5,$6,false,$7) RETURNING id, t`,
-    [uid, party ? party.code : null, ago, label, ml, abv, water]);
+  const place = curPlace(await userRow(uid));
+  const { rows } = await q(`INSERT INTO drinks(user_id, party_code, t, label, ml, abv, fed, water, place) VALUES($1,$2, now() - make_interval(mins => $3), $4,$5,$6,false,$7,$8) RETURNING id, t`,
+    [uid, party ? party.code : null, ago, label, ml, abv, water, place]);
   if (party) await q("UPDATE parties SET last_activity=now() WHERE code=$1", [party.code]);
   hooks.drinkAdded(uid, party && party.code);
   return { ok: true, id: +rows[0].id, t: +rows[0].t, party: party ? party.code : null };
@@ -105,6 +114,22 @@ async function delDrink(uid, id, undo) {
   const { rows } = await q(`UPDATE drinks SET deleted_at=now() WHERE id=$1 AND user_id=$2 AND deleted_at IS NULL AND created_at > now() - interval '3 hours' RETURNING party_code`, [id, uid]);
   if (!rows[0]) throw Object.assign(new Error("Ce verre ne peut plus être supprimé (plus de 3 h)."), { status: 400 });
   hooks.drinkAdded(uid, rows[0].party_code);
+}
+
+/* choisir le lieu : vaut pour la session en cours (verres déjà notés compris) et les verres des 10 h qui suivent */
+async function setPlace(uid, b) {
+  const place = cleanPlace(b.place), u = await userRow(uid);
+  let favs = Array.isArray(u.places) ? u.places.slice() : [];
+  if (Array.isArray(b.favs)) favs = b.favs.map(cleanPlace).filter(Boolean);
+  if (place && b.fav) favs = [place, ...favs.filter(f => f.toLowerCase() !== place.toLowerCase())];
+  favs = [...new Map(favs.map(f => [f.toLowerCase(), f])).values()].slice(0, 12);
+  if ("place" in b) {
+    await q("UPDATE users SET cur_place=$2, cur_place_t=now(), places=$3::jsonb WHERE id=$1", [uid, place || null, JSON.stringify(favs)]);
+    const l = await live(uid);
+    if (l.me.sessionStart) await q("UPDATE drinks SET place=$3 WHERE user_id=$1 AND deleted_at IS NULL AND t >= to_timestamp($2/1000.0) - interval '30 minutes'", [uid, l.me.sessionStart, place || null]);
+  } else await q("UPDATE users SET places=$2::jsonb WHERE id=$1", [uid, JSON.stringify(favs)]);
+  const n = await userRow(uid);
+  return { place: curPlace(n), places: n.places || [] };
 }
 
 /* agenda : verres standard par jour (heure de Paris) ; alertes bienveillantes */
@@ -147,7 +172,7 @@ async function groupView(gid, end) {
     const tNow = Math.min(now, end), simL = YD.simulate({ ...p, drinks: lastD, meals }, tNow);
     const ev = lastD.length ? YD.events({ ...p, drinks: lastD, meals, joined: last[0].t }, simL, tNow).filter(e => e.kind !== "info" && e.t >= start && e.t <= end).sort((a, b) => b.t - a.t) : [];
     return { id: m.id, pseudo: m.pseudo, cap: m.cap, sim: { pts: thin(sim.pts, start, end), cur: end >= now ? sim.cur : 0, prev: sim.prev, peak: sim.peak, peakT: sim.peakT, zeroT: sim.zeroT },
-      title: ev[0] ? { title: ev[0].title, kind: ev[0].kind, t: ev[0].t } : null,
+      title: ev[0] ? { title: ev[0].title, kind: ev[0].kind, t: ev[0].t } : null, place: end >= now && simL.cur > 0 ? placeOf(lastD) : null,
       std: Math.round(win.reduce((s, d) => s + STD(d), 0) * 10) / 10, n: win.length, water: drinks.filter(d => d.water && d.t >= start).length };
   });
   return { id: +g[0].id, name: g[0].name, code: g[0].code, start, end, now, members };
@@ -156,6 +181,10 @@ async function groupView(gid, end) {
 function routes(app, h) {
   hooks = { ...hooks, ...h };
   app.get("/api/me/live", requireUser, async (req, res) => res.json(await live(req.user.id)));
+  app.get("/api/me/place", requireUser, async (req, res) => { const u = await userRow(req.user.id); res.json({ place: curPlace(u), places: u.places || [] }); });
+  app.put("/api/me/place", requireUser, async (req, res) => {
+    try { const r = await setPlace(req.user.id, req.body || {}); hooks.drinkAdded(req.user.id, null); res.json(r); } catch (e) { res.status(500).json({ error: e.message }); }
+  });
   app.post("/api/me/drinks", requireUser, async (req, res) => {
     try { res.json(await addDrink(req.user.id, req.body || {})); } catch (e) { res.status(e.status || 500).json({ error: e.message }); }
   });
@@ -226,4 +255,4 @@ function routes(app, h) {
   });
 }
 
-module.exports = { routes, live, splitSessions, addDrink, delDrink, calendar, STD, parisDay };
+module.exports = { routes, live, splitSessions, addDrink, delDrink, calendar, STD, parisDay, placeOf };

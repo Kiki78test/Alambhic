@@ -27,7 +27,7 @@ h2{font-size:20px}
 section{display:flex;flex-direction:column;gap:12px;padding-block:18px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px}
 .field{display:flex;flex-direction:column;gap:6px}
-.field input,.field select{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--fg);font:inherit;min-width:0;width:100%;box-sizing:border-box}
+.field input,.field select,.placecard input{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--fg);font:inherit;min-width:0;width:100%;box-sizing:border-box}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .seg{display:flex;background:var(--surface2);border-radius:10px;padding:3px;gap:3px;border:1px solid var(--line)}
@@ -328,3 +328,19 @@ nav #navHub{grid-template-columns:repeat(4,1fr)}
 .gv b small{font-size:11px;margin-left:2px;color:var(--muted)}
 .gv span{font-size:11px;font-weight:600}
 .pchip.solo{color:var(--muted);background:var(--surface2)}
+
+/* lieu de la session */
+.placebtn{display:flex;align-items:center;gap:8px;width:100%;background:var(--surface);border:1px dashed color-mix(in srgb,var(--accent) 45%,transparent);border-radius:14px;padding:10px 12px;color:var(--muted);font:inherit;text-align:left;cursor:pointer}
+.placebtn.set{border-style:solid;color:var(--fg)}
+.placebtn svg{width:20px;height:20px;flex:none;fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round}
+.placebtn span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.placebtn small{flex:none;color:var(--accent);font-size:12px;font-weight:600}
+.placecard{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.pfavs{display:flex;flex-wrap:wrap;gap:6px}
+.pfav{display:inline-flex;align-items:center;border-radius:999px;background:color-mix(in srgb,var(--accent) 12%,transparent);border:1px solid transparent}
+.pfav.on{border-color:var(--accent)}
+.pfav button{background:none;border:0;color:var(--fg);font:inherit;font-size:14px;padding:6px 12px;cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pfav .x{padding:6px 10px 6px 0;color:var(--muted)}
+.pplace{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pplace svg{width:13px;height:13px;flex:none;fill:none;stroke:var(--accent);stroke-width:2.2}
+.pplace.big{font-size:14px;color:var(--fg)}.pplace.big svg{width:16px;height:16px}

@@ -2,6 +2,7 @@
 /* Alamb'hic — notifications « expressions » envoyées aux potes, tirées des expressions françaises de l'alcool.
    Exemples : « Max remet le facteur sur le vélo » (un verre le lendemain d'une soirée), « Max tue le ver » (avant midi),
    « Max a du vent dans les voiles » (0,8 g/L), « Max met de l'eau dans son vin » (3 verres d'eau)…
+   Le lieu de la session s'ajoute quand il est connu : « Kiki remet le facteur sur le vélo – à La Folie Douce ».
    Destinataires : les amis (liste d'amis, si le joueur partage avec eux) et les membres de ses groupes.
    Chaque destinataire choisit ce qu'il reçoit (users.notif_prefs.expr) : tout (défaut), amis, groupes ou rien.
    Garde-fous : une seule fois par session et par expression ; au plus une expression du même joueur toutes les 30 min par destinataire. */
@@ -15,6 +16,9 @@ const MODES = { tout: 1, amis: 1, groupes: 1, rien: 1 };
 const sent = new Set(), lastTo = new Map();
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const parisHour = t => +new Date(t).toLocaleString("en-GB", { timeZone: "Europe/Paris", hour: "2-digit", hour12: false }).slice(0, 2);
+
+/* « – à La Folie Douce », mais « – chez Paul », « – au Bistrot » tels quels */
+const where = p => !p ? "" : " – " + (/^(à|a|au|aux|chez|en|dans|sur|sous|devant|place|rue)\s/i.test(p) ? p : "à " + p);
 
 const LEVELS = [
   [1.2, "lvl3", "est rond comme une queue de pelle", "Un grand verre d'eau pour lui ?"],
@@ -38,7 +42,7 @@ async function audience(uid) {
   }).map(r => r.id);
 }
 
-async function emit(uid, key, phrase, body) {
+async function emit(uid, key, phrase, body, place) {
   if (sent.has(key)) return 0;
   sent.add(key); if (sent.size > 50000) sent.clear();
   const { rows } = await q("SELECT pseudo FROM users WHERE id=$1", [uid]);
@@ -48,7 +52,7 @@ async function emit(uid, key, phrase, body) {
     const k = uid + ">" + to, last = lastTo.get(k) || 0;
     if (Date.now() - last < 30 * MIN) continue;
     lastTo.set(k, Date.now());
-    n += await push.deliver(to, "expr", { title: `${name} ${phrase}`, body, url: "/" });
+    n += await push.deliver(to, "expr", { title: `${name} ${phrase}${where(place)}`, body, url: "/" });
   }
   return n;
 }
@@ -67,14 +71,14 @@ async function check(uid) {
     else if (h >= 5 && h < 12) e = ["tue le ver", "Un premier verre avant midi."];
     else if (h >= 17 && h < 21) e = ["prend l'apéro", "Santé !"];
     else e = [pick(["lève le coude", "boit un coup", "s'humecte le gosier", "s'en jette un derrière la cravate"]), "Tchin !"];
-    await emit(uid, base + ":start", ...e);
+    await emit(uid, base + ":start", e[0], e[1], me.place);
   }
   const lv = LEVELS.find(x => me.sim.cur >= x[0]);
   if (lv && !sent.has(base + ":" + lv[1])) {
     LEVELS.filter(x => x[0] < lv[0]).forEach(x => sent.add(base + ":" + x[1]));
-    await emit(uid, base + ":" + lv[1], lv[2], lv[3]);
+    await emit(uid, base + ":" + lv[1], lv[2], lv[3], me.place);
   }
-  if (water >= 3 && alc.length) await emit(uid, base + ":eau", "met de l'eau dans son vin", `${water} verres d'eau pendant la session.`);
+  if (water >= 3 && alc.length) await emit(uid, base + ":eau", "met de l'eau dans son vin", `${water} verres d'eau pendant la session.`, me.place);
 }
 
 /* le matin (10 h, heure de Paris) : « a sûrement mal aux cheveux » après une session montée à 1 g/L ou plus */
@@ -88,11 +92,12 @@ async function morning() {
   for (const r of rows) {
     const l = await conso.live(r.user_id).catch(() => null);
     if (!l || l.me.sessionStart) continue;   // encore en session : pas de message du matin
-    const { rows: ses } = await q(`SELECT id, t, label, ml, abv, water FROM drinks WHERE user_id=$1 AND deleted_at IS NULL AND t > now() - interval '20 hours' ORDER BY t`, [r.user_id]);
+    const { rows: ses } = await q(`SELECT id, t, label, ml, abv, water, place FROM drinks WHERE user_id=$1 AND deleted_at IS NULL AND t > now() - interval '20 hours' ORDER BY t`, [r.user_id]);
     const { rows: u } = await q("SELECT sex, age, height, weight, cap FROM users WHERE id=$1", [r.user_id]);
     const dr = ses.map(d => ({ t: +d.t, ml: d.ml, abv: d.abv, ...(d.water ? { water: 1 } : {}) }));
     const peaks = conso.splitSessions(u[0], dr, []).map(s => YD.simulate({ ...u[0], drinks: s, meals: [] }, s[s.length - 1].t + 3 * H).peak);
-    if (Math.max(0, ...peaks) >= 1) await emit(r.user_id, r.user_id + ":matin:" + day, "a sûrement mal aux cheveux ce matin", "Grosse soirée hier : un grand verre d'eau ?");
+    const pl = conso.placeOf(ses.map(d => ({ place: d.place })));
+    if (Math.max(0, ...peaks) >= 1) await emit(r.user_id, r.user_id + ":matin:" + day, "a sûrement mal aux cheveux ce matin", pl ? `Grosse soirée hier (${pl}) : un grand verre d'eau ?` : "Grosse soirée hier : un grand verre d'eau ?");
   }
 }
 setInterval(() => morning().catch(e => console.error("[expr matin]", e.message)), 5 * MIN).unref();

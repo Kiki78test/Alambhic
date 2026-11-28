@@ -384,6 +384,17 @@ Chaque membre, où qu'il boive. Trait plein : jusqu'à maintenant ; pointillés 
 Vue entière|Full view|Vista completa|Visão completa
 Expressions des potes (« Max remet le facteur sur le vélo »)|Friends' expressions ("Max is back on the sauce")|Expresiones de los amigos («Max vuelve a las andadas»)|Expressões dos amigos («Max voltou à pinga»)
 Amis et groupes|Friends and groups|Amigos y grupos|Amigos e grupos
+Où êtes-vous ?|Where are you?|¿Dónde estás?|Onde você está?
+Indiquer le lieu|Set the place|Indicar el lugar|Indicar o local
+Changer|Change|Cambiar|Mudar
+Favoris|Favourites|Favoritos|Favoritos
+Ajouter aux favoris|Add to favourites|Añadir a favoritos|Adicionar aos favoritos
+Aucun lieu|No place|Ningún lugar|Nenhum local
+Gérer les favoris|Manage favourites|Gestionar favoritos|Gerir favoritos
+Terminé|Done|Hecho|Concluído
+Lieu noté|Place saved|Lugar guardado|Local guardado
+Lieu retiré|Place removed|Lugar quitado|Local removido
+Vos lieux favoris apparaîtront ici.|Your favourite places will appear here.|Tus lugares favoritos aparecerán aquí.|Os seus locais favoritos aparecerão aqui.
 Amis seulement|Friends only|Solo amigos|Só amigos
 Groupes seulement|Groups only|Solo grupos|Só grupos
 Rien|Nothing|Nada|Nada

@@ -91,6 +91,8 @@ A_FAIRE = [
     ("ok", "<b>Jauge alambic</b> (10/11) : ballon en verre, chapiteau et col de cygne en cuivre ; la potion monte avec le taux, bulles, flamme, goutte au bout du tuyau et vapeur au-delà de la moitié. Remplace la spirale ; à remplacer plus tard par une version faite par IA."),
     ("todo", "<b>Visuels par IA</b> (jauge, avatars, logo) : 1) <b>Recraft</b> (recraft.ai), en priorité : vrais fichiers vectoriels SVG et style constant d'une image à l'autre, découpables et animables ; 2) <b>Midjourney ou ChatGPT (images)</b> : beau rendu mais images figées (PNG) ; pour la jauge, demander une version vide et une version pleine superposables ; 3) <b>LottieFiles</b> (Lottie Creator et son assistant IA) : vraie animation, plus de travail."),
     ("done", "<b>Notifications avec les expressions</b> : envoyées aux amis et aux membres des groupes (facteur sur le vélo, tuer le ver, apéro, paliers 0,5 / 0,8 / 1,2 g/L, eau, mal aux cheveux à 10 h) ; chacun choisit amis, groupes, tout ou rien (Profil → Notifications)."),
+    ("done", "<b>Lieu des sessions</b> : sélecteur avec favoris (écran Moi), affiché dans l'historique, les groupes et les notifications des potes."),
+    ("todo", "<b>Lieu</b> : proposer plus tard les lieux proches par GPS (facultatif, avec accord) et un lieu par défaut pour une soirée à code."),
     ("todo", "<b>Tester les expressions des potes</b> sur deux téléphones (un ami, un groupe) : réglage amis / groupes / tout / rien respecté, pas de rafale (30 min)."),
     ("todo", "<b>Tester le zoom des courbes</b> au doigt (pincer, glisser, double-toucher) sur Android et iPhone."),
     ("todo", "<b>Avatar femme</b> : à dessiner d'après les prochaines images (le sexe du profil choisira la version)."),

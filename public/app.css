@@ -144,9 +144,9 @@ body.isdemo{padding-bottom:200px}
 .meals1,.mq{display:flex;flex-direction:column;gap:10px}
 .meals1{border-color:color-mix(in srgb,var(--accent) 55%,transparent)}
 .mq{border-color:color-mix(in srgb,var(--care) 55%,transparent)}
-.mrow{display:grid;grid-template-columns:minmax(0,1fr) 88px minmax(0,1.5fr);gap:8px;align-items:center}
-.mrow.add{grid-template-columns:92px 1fr auto;margin-top:10px}
-.mrow input,.mrow select{background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 8px;color:var(--fg);font:inherit;font-size:14px;min-width:0;width:100%}
+.mrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(96px,132px) minmax(0,1.5fr);gap:8px;align-items:center}
+.mrow.add{grid-template-columns:minmax(100px,132px) 1fr auto;margin-top:10px}
+.mrow input,.mrow select{box-sizing:border-box;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:9px 8px;color:var(--fg);font:inherit;font-size:14px;min-width:0;width:100%}
 @media (max-width:380px){.mrow{grid-template-columns:1fr 1fr}.mrow b{grid-column:1/-1}.mrow.add{grid-template-columns:1fr 1fr}.mrow.add button{grid-column:1/-1}}
 .consent{align-items:flex-start;justify-content:flex-start;font-size:13px;line-height:1.45}.consent input{flex:none;margin-top:2px}.consent a,.note a,#app .muted a{color:var(--accent)}
 .live{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -170,17 +170,28 @@ body.isdemo{padding-bottom:200px}
 .gauge.alam{position:relative;width:76px;flex:none}
 .gauge svg{display:block;width:100%;height:auto;overflow:visible}
 .gauge .alq{transition:transform 1.4s cubic-bezier(.3,.7,.2,1)}
+.gauge .alpour .alq{transition:transform 1.5s cubic-bezier(.34,1.5,.5,1)}
 .gauge .alb{fill:none;stroke:#d8f0ff;stroke-opacity:.75;stroke-width:.9;animation:alb 2.6s linear infinite}
 .gauge .aldown .alb{animation-direction:reverse}
-@keyframes alb{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-46px);opacity:0}}
+@keyframes alb{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-44px);opacity:0}}
+.gauge .alwv{animation:alwv 3.2s linear infinite}.gauge .alwv2{animation:alwv 4.6s linear infinite reverse}
+@keyframes alwv{to{transform:translateX(-20px)}}
+.gauge .alpour .alwv,.gauge .alpour .alwv2{transform-box:fill-box;animation:alwv 3.2s linear infinite,alslosh 1.6s ease-out var(--pel,0s) both}
+@keyframes alslosh{0%{scale:1 1}20%{scale:1 3.2}45%{scale:1 .6}70%{scale:1 1.6}100%{scale:1 1}}
+.gauge .alpd{opacity:0}
+.gauge .alpour .alpd{animation:alpd .6s cubic-bezier(.5,0,.9,.5) var(--pel,0s) both}
+@keyframes alpd{0%{opacity:1;transform:translateY(0)}90%{opacity:1}100%{opacity:0;transform:translateY(40px)}}
+.gauge .alpour .alrip{transform-box:fill-box;transform-origin:center;animation:alrip .9s ease-out calc(var(--pel,0s) + .5s) both}
+@keyframes alrip{0%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(2.4)}}
 .gauge .alfl{transform-box:fill-box;transform-origin:50% 100%;animation:alfl .9s ease-in-out infinite alternate}
-@keyframes alfl{to{transform:scale(1.08,.88)}}
+.gauge .alfl2{transform-box:fill-box;transform-origin:50% 100%;animation:alfl .6s ease-in-out infinite alternate-reverse}
+@keyframes alfl{to{transform:scale(1.1,.86)}}
 .gauge .aldr{animation:aldr 1.8s ease-in infinite}
-@keyframes aldr{0%{transform:translateY(-3px);opacity:0}30%{opacity:1}100%{transform:translateY(8px);opacity:0}}
+@keyframes aldr{0%{transform:translateY(-3px);opacity:0}30%{opacity:1}100%{transform:translateY(9px);opacity:0}}
 .gauge .alst{animation:alst 2.6s ease-in-out infinite}
 @keyframes alst{0%{opacity:0;transform:translateY(4px)}40%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
 @media (max-width:370px){.gauge.alam{width:60px}}
-@media (prefers-reduced-motion:reduce){.gauge .alq{transition:none}.gauge .alb,.gauge .alfl,.gauge .aldr,.gauge .alst{animation:none}}
+@media (prefers-reduced-motion:reduce){.gauge .alq{transition:none}.gauge .alb,.gauge .alfl,.gauge .alfl2,.gauge .aldr,.gauge .alst,.gauge .alwv,.gauge .alwv2,.gauge .alpd,.gauge .alrip{animation:none!important}}
 /* goutte qui vole jusqu'au tuyau */
 .dropfx{position:fixed;left:0;top:0;width:14px;height:14px;margin:-7px 0 0 -7px;z-index:30;pointer-events:none;background:radial-gradient(circle at 35% 35%,#bfe3ff,#2f8cff 60%);border-radius:50% 50% 50% 0;rotate:-45deg;box-shadow:0 0 10px rgba(47,140,255,.6)}
 .splashfx{position:fixed;z-index:30;width:10px;height:10px;margin:-5px 0 0 -5px;border:2px solid #8fd0ff;border-radius:50%;pointer-events:none;animation:splash .55s ease-out forwards}
@@ -359,4 +370,8 @@ nav #navHub{grid-template-columns:repeat(4,1fr)}
 @keyframes mpin{from{opacity:0;transform:translateY(12px)}}
 @media (min-width:600px){.mpop{align-items:center}}
 @media (prefers-reduced-motion:reduce){.mpop{animation:none}}
-.mpopc .mrow{grid-template-columns:auto minmax(0,1fr) minmax(0,1.3fr)}
+.mpopc .mrow{grid-template-columns:auto minmax(108px,1fr) minmax(0,1.3fr)}
+/* courbe : pulsation au point « maintenant » quand on vient de noter un verre */
+.cpulse{transform-box:fill-box;transform-origin:center;opacity:0;animation:cpulse 1.2s ease-out both}
+@keyframes cpulse{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(4.5)}}
+@media (prefers-reduced-motion:reduce){.cpulse{display:none}}

@@ -14,14 +14,39 @@ function drinkKind(d){
   const l=d.l||""; if(/Bi|Pinte|Cidre/.test(l)) return "beer"; if(/Champ/.test(l)) return "champ"; if(/Vin/.test(l)) return "wine";
   if(/Shot/.test(l)) return "shot"; if(/Cocktail/.test(l)) return "cocktail"; return d.abv>=20?"shot":"wine";
 }
-function heldGlass(k){
+/* verres tenus : dessinés en coordonnées finales, la main (dessinée après) les tient par le corps ou le pied */
+function heldGlass(k,n){
+  const GL=`stroke="#dcebff" stroke-opacity=".9" stroke-width="1" stroke-linejoin="round"`, gf=`url(#gl${n})`;
+  const hi=(d)=>`<path d="${d}" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.3" stroke-linecap="round"/>`;
+  const stem=(y0)=>`<path d="M93.4 ${y0}V97" stroke="#dcebff" stroke-opacity=".9" stroke-width="1.7" stroke-linecap="round"/><path d="M88.4 98.8h10" stroke="#dcebff" stroke-opacity=".9" stroke-width="1.8" stroke-linecap="round"/>`;
+  const bub=(pts,c)=>pts.map(([x,y,r],i)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" class="av-bu" style="animation-delay:-${(i*.55).toFixed(2)}s"/>`).join("");
   const G={
-   beer:'<path d="M96 62h15l-1.5 23h-12z" fill="#e9a33a" stroke="#3a2216" stroke-width="1"/><path d="M96 62h15l-.4 5h-14.2z" fill="#fff6dd"/><circle cx="99" cy="61.5" r="2.6" fill="#fff6dd"/><circle cx="104" cy="60.8" r="3" fill="#fff6dd"/><circle cx="108.5" cy="61.6" r="2.4" fill="#fff6dd"/><path d="M111 67q5 1 4 7q-.5 4-4.6 4" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.6"/><path d="M98.5 70v12" stroke="rgba(255,255,255,.35)" stroke-width="1.4"/>',
-   wine:'<path d="M96.5 60h14q.3 13-7 13.6q-7.3-.6-7-13.6z" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.7)" stroke-width=".9"/><path d="M97 66h13q-.8 7-6.5 7.4q-5.7-.4-6.5-7.4z" fill="#8c1d32"/><path d="M103.5 73.6v10M99 84h9" stroke="rgba(255,255,255,.75)" stroke-width="1.2" stroke-linecap="round"/>',
-   champ:'<path d="M100 58h7l-.6 15h-5.8z" fill="#f4d47c" stroke="rgba(255,255,255,.7)" stroke-width=".9"/><circle cx="102.5" cy="66" r=".7" fill="#fff"/><circle cx="104.4" cy="62" r=".6" fill="#fff"/><path d="M103.5 73v11M99.5 84h8" stroke="rgba(255,255,255,.75)" stroke-width="1.2" stroke-linecap="round"/>',
-   shot:'<path d="M98 72h11l-1.2 12h-8.6z" fill="rgba(255,255,255,.2)" stroke="rgba(255,255,255,.7)" stroke-width=".9"/><path d="M98.6 76h9.8l-.8 7.6h-8.2z" fill="#d68a2e"/>',
-   cocktail:'<path d="M95 60h17l-8.5 11z" fill="#ef6fa6" stroke="rgba(255,255,255,.7)" stroke-width=".9"/><circle cx="109" cy="59" r="3" fill="#ffd34d"/><path d="M103.5 71v13M99.5 84h8" stroke="rgba(255,255,255,.75)" stroke-width="1.2" stroke-linecap="round"/><path d="M98 54l7 9" stroke="#5bc88a" stroke-width="1.2"/>',
-   water:'<path d="M97 62h13l-1.4 22h-10.2z" fill="rgba(140,200,255,.22)" stroke="#8fd0ff" stroke-width="1"/><path d="M97.6 68h11.8l-1 15.6h-9.8z" fill="#5ab0ff" opacity=".65"/><path d="M99.5 70v11" stroke="rgba(255,255,255,.5)" stroke-width="1.2"/>'};
+   beer:`<path d="M101.2 72.4q6.4 0 6.4 7.2q0 7.2-6.8 7.2" fill="none" stroke="#dcebff" stroke-opacity=".85" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M84.6 66h17l-1 29.4q0 2-2 2h-11q-2 0-2-2z" fill="${gf}" ${GL}/>
+    <path d="M85.5 71h15.2l-.9 24.2q0 1.2-1.2 1.2h-11q-1.2 0-1.2-1.2z" fill="url(#lb${n})"/>
+    <g clip-path="url(#lq${n})">${bub([[89,92,.7],[94,90,.6],[98,93,.8],[91.5,94,.5]],"#fff3c4")}</g>
+    <path d="M83.6 69.6q-1.6-4.4 2.8-5.4q.8-3.8 5.6-3.2q2.8-3 7-.6q4.8-.4 4 4.4q2 3.6-2.2 4.8z" fill="#fffaf0" stroke="#e7d9bf" stroke-width=".7"/>
+    <path d="M86.4 64.6q2-1.4 4.2-.6M93.6 61.6q2.4-.8 4.2.6" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round"/>
+    ${hi("M87.4 73v19")}`,
+   wine:`<path d="M85.8 59.6h15.2q.6 13.4-7.6 15.8q-8.2-2.4-7.6-15.8z" fill="${gf}" ${GL}/>
+    <path d="M86.2 66.6h14.4q-1 7.6-7.2 8.8q-6.2-1.2-7.2-8.8z" fill="url(#lw${n})"/><ellipse cx="93.4" cy="66.6" rx="7.2" ry="1.2" fill="#d4566c"/>
+    ${stem(75.4)}${hi("M88.2 61.8q-.2 6 2.2 10")}`,
+   champ:`<path d="M89.8 53.6h7.2q.4 17.4-3.6 21.4q-4-4-3.6-21.4z" fill="${gf}" ${GL}/>
+    <path d="M90.1 58.4h6.6q-.2 12.6-3.3 15.8q-3.1-3.2-3.3-15.8z" fill="url(#lc${n})"/><ellipse cx="93.4" cy="58.4" rx="3.3" ry=".8" fill="#fff4c2"/>
+    <g clip-path="url(#lf${n})">${bub([[92.4,72,.45],[94.4,70,.4],[93.2,74,.35]],"#fffbe6")}</g>
+    ${stem(75)}${hi("M91.2 56v9")}`,
+   cocktail:`<path d="M84 61.6h18.8l-9.4 12.4z" fill="${gf}" ${GL}/>
+    <path d="M85.8 63.6h15.2l-7.6 10z" fill="url(#lk${n})"/><path d="M85.8 63.6h15.2" stroke="#ffc0da" stroke-width="1"/>
+    <path d="M83.6 62.4a4 4 0 0 1 7.4-1.2" fill="#ffe36a" stroke="#d9b21f" stroke-width=".8"/><path d="M85.2 61.8l2.4-2" stroke="#d9b21f" stroke-width=".5"/>
+    <path d="M95.6 55.4l5 8.6" stroke="#8a5a2a" stroke-width="1" stroke-linecap="round"/><circle cx="99.6" cy="62.2" r="2.5" fill="#e23b4b" stroke="#9e1d2b" stroke-width=".6"/><circle cx="98.8" cy="61.4" r=".7" fill="#fff" opacity=".7"/>
+    ${stem(74)}`,
+   shot:`<path d="M87.8 75.4h11.2l-1.3 13.6h-8.6z" fill="${gf}" ${GL}/>
+    <path d="M88.5 78.6h9.8l-1 10h-7.8z" fill="url(#ls${n})"/><ellipse cx="93.4" cy="78.6" rx="4.9" ry=".8" fill="#ffd27a"/>
+    ${hi("M89.6 77v10")}`,
+   water:`<path d="M85.8 65.6h15.2l-1.4 31.2h-12.4z" fill="${gf}" ${GL}/>
+    <path d="M86.3 71.6h14.2l-1.1 24.6h-12z" fill="url(#lh${n})"/><ellipse cx="93.4" cy="71.6" rx="7.1" ry="1" fill="#c8ecff" opacity=".8"/>
+    <rect x="87.6" y="73" width="5.2" height="5.2" rx="1.2" fill="#fff" opacity=".45" transform="rotate(-12 90 75.6)"/><rect x="93.4" y="75.4" width="4.8" height="4.8" rx="1.2" fill="#fff" opacity=".35" transform="rotate(14 95.8 77.8)"/>
+    ${hi("M87.6 68v26")}`};
   return G[k]||"";
 }
 const AV_CSS=`<style>.av-p{transform-box:view-box;transform-origin:60px 116px;animation:avsw 3.4s ease-in-out infinite}
@@ -31,7 +56,24 @@ const AV_CSS=`<style>.av-p{transform-box:view-box;transform-origin:60px 116px;an
 .av-wb{transform-box:view-box;transform-origin:60px 28px;animation:avwb 2.4s ease-in-out infinite}
 @keyframes avwb{0%,100%{rotate:-7deg}50%{rotate:7deg}}
 .av-sp{transform-box:fill-box;transform-origin:center;animation:avsp 3s linear infinite}@keyframes avsp{to{rotate:360deg}}
-@media (prefers-reduced-motion:reduce){.av-p,.av-fl,.av-fl2,.av-wb,.av-sp{animation:none}}</style>`;
+.av-br{transform-box:view-box;transform-origin:60px 124px;animation:avbr 3.6s ease-in-out infinite}
+@keyframes avbr{50%{transform:translateY(-.6px) scale(1.008,1.014)}}
+.av-br.ko{animation-duration:5.2s}
+.av-bl{transform-box:fill-box;transform-origin:50% 0;transform:scaleY(0);animation:avbl 5.2s ease-in-out infinite}
+@keyframes avbl{0%,91%,100%{transform:scaleY(0)}94.5%{transform:scaleY(1)}}
+.av-hic{transform-box:view-box;transform-origin:60px 86px;animation:avhic 6.5s ease-out infinite}
+@keyframes avhic{0%,86%,100%{transform:none}88%{transform:translateY(-2.4px) rotate(-2deg)}90%{transform:none}92%{transform:translateY(-1.2px)}94%{transform:none}}
+.av-pw{animation:avpw 2.6s ease-in-out infinite}@keyframes avpw{25%{transform:translate(.9px,-.3px)}75%{transform:translate(-.9px,.4px)}}
+.av-bu{animation:avbu 2.2s linear infinite}@keyframes avbu{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(-16px);opacity:0}}
+.av-arm{transform-box:view-box;transform-origin:86px 124px}
+.av-glass{transform-box:view-box;transform-origin:93px 80px}
+.avw.sip .av-arm{animation:avsip 1.7s cubic-bezier(.45,0,.3,1) var(--sel,0s) both}
+.avw.sip .av-glass{animation:avsipg 1.7s cubic-bezier(.45,0,.3,1) var(--sel,0s) both}
+.avw.sip .av-hd{animation:avsiph 1.7s cubic-bezier(.45,0,.3,1) var(--sel,0s) both}
+@keyframes avsip{0%,100%{transform:none}35%,62%{transform:rotate(-24deg)}}
+@keyframes avsipg{0%,100%{transform:none}35%,62%{transform:rotate(-38deg)}}
+@keyframes avsiph{0%,100%{transform:none}35%,62%{transform:rotate(-5deg) translateY(-1px)}}
+@media (prefers-reduced-motion:reduce){.av-p,.av-fl,.av-fl2,.av-wb,.av-sp,.av-br,.av-bl,.av-hic,.av-pw,.av-bu,.avw.sip .av-arm,.avw.sip .av-glass,.avw.sip .av-hd{animation:none}}</style>`;
 
 function avatar(p,size){
   const n=++AVN, s=p.sim||{cur:0,prev:0,peak:0}, b=s.cur, c=p.color||"#2f8cff", st=avStage(b);
@@ -45,7 +87,7 @@ function avatar(p,size){
   const BROW=[[-2.6,-2.6],[-2.2,-2.2],[0,0],[.6,-1],[1.6,-1.2],[-2.4,-2.4],[-2.2,-2.2],[1.4,-1.8],[1.2,-2],[1,-1.4]][st]; /* [extérieur, intérieur] */
   const tilt=[0,0,-2,-4,-6,5,-7,-9,9,0][st];
   const blush=cl((b-0.15)/0.6), nose=cl((b-0.3)/0.6)*0.8, flush=cl((b-0.9)/0.7)*0.26;
-  const EY=57;
+  const EY=57, blinkD=((n*1.37)%5.2).toFixed(2);
   const almond=x=>`M${x-5.8} ${EY}C${x-4.2} ${EY-5.2} ${x+4.2} ${EY-5.2} ${x+5.8} ${EY}C${x+4.2} ${EY+3.9} ${x-4.2} ${EY+3.9} ${x-5.8} ${EY}Z`;
   const eye=(x,side)=>{
     if(happy) return `<path d="M${x-5.4} ${EY+1}Q${x} ${EY-5.4} ${x+5.4} ${EY+1}" fill="none" stroke="${INK}" stroke-width="2.3" stroke-linecap="round"/>`;
@@ -54,10 +96,11 @@ function avatar(p,size){
     return `<path d="${almond(x)}" fill="#fffdf8"/>
     <g clip-path="url(#ec${side<0?"l":"r"}${n})">
      <path d="${almond(x)}" fill="#ff7a6a" opacity="${(cl((b-0.6)/0.8)*0.35).toFixed(2)}"/>
-     <circle cx="${x+px}" cy="${EY+.2}" r="3.7" fill="url(#ir${n})"/><circle cx="${x+px}" cy="${EY+.2}" r="1.8" fill="#170b05"/>
-     <circle cx="${x+px+1.3}" cy="${EY-1.2}" r="1.15" fill="#fff"/><circle cx="${x+px-1.2}" cy="${EY+1.5}" r=".55" fill="#fff" opacity=".8"/>
+     <g${st>=7?' class="av-pw"':""}><circle cx="${x+px}" cy="${EY+.2}" r="3.7" fill="url(#ir${n})"/><circle cx="${x+px}" cy="${EY+.2}" r="1.8" fill="#170b05"/>
+     <circle cx="${x+px+1.3}" cy="${EY-1.2}" r="1.15" fill="#fff"/><circle cx="${x+px-1.2}" cy="${EY+1.5}" r=".55" fill="#fff" opacity=".8"/></g>
      <path d="M${x-7} ${EY-7}H${x+7}L${out} ${(ly+SLANT).toFixed(1)}Q${x} ${(ly+1.4).toFixed(1)} ${inn} ${(ly-SLANT*0.3).toFixed(1)}Z" fill="${SK}"/>
      <path d="M${inn} ${(ly-SLANT*0.3).toFixed(1)}Q${x} ${(ly+1.4).toFixed(1)} ${out} ${(ly+SLANT).toFixed(1)}" fill="none" stroke="${INK}" stroke-width="1.5" opacity="${LID>0.15?1:0}"/>
+     <rect x="${x-7}" y="${EY-6}" width="14" height="11" fill="${SK}" class="av-bl" style="animation-delay:-${blinkD}s"/>
     </g>
     <path d="M${x-5.8} ${EY}C${x-4.2} ${EY-5.2} ${x+4.2} ${EY-5.2} ${x+5.8} ${EY}" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linecap="round"/>
     <path d="M${x-4.4} ${EY+2.7}C${x-2} ${EY+4.1} ${x+2} ${EY+4.1} ${x+4.4} ${EY+2.7}" fill="none" stroke="${INK}" stroke-width=".8" opacity=".45"/>
@@ -134,16 +177,16 @@ function avatar(p,size){
    ${st>=5?`<path d="M28 110q6 3 10 1M84 111q6-1 9 2" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="1.5" stroke-linecap="round"/>`:""}
    ${st>=6?`<circle cx="77" cy="113" r="3.2" fill="#8c1d32" opacity=".55"/><circle cx="81" cy="117" r="1.5" fill="#8c1d32" opacity=".5"/>`:""}`;
   /* bras levé : manche, poignet, main qui entoure le verre (doigts devant, pouce sur le côté) */
-  const arm=k?`<path d="M86.5 126Q89.6 110 92.6 99" fill="none" stroke="${INK}" stroke-width="12.4" stroke-linecap="round"/><path d="M86.5 126Q89.6 110 92.6 99" fill="none" stroke="${c}" stroke-width="9.8" stroke-linecap="round"/>
+  const arm=k?`<g class="av-arm"><path d="M86.5 126Q89.6 110 92.6 99" fill="none" stroke="${INK}" stroke-width="12.4" stroke-linecap="round"/><path d="M86.5 126Q89.6 110 92.6 99" fill="none" stroke="${c}" stroke-width="9.8" stroke-linecap="round"/>
    <path d="M90.6 112Q91.4 106 92.8 101" fill="none" stroke="#000" stroke-opacity=".18" stroke-width="3" stroke-linecap="round"/>
    <path d="M87.4 99.4q5.2 2.2 10.4 0" fill="none" stroke="${INK}" stroke-width="1.1" opacity=".6"/>
-   <g transform="translate(-10 6)">${heldGlass(k)}</g>
+   <g class="av-glass">${heldGlass(k,n)}
    <path d="M88.4 86.6h10.4q2.6 0 2.6 2.6v4.8q0 3.4-3.4 3.4h-7.2q-3.4 0-3.4-3.4v-4.6q0-2.8 1-2.8z" fill="${SK}" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>
    <path d="M90 89.4h10.2M90 92.4h10.2" stroke="${SKD}" stroke-width="1" stroke-linecap="round"/>
    <path d="M88.4 86.6q-3.4.4-3.4 3.4q0 2.4 2.6 3" fill="${SK}" stroke="${INK}" stroke-width="1.2" stroke-linecap="round"/>
-   <path d="M98 95.6q2.6-.6 3-3" fill="none" stroke="${SKD}" stroke-width="1"/>`:"";
+   <path d="M98 95.6q2.6-.6 3-3" fill="none" stroke="${SKD}" stroke-width="1"/></g></g>`:"";
   const headRot=sleep?22:0;
-  const person=`<g class="av-p"><g transform="rotate(${tilt} 60 116)">${torso}<g transform="rotate(${headRot} 60 86)">${head}</g>${arm}</g></g>`;
+  const person=`<g class="av-p"><g transform="rotate(${tilt} 60 116)"><g class="av-br${sleep?" ko":""}">${torso}<g class="av-hd"><g${st>=4&&st<=8?' class="av-hic"':""}><g transform="rotate(${headRot} 60 86)">${head}</g></g></g></g>${arm}</g></g>`;
   /* effets autour de la tête */
   const bub=(x,y,r,cls)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#dfe9f7" stroke-opacity=".75" stroke-width="1.3" class="${cls}"/>`;
   const star=(x,y,r)=>`<path d="M${x} ${y-r}L${x+r*.3} ${y-r*.3}L${x+r} ${y}L${x+r*.3} ${y+r*.3}L${x} ${y+r}L${x-r*.3} ${y+r*.3}L${x-r} ${y}L${x-r*.3} ${y-r*.3}Z" fill="#ffcf4a" stroke="#c98f12" stroke-width=".6"/>`;
@@ -154,7 +197,7 @@ function avatar(p,size){
   if(st===8) fx+=`<g class="av-wb"><ellipse cx="60" cy="26" rx="25" ry="6" fill="none" stroke="#ffcf4a" stroke-width="1.6"/>${star(36,25,4)}${star(56,20.4,3.2)}${star(80,23,4.4)}${star(70,31.6,3)}</g>`;
   if(st===9) fx+=`<g class="av-fl">${star(30,32,3.6)}${star(90,26,4.4)}</g><g class="av-fl2">${star(82,40,2.6)}${bub(25,56,1.8)}</g><text x="97" y="46" font-family="sans-serif" font-weight="800" font-size="9" fill="#dfe9f7" opacity=".8">z</text><text x="103" y="37" font-family="sans-serif" font-weight="800" font-size="7" fill="#dfe9f7" opacity=".6">z</text>`;
   const keys=b>=0.5&&!ko?`<g transform="translate(-2 -2)"><circle cx="11" cy="11" r="10.5" fill="#18140f" stroke="#ff5a4e" stroke-width="1.8"/><circle cx="7.6" cy="11" r="3" fill="none" stroke="#f7f1ea" stroke-width="1.6"/><path d="M10.6 11h6.4M15 11v2.8M12.8 11v2" stroke="#f7f1ea" stroke-width="1.6"/><path d="M4 18L18 4" stroke="#ff5a4e" stroke-width="2"/></g>`:"";
-  const koWater=ko?`<g transform="translate(-62 22) scale(.85)">${heldGlass("water")}</g>`:"";
+  const koWater=ko?`<g transform="translate(-53 24) scale(.85)">${heldGlass("water",n)}</g>`:"";
   const lab=ko?"avatar KO":st>=7?"avatar très éméché":st>=5?"avatar éméché":st>=2?"avatar pompette":"avatar en forme";
   return `<svg viewBox="0 0 120 120" width="${size}" height="${size}" role="img" aria-label="${lab}" style="flex:none;overflow:visible">${AV_CSS}
   <defs><radialGradient id="ir${n}" cx="50%" cy="35%" r="65%"><stop offset="0" stop-color="#a8743e"/><stop offset=".6" stop-color="#6a4022"/><stop offset="1" stop-color="#3a2210"/></radialGradient>
@@ -163,6 +206,14 @@ function avatar(p,size){
   <linearGradient id="hr${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a4126"/><stop offset="1" stop-color="#3c2414"/></linearGradient>
   <linearGradient id="sh${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".32"/></linearGradient>
   <radialGradient id="bg${n}" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="#1d3354"/><stop offset="1" stop-color="#0c1728"/></radialGradient>
+  <linearGradient id="gl${n}" x1="0" x2="1"><stop offset="0" stop-color="#e6f2ff" stop-opacity=".34"/><stop offset=".45" stop-color="#e6f2ff" stop-opacity=".07"/><stop offset="1" stop-color="#e6f2ff" stop-opacity=".22"/></linearGradient>
+  <linearGradient id="lb${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd25e"/><stop offset="1" stop-color="#d9801a"/></linearGradient>
+  <linearGradient id="lw${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b52a44"/><stop offset="1" stop-color="#5a0d1d"/></linearGradient>
+  <linearGradient id="lc${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe896"/><stop offset="1" stop-color="#e2ab30"/></linearGradient>
+  <linearGradient id="lk${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff9cc6"/><stop offset="1" stop-color="#d93a78"/></linearGradient>
+  <linearGradient id="ls${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6b04a"/><stop offset="1" stop-color="#a8540c"/></linearGradient>
+  <linearGradient id="lh${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9ad9ff" stop-opacity=".6"/><stop offset="1" stop-color="#2f8cff" stop-opacity=".75"/></linearGradient>
+  <clipPath id="lq${n}"><path d="M85.5 71h15.2l-.9 24.2q0 1.2-1.2 1.2h-11q-1.2 0-1.2-1.2z"/></clipPath><clipPath id="lf${n}"><path d="M90.1 58.4h6.6q-.2 12.6-3.3 15.8q-3.1-3.2-3.3-15.8z"/></clipPath>
   <clipPath id="cc${n}"><circle cx="60" cy="60" r="55"/></clipPath>
   <clipPath id="ecl${n}"><path d="M44.2 57C45.8 51.8 54.2 51.8 55.8 57C54.2 60.9 45.8 60.9 44.2 57Z"/></clipPath><clipPath id="ecr${n}"><path d="M64.2 57C65.8 51.8 74.2 51.8 75.8 57C74.2 60.9 65.8 60.9 64.2 57Z"/></clipPath></defs>
   <circle cx="60" cy="60" r="55" fill="url(#bg${n})"/>
@@ -171,37 +222,70 @@ function avatar(p,size){
   ${keys}</svg>`;
 }
 
-/* ---------- jauge : alambic en verre et cuivre qui se remplit de potion (indicatif, sans graduation) ----------
-   v : 0 à 1 ; from : niveau de départ pour l'animation ; down : le taux redescend. */
+/* ---------- jauge : alambic en verre et cuivre (indicatif, sans graduation) ----------
+   Ballon en verre qui se remplit de potion (surface en vagues, bulles), chapiteau de cuivre riveté, col de cygne,
+   serpentin et fiole qui reçoit les gouttes ; brûleur dont la flamme grandit avec le taux.
+   v : 0 à 1 ; from : niveau de départ pour l'animation ; down : le taux redescend ; pour : un verre vient d'être versé. */
 let ALN=0;
-function alambic(v,from,down){
+function alambic(v,from,down,pour){
   const n=++ALN; v=cl(v); from=from==null?v:cl(from);
-  const off=x=>((1-x)*56).toFixed(1), hot=v>0.55, nb=v>0.02?Math.round(2+v*5):0;
-  const bub=[...Array(nb)].map((_,i)=>`<circle cx="${36+(i*13)%40}" cy="106" r="${(1+(i%3)*.7).toFixed(1)}" class="alb" style="animation-delay:-${(i*0.47).toFixed(2)}s;animation-duration:${(2.2+(i%3)*0.6).toFixed(1)}s"/>`).join("");
-  return `<svg viewBox="0 0 120 120" role="img" aria-label="Jauge indicative du taux"${down?' class="aldown"':""}>
+  const off=x=>((1-x)*54).toFixed(1), hot=v>0.55, nb=v>0.02?Math.round(3+v*6):0;
+  const bub=[...Array(nb)].map((_,i)=>`<circle cx="${34+(i*11)%40}" cy="104" r="${(.9+(i%3)*.6).toFixed(1)}" class="alb" style="animation-delay:-${(i*0.43).toFixed(2)}s;animation-duration:${(2+(i%3)*0.6).toFixed(1)}s"/>`).join("");
+  const wave=(y,a)=>{ let d=`M-10 ${y}`; for(let x=-10;x<130;x+=20) d+=`q5 ${-a} 10 0t10 0`; return d+`V130H-10Z` };
+  const rivet=(x,y)=>`<circle cx="${x}" cy="${y}" r=".9" fill="#ffd9b0"/><circle cx="${x+.25}" cy="${y+.25}" r=".5" fill="#6b3112"/>`;
+  const fl=.35+v*.65;
+  return `<svg viewBox="0 0 120 120" role="img" aria-label="Jauge indicative du taux" class="alsvg${down?" aldown":""}${pour?" alpour":""}">
   <defs>
-   <radialGradient id="ag${n}" cx="38%" cy="35%" r="70%"><stop offset="0" stop-color="#bfe2ff" stop-opacity=".22"/><stop offset=".7" stop-color="#5a8fc4" stop-opacity=".12"/><stop offset="1" stop-color="#9fd0ff" stop-opacity=".35"/></radialGradient>
-   <linearGradient id="aq${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd0ff"/><stop offset=".45" stop-color="#2f8cff"/><stop offset="1" stop-color="#1449a8"/></linearGradient>
-   <linearGradient id="ac${n}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7a3a17"/><stop offset=".35" stop-color="#e59a5c"/><stop offset=".55" stop-color="#ffd2a3"/><stop offset=".75" stop-color="#c86e34"/><stop offset="1" stop-color="#6b3112"/></linearGradient>
-   <radialGradient id="aw${n}" cx="50%" cy="70%" r="55%"><stop offset="0" stop-color="#2f8cff" stop-opacity="${(0.12+v*0.5).toFixed(2)}"/><stop offset="1" stop-color="#2f8cff" stop-opacity="0"/></radialGradient>
-   <radialGradient id="af${n}" cx="50%" cy="100%" r="80%"><stop offset="0" stop-color="#ffe17a"/><stop offset=".5" stop-color="#ff8a2a"/><stop offset="1" stop-color="#ff4d2a" stop-opacity="0"/></radialGradient>
-   <clipPath id="ak${n}"><circle cx="56" cy="80" r="28"/></clipPath>
+   <radialGradient id="ag${n}" cx="36%" cy="32%" r="72%"><stop offset="0" stop-color="#d6ecff" stop-opacity=".2"/><stop offset=".7" stop-color="#5a8fc4" stop-opacity=".08"/><stop offset="1" stop-color="#a9d6ff" stop-opacity=".32"/></radialGradient>
+   <linearGradient id="aq${n}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fdcff"/><stop offset=".35" stop-color="#3d97ff"/><stop offset="1" stop-color="#123f9a"/></linearGradient>
+   <linearGradient id="ac${n}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6e3313"/><stop offset=".3" stop-color="#d98a4c"/><stop offset=".5" stop-color="#ffd9b0"/><stop offset=".72" stop-color="#c06a32"/><stop offset="1" stop-color="#5e2a0f"/></linearGradient>
+   <radialGradient id="ad${n}" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#ffe0bd"/><stop offset=".35" stop-color="#e09a5e"/><stop offset=".8" stop-color="#9c4d20"/><stop offset="1" stop-color="#6b3112"/></radialGradient>
+   <radialGradient id="aw${n}" cx="45%" cy="68%" r="55%"><stop offset="0" stop-color="#2f8cff" stop-opacity="${(0.1+v*0.5).toFixed(2)}"/><stop offset="1" stop-color="#2f8cff" stop-opacity="0"/></radialGradient>
+   <radialGradient id="af${n}" cx="50%" cy="100%" r="80%"><stop offset="0" stop-color="#fff2a8"/><stop offset=".45" stop-color="#ff9a2a"/><stop offset="1" stop-color="#ff4d2a" stop-opacity="0"/></radialGradient>
+   <clipPath id="ak${n}"><circle cx="50" cy="80" r="25.4"/><rect x="43.6" y="44" width="12.8" height="20"/></clipPath>
+   <clipPath id="av${n}"><path d="M99 98h11v11q0 3-3 3h-5q-3 0-3-3z"/></clipPath>
   </defs>
-  <ellipse cx="56" cy="82" rx="46" ry="38" fill="url(#aw${n})"/>
-  ${v>0.03?`<path class="alfl" d="M44 116q4-${(6+v*8).toFixed(0)} 6-12q3 ${(5+v*6).toFixed(0)} 6 12q4-${(8+v*9).toFixed(0)} 6-14q3 ${(7+v*6).toFixed(0)} 6 14z" fill="url(#af${n})" opacity="${(0.45+v*0.55).toFixed(2)}"/>`:""}
-  <rect x="30" y="108" width="52" height="5" rx="2.5" fill="url(#ac${n})"/>
-  <g clip-path="url(#ak${n})"><g class="alq" style="transform:translateY(${off(from)}px)" data-to="${off(v)}">
-   <rect x="20" y="52" width="72" height="70" fill="url(#aq${n})"/><ellipse cx="56" cy="52" rx="30" ry="3" fill="#bfe6ff" opacity=".75"/></g>${bub}</g>
-  <circle cx="56" cy="80" r="28" fill="url(#ag${n})" stroke="#bfe2ff" stroke-opacity=".8" stroke-width="1.6"/>
-  <path d="M38 68q4-12 16-15" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2.4" stroke-linecap="round"/>
-  <path d="M74 96q4-4 5-9" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.6" stroke-linecap="round"/>
-  <path d="M47 53V40h18v13" fill="url(#ac${n})" stroke="#4a210b" stroke-width="1"/>
-  <path d="M43 40q13-16 26 0z" fill="url(#ac${n})" stroke="#4a210b" stroke-width="1"/>
-  <rect x="44" y="49" width="24" height="4" rx="2" fill="url(#ac${n})" stroke="#4a210b" stroke-width=".8"/>
-  <path d="M56 27q0-6 8-8q22-4 32 10q4 7 4 20" fill="none" stroke="#4a210b" stroke-width="6.4" stroke-linecap="round"/>
-  <path d="M56 27q0-6 8-8q22-4 32 10q4 7 4 20" fill="none" stroke="url(#ac${n})" stroke-width="4.6" stroke-linecap="round"/>
-  <path d="M60 21q18-5 30 6" fill="none" stroke="#ffe3c4" stroke-opacity=".7" stroke-width="1.2" stroke-linecap="round"/>
-  ${v>0.15?`<circle cx="100" cy="56" r="${(1.6+v*1.4).toFixed(1)}" fill="#8fd0ff" class="aldr"/>`:""}
-  ${hot?`<g fill="none" stroke="#dfe9f7" stroke-linecap="round" stroke-opacity=".55" stroke-width="1.6" class="alst"><path d="M50 22q-4-5 0-9q4-4 0-9"/><path d="M62 18q4-4 0-8"/></g>`:""}
+  <ellipse cx="54" cy="82" rx="50" ry="36" fill="url(#aw${n})"/>
+  <path d="M30 112h40l-3 6H33z" fill="url(#ac${n})" stroke="#4a210b" stroke-width=".8"/>
+  <path d="M33 108h34" stroke="#4a210b" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>
+  <!-- potion -->
+  <g clip-path="url(#ak${n})">
+   <g class="alq" style="transform:translateY(${off(from)}px)" data-to="${off(v)}">
+    <g class="alwv"><path d="${wave(52,2.4)}" fill="url(#aq${n})"/></g>
+    <g class="alwv2" opacity=".45"><path d="${wave(52.6,1.8)}" fill="#bfe8ff"/></g>
+    <rect x="-10" y="56" width="140" height="80" fill="url(#aq${n})" opacity=".85"/>
+    <ellipse cx="50" cy="52.8" rx="9" ry="1.6" fill="#e6f6ff" opacity=".0" class="alrip"/>
+   </g>${bub}
+  </g>
+  <!-- ballon en verre -->
+  <path d="M43.6 44V57.6A25.4 25.4 0 1 0 56.4 57.6V44" fill="url(#ag${n})" stroke="#cfe6ff" stroke-opacity=".85" stroke-width="1.5"/>
+  <path d="M45.6 46V58.6A23.4 23.4 0 1 0 54.4 58.6V46" fill="none" stroke="#cfe6ff" stroke-opacity=".18" stroke-width="1"/>
+  <path d="M31.4 72q3-11 12.6-13.6" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="2.6" stroke-linecap="round"/>
+  <path d="M30.2 79.4q0 2 .4 3.6" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M66 96q4-4 5.4-9.6" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M45.2 47v8" stroke="#fff" stroke-opacity=".6" stroke-width="1.3" stroke-linecap="round"/>
+  <!-- brûleur et flamme -->
+  ${v>0.03?`<g class="alfl" style="opacity:${fl.toFixed(2)}"><path d="M40 112q3-${(7+v*9).toFixed(0)} 6-13q3 ${(6+v*6).toFixed(0)} 4 13q3-${(9+v*9).toFixed(0)} 6-15q3 ${(8+v*6).toFixed(0)} 6 15z" fill="url(#af${n})"/><path d="M45 112q2-6 4-8q2 5 3 8z" fill="#fffbe0" opacity=".8" class="alfl2"/></g>`:""}
+  <path d="M30 112h40l-3 6H33z" fill="url(#ac${n})" stroke="#4a210b" stroke-width=".8"/>
+  <!-- collier et chapiteau de cuivre -->
+  <rect x="41.6" y="42" width="16.8" height="5" rx="2" fill="url(#ac${n})" stroke="#4a210b" stroke-width=".8"/>
+  ${rivet(44.4,44.5)}${rivet(50,44.5)}${rivet(55.6,44.5)}
+  <path d="M42.6 42q-1-9 7.4-15q8.4 6 7.4 15z" fill="url(#ad${n})" stroke="#4a210b" stroke-width=".9"/>
+  <path d="M46 37.6q1-5 4-7.4" fill="none" stroke="#fff3e0" stroke-opacity=".75" stroke-width="1.3" stroke-linecap="round"/>
+  <path d="M48.6 27.4q1.4-3 1.4-5q0 2 1.4 5" fill="url(#ac${n})" stroke="#4a210b" stroke-width=".7"/>
+  <circle cx="50" cy="21.4" r="1.6" fill="url(#ad${n})" stroke="#4a210b" stroke-width=".6"/>
+  <!-- col de cygne et serpentin -->
+  <path d="M55.6 33q12-10 28-6q12 3.4 17 14.6" fill="none" stroke="#4a210b" stroke-width="5.4" stroke-linecap="round"/>
+  <path d="M55.6 33q12-10 28-6q12 3.4 17 14.6" fill="none" stroke="url(#ac${n})" stroke-width="3.8" stroke-linecap="round"/>
+  <path d="M60 30.4q10-6.4 22-4.4" fill="none" stroke="#ffe3c4" stroke-opacity=".7" stroke-width="1" stroke-linecap="round"/>
+  <rect x="94" y="44" width="15" height="40" rx="5" fill="#9fd0ff" fill-opacity=".08" stroke="#cfe6ff" stroke-opacity=".55" stroke-width="1"/>
+  ${[50,58,66,74].map(y=>`<path d="M96.4 ${y}q5 3.4 10.2 0q-5-3.4-10.2 0" fill="none" stroke="#4a210b" stroke-width="3"/><path d="M96.4 ${y}q5 3.4 10.2 0" fill="none" stroke="url(#ac${n})" stroke-width="1.8"/>`).join("")}
+  <path d="M100.6 41.6V47M104.4 80v8.4" stroke="#4a210b" stroke-width="3" stroke-linecap="round"/><path d="M100.6 41.6V47M104.4 80v8.4" stroke="url(#ac${n})" stroke-width="1.6" stroke-linecap="round"/>
+  <!-- fiole qui reçoit les gouttes -->
+  <g clip-path="url(#av${n})"><rect x="98" y="${(110-v*10).toFixed(1)}" width="13" height="14" fill="url(#aq${n})" opacity=".85"/></g>
+  <path d="M99 98h11v11q0 3-3 3h-5q-3 0-3-3z" fill="url(#ag${n})" stroke="#cfe6ff" stroke-opacity=".8" stroke-width="1"/>
+  ${v>0.1?`<circle cx="104.4" cy="91" r="${(1.1+v*1).toFixed(1)}" fill="#8fd0ff" class="aldr"/>`:""}
+  ${hot?`<g fill="none" stroke="#dfe9f7" stroke-linecap="round" stroke-opacity=".5" stroke-width="1.5" class="alst"><path d="M50 18q-4-5 0-9q4-4 0-8"/><path d="M58 20q4-4 0-8"/></g>`:""}
+  <circle cx="50" cy="30" r="2.6" fill="#8fd0ff" class="alpd"/>
   </svg>`;
 }

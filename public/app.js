@@ -141,7 +141,7 @@ function viewChart(list,now,o={}){
   const ymax=Math.max(1.0,...withD.map(p=>Math.max(0,...p.sim.pts.filter(x=>x[0]>=t0&&x[0]<=t1).map(x=>x[1]))))*1.1;
   const W=Math.max(320,($("#app").clientWidth||340)), H=o.height||260;
   const id=(o.key||title)+"|"+Math.round(t0/MIN);
-  CH[id]={t0,t1,now,ymax,W,H,series:withD.map(p=>({color:p.color,pts:p.sim.pts,cur:p.sim.cur}))};
+  CH[id]={t0,t1,now,ymax,W,H,series:withD.map(p=>({id:p.id,color:p.color,pts:p.sim.pts,cur:p.sim.cur}))};
   const v=CHV[id];
   return `<section><h2>${esc(title)}</h2><div class="card" style="padding:12px 8px"><div class="chart zoomable" data-ch="${esc(id)}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(title)}">${chartBody(CH[id],v?v.a:t0,v?v.b:t1)}</svg><span class="zhint"${v?"":" hidden"}><button type="button" class="link" data-zreset>Vue entière</button></span></div></div>
   ${list.length>1||o.legend?`<div class="legend">${(o.legend?list:withD).map(p=>`<span><i class="dot" style="background:${p.color}"></i>${o.legend?o.legend(p):`${esc(p.pseudo)} · ${fmt(p.sim.cur)}`}</span>`).join("")}</div>`:""}
@@ -170,7 +170,8 @@ function chartBody(c,a,b){
     const d=arr=>arr.map((x,i)=>(i?"L":"M")+X(x[0]).toFixed(1)+" "+Y(x[1]).toFixed(1)).join("");
     if(past.length>1) g+=`<path d="${d(past)}" fill="none" stroke="${p.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
     if(fut.length>1) g+=`<path d="${d(fut)}" fill="none" stroke="${p.color}" stroke-width="2" stroke-dasharray="4 5" stroke-opacity=".7"/>`;
-    if(live) g+=`<circle cx="${X(now)}" cy="${Y(p.cur)}" r="4.5" fill="${p.color}" stroke="var(--bg)" stroke-width="2"/>`;
+    if(live){ const pe=Date.now()-lastPour; if(pe>-1000&&pe<2600&&p.id===S.me&&!REDUCE) g+=`<circle cx="${X(now)}" cy="${Y(p.cur)}" r="5" fill="none" stroke="${p.color}" stroke-width="2.5" class="cpulse" style="animation-delay:${-pe}ms"/><circle cx="${X(now)}" cy="${Y(p.cur)}" r="5" fill="none" stroke="${p.color}" stroke-width="2" class="cpulse" style="animation-delay:${-pe+350}ms"/>`;
+      g+=`<circle cx="${X(now)}" cy="${Y(p.cur)}" r="4.5" fill="${p.color}" stroke="var(--bg)" stroke-width="2"/>` }
   }
   g+=`</g>`;
   if(live) g+=`<text x="${Math.min(X(now)+4,W-R-60)}" y="${T+10}" fill="var(--muted)" font-size="11">maintenant</text>`;
@@ -207,10 +208,11 @@ function bindCharts(){
 /* ---------- animations ---------- */
 const REDUCE=(()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}})();
 /* Jauge : alambic qui se remplit de potion (dessin dans avatar.js), sans graduation (indicatif). */
-let gaugePrev=null;
+let gaugePrev=null, lastPour=-1e9, lastSip=-1e9;   // verre qui vient d'être noté : goutte et remous dans l'alambic, gorgée de l'avatar, pulsation sur la courbe
 function gauge(cur,maxB,cap,col,down){
   const r=Math.max(0,Math.min(1,cur/maxB)), from=gaugePrev===null?r:gaugePrev; gaugePrev=r;
-  return `<div class="gauge alam">${alambic(r,from,down)}</div>`;
+  const pe=Date.now()-lastPour, pour=pe>-1000&&pe<1800&&!REDUCE;
+  return `<div class="gauge alam"${pour?` style="--pel:${-pe}ms"`:""}>${alambic(r,from,down,pour)}</div>`;
 }
 function animateGauge(){
   document.querySelectorAll(".gauge .alq").forEach(q=>{ const go=()=>{q.style.transform=`translateY(${q.dataset.to}px)`};
@@ -235,7 +237,8 @@ function avx(p,size,_lab,key){
   key=key||p.id; const lab=AV_NAMES[avStage(Math.max(0,p.sim?.cur||0))]; const old=statePrev[key], now=Date.now();
   const at=old?(old.lab!==lab?now:old.at):0, el=now-at, changed=!!at&&el<2200&&!REDUCE;   // l'animation continue au fil des rafraîchissements
   const sw=Math.min(1.4,Math.max(0,p.sim?.cur||0))*4.5;
-  return `<span class="avw${changed?" avchg":""}${sw<0.4?" still":""}" style="--sw:${sw.toFixed(2)}deg;--el:-${el}ms" data-st="${esc(key)}|${at}|${esc(lab)}">${avatar(p,size)}${changed?`<em class="avbub">${esc(lab)}</em>`:""}</span>`;
+  const se=Date.now()-lastSip, sip=key==="me"&&se<1800&&!REDUCE;
+  return `<span class="avw${changed?" avchg":""}${sw<0.4?" still":""}${sip?" sip":""}" style="--sw:${sw.toFixed(2)}deg;--el:-${el}ms;--sel:-${Math.max(0,se)}ms" data-st="${esc(key)}|${at}|${esc(lab)}">${avatar(p,size)}${changed?`<em class="avbub">${esc(lab)}</em>`:""}</span>`;
 }
 
 /* Potes en direct : taux, tendance façon bourse, mini-courbe, dernier titre */
@@ -941,10 +944,12 @@ async function addDrink(d,key,rect,noPop){
   if(!noPop&&needMealPop(d)){ S.mealPop={d,key,rect,kind:guessKind(),t:""}; render(); return }
   const a=ago, when=NOW()-a*MIN;
   if(demo){ const p=demoPlayers[S.me]; p.drinks=[...p.drinks,{id:when,t:when,l:d.l,ml:d.ml,abv:d.abv,...(d.water?{water:1}:{})}]; ago=0;
+    if(!d.water){ lastSip=Date.now(); lastPour=Date.now()+650 }
     buzz(25); setPend(key,"ok",1300); if(!d.water) flyDrop(rect); snack("Verre enregistré",`${d.l} · ${hm(when)}`,{undo:()=>{p.drinks=p.drinks.filter(x=>x.id!==when);render();snack("Verre retiré")}}); return }
   setPend(key,"sending");
   try{
     const r=await api("POST","/api/me/drinks",{label:d.l,ml:d.ml,abv:d.abv,agoMin:a}); hubDirty("soirees","agenda");
+    if(!d.water){ lastSip=Date.now(); lastPour=Date.now()+650 }
     ago=0; buzz(25); setPend(key,"ok",1300); if(!d.water) flyDrop(rect);
     snack("Verre enregistré",`${d.l} · ${hm(r.t||when)}`,{undo:async()=>{ try{ await api("DELETE",`/api/me/drinks/${r.id}?undo=1`); snack("Verre retiré"); refresh() }catch(e){ snack("Impossible d'annuler",e.message,{err:1}) } }});
     refresh();

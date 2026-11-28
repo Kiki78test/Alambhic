@@ -9,6 +9,7 @@ const parties = require("./parties");
 const app = express();
 app.set("trust proxy", 1);
 app.disable("x-powered-by");
+app.use(require("./monitor").veille.express());   // (28/11) veille de sécurité du centre de contrôle : connexions refusées, inscriptions, erreurs, accès admin refusés
 app.use(express.json({ limit: "32kb" }));
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");

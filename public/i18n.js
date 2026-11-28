@@ -316,14 +316,14 @@ Ce lien a expiré ou a déjà servi. Refaites une demande.|This link has expired
 Ce pseudo n'est pas accepté : choisissez-en un autre.|This nickname isn't allowed: choose another one.|Este apodo no está permitido: elige otro.|Este apelido não é aceito: escolha outro.
 Un pseudo ne peut pas contenir d'adresse, de numéro ni de lien.|A nickname can't contain an address, a number or a link.|Un apodo no puede contener una dirección, un número ni un enlace.|Um apelido não pode conter endereço, número nem link.
 Partager|Share|Compartir|Compartilhar
-Sessions|Sessions|Sesiones|Sessões
+Cuvées|Sessions|Sesiones|Sessões
 Agenda|Calendar|Agenda|Agenda
 Groupes|Groups|Grupos|Grupos
 Soirées|Parties|Fiestas|Festas
-Mes sessions|My sessions|Mis sesiones|Minhas sessões
-Une session commence au premier verre d'alcool et se termine quand le taux revient à 0. 60 derniers jours.|A session starts with the first alcoholic drink and ends when your level is back to 0. Last 60 days.|Una sesión empieza con la primera copa de alcohol y termina cuando la tasa vuelve a 0. Últimos 60 días.|Uma sessão começa no primeiro copo com álcool e termina quando a taxa volta a 0. Últimos 60 dias.
-Aucune session pour l'instant. Elles apparaîtront ici dès votre premier verre d'alcool.|No sessions yet. They will appear here from your first alcoholic drink.|Aún no hay sesiones. Aparecerán aquí con tu primera copa de alcohol.|Ainda sem sessões. Elas vão aparecer aqui a partir do seu primeiro copo com álcool.
-‹ Toutes les sessions|‹ All sessions|‹ Todas las sesiones|‹ Todas as sessões
+Mes cuvées|My sessions|Mis sesiones|Minhas sessões
+Une cuvée commence au premier verre d'alcool et se termine quand le taux revient à 0. 60 derniers jours.|A session starts with the first alcoholic drink and ends when your level is back to 0. Last 60 days.|Una sesión empieza con la primera copa de alcohol y termina cuando la tasa vuelve a 0. Últimos 60 días.|Uma sessão começa no primeiro copo com álcool e termina quando a taxa volta a 0. Últimos 60 dias.
+Aucune cuvée pour l'instant. Elles apparaîtront ici dès votre premier verre d'alcool.|No sessions yet. They will appear here from your first alcoholic drink.|Aún no hay sesiones. Aparecerán aquí con tu primera copa de alcohol.|Ainda sem sessões. Elas vão aparecer aqui a partir do seu primeiro copo com álcool.
+‹ Toutes les cuvées|‹ All sessions|‹ Todas las sesiones|‹ Todas as sessões
 Début|Start|Inicio|Início
 Fin|End|Fin|Fim
 Retour à 0|Back to 0|Vuelta a 0|Volta a 0
@@ -331,10 +331,10 @@ Retour à 0 prévu|Expected back to 0|Vuelta a 0 prevista|Volta a 0 prevista
 Pic|Peak|Pico|Pico
 Verres d'alcool|Alcoholic drinks|Copas de alcohol|Copos com álcool
 Verres d'eau|Glasses of water|Vasos de agua|Copos de água
-Courbe de la session|Session curve|Curva de la sesión|Curva da sessão
-Verres de la session|Drinks in this session|Copas de la sesión|Copos da sessão
-Ma session en cours|My current session|Mi sesión en curso|Minha sessão atual
-La session a commencé à votre premier verre d'alcool ; elle se terminera quand votre taux sera revenu à 0.|The session started with your first alcoholic drink; it will end when your level is back to 0.|La sesión empezó con tu primera copa de alcohol; terminará cuando tu tasa vuelva a 0.|A sessão começou no seu primeiro copo com álcool; vai terminar quando sua taxa voltar a 0.
+Courbe de la cuvée|Session curve|Curva de la sesión|Curva da sessão
+Verres de la cuvée|Drinks in this session|Copas de la sesión|Copos da sessão
+Ma cuvée en cours|My current session|Mi sesión en curso|Minha sessão atual
+La cuvée a commencé à votre premier verre d'alcool ; elle se terminera quand votre taux sera revenu à 0.|The session started with your first alcoholic drink; it will end when your level is back to 0.|La sesión empezó con tu primera copa de alcohol; terminará cuando tu tasa vuelva a 0.|A sessão começou no seu primeiro copo com álcool; vai terminar quando sua taxa voltar a 0.
 Du premier verre au retour à 0.|From the first drink to back to 0.|De la primera copa a la vuelta a 0.|Do primeiro copo à volta a 0.
 en cours|ongoing|en curso|em andamento
 Soirée en cours|Party in progress|Fiesta en curso|Festa em andamento
@@ -346,7 +346,7 @@ Jours sans alcool|Alcohol-free days|Días sin alcohol|Dias sem álcool
 Jours à 6 et +|Days with 6+|Días con 6 o más|Dias com 6 ou mais
 verres standard par jour|standard drinks per day|copas estándar por día|doses padrão por dia
 Jour sans alcool.|Alcohol-free day.|Día sin alcohol.|Dia sem álcool.
-Voir les sessions|See sessions|Ver las sesiones|Ver as sessões
+Voir les cuvées|See sessions|Ver las sesiones|Ver as sessões
 Voir mon agenda|See my calendar|Ver mi agenda|Ver minha agenda
 Prenez soin de vous|Take care of yourself|Cuídate|Cuide-se
 Un œil sur votre conso|Keep an eye on your drinking|Ojo con tu consumo|De olho no seu consumo
@@ -397,6 +397,12 @@ Lieu retiré|Place removed|Lugar quitado|Local removido
 Autour de moi : bars, restaurants…|Near me: bars, restaurants…|Cerca de mí: bares, restaurantes…|Perto de mim: bares, restaurantes…
 Recherche autour de vous…|Searching around you…|Buscando a tu alrededor…|A procurar à sua volta…
 Chez moi|At home|En casa|Em casa
+Mon avatar|My avatar|Mi avatar|O meu avatar
+Personnage|Character|Personaje|Personagem
+Peau|Skin|Piel|Pele
+Cheveux|Hair|Pelo|Cabelo
+Visible par vos potes. La peau de l'avatar rosit puis pâlit quand le taux monte.|Visible to your friends. The avatar's skin flushes, then turns pale, as the level rises.|Visible para tus amigos. La piel del avatar se sonroja y luego palidece cuando sube la tasa.|Visível para os amigos. A pele do avatar cora e depois empalidece quando a taxa sobe.
+Avatar non enregistré|Avatar not saved|Avatar no guardado|Avatar não guardado
 Avant ce premier verre · facultatif|Before this first drink · optional|Antes de esta primera copa · opcional|Antes desta primeira bebida · opcional
 Votre dernier repas ?|Your last meal?|¿Tu última comida?|A sua última refeição?
 Un repas ralentit le passage de l'alcool et baisse le pic : l'estimation sera plus juste.|A meal slows alcohol absorption and lowers the peak: the estimate will be more accurate.|Una comida frena el paso del alcohol y baja el pico: la estimación será más precisa.|Uma refeição abranda a passagem do álcool e baixa o pico: a estimativa será mais precisa.
@@ -441,7 +447,7 @@ Rien|Nothing|Nada|Nada
     [/^(.+) a bu 3 verres d'eau\.$/, "$1 drank 3 glasses of water.", "$1 ha bebido 3 vasos de agua.", "$1 bebeu 3 copos de água."],
     [/^(.+) en est à 6 verres d'eau\.$/, "$1 is up to 6 glasses of water.", "$1 va por 6 vasos de agua.", "$1 já está em 6 copos de água."],
     [/^(.+) reste à zéro et veille sur tout le monde\.$/, "$1 stays at zero and looks after everyone.", "$1 se queda a cero y cuida de todos.", "$1 fica no zero e cuida de todo mundo."],
-    [/^Titres de la session \((\d+)\)$/, "Session titles ($1)", "Títulos de la sesión ($1)", "Títulos da sessão ($1)"],
+    [/^Titres de la cuvée \((\d+)\)$/, "Session titles ($1)", "Títulos de la sesión ($1)", "Títulos da sessão ($1)"],
     [/^(.+) Pincez pour zoomer, glissez pour vous déplacer\.$/, "{t:$1} Pinch to zoom, swipe to move.", "{t:$1} Pellizca para ampliar, desliza para moverte.", "{t:$1} Faça pinça para ampliar, deslize para mover."],
     [/^Notre soirée du (.+)$/, "Our night: $1", "Nuestra noche del $1", "Nossa noite de $1"],
     [/^(\d+) joueurs? · (\d+) titres? débloqués?$/, "$1 player(s) · $2 title(s) unlocked", "$1 jugador(es) · $2 título(s) desbloqueado(s)", "$1 jogador(es) · $2 título(s) desbloqueado(s)"],

@@ -69,7 +69,7 @@ body = f"""<div class="page">{band("Avatar animé : cahier des charges", "Pour l
 <li>Un plan de travail (artboard) nommé <code>Avatar</code>, carré <b>240 × 240</b>, fond transparent. Le personnage est cadré en buste, centré, et tient dans un cercle de 220 de diamètre : l'appli ajoute elle-même le fond rond, l'anneau de couleur du stade et le badge « clés confisquées ».</li>
 <li>Une machine à états nommée <code>Etat</code>, avec exactement les entrées décrites au point 4 (noms sensibles à la casse).</li>
 <li>Un aperçu vidéo (MP4 ou GIF) de chaque stade et de chaque geste, pour la validation.</li>
-<li>Plus tard, avec le même squelette : une version femme (plan de travail <code>AvatarF</code>), voir le point 9.</li>
+<li>Avec le même squelette : une version femme (plan de travail <code>AvatarF</code>), déjà en place dans l'avatar actuel (cheveux longs, pendentif, bracelet), voir le point 9. Prévoir aussi la teinte de peau et la couleur de cheveux pilotables (6 teintes, 6 couleurs), et la peau qui rosit puis pâlit avec le stade.</li>
 </ul>
 
 <h2>2. Le personnage</h2>
@@ -81,6 +81,8 @@ body = f"""<div class="page">{band("Avatar animé : cahier des charges", "Pour l
 </ul>
 <img class="ref" src="img/rive-stades.png" alt="Les 10 stades de l'avatar actuel">
 <p class="cap">Référence : les 10 stades de l'avatar actuel (pantin dessiné et animé en code). Garder les idées (expressions, cheveux, cravate, effets, gorgée jusqu'à la bouche, liquide qui reste à l'horizontale), en mieux.</p>
+<img class="ref" src="img/rive-femme.png" alt="Les 10 stades de la version femme">
+<p class="cap">Référence : la version femme actuelle (cheveux longs, pendentif à la place de la cravate, bracelet, vernis). Teintes de peau et couleurs de cheveux au choix du joueur.</p>
 <h2>3. Les 10 stades</h2>
 <p style="font-size:9pt">Seuil = taux estimé en g/L à partir duquel le stade s'affiche. L'appli calcule le stade et le transmet à l'animation (entrée <code>stage</code>).</p>
 <table class="t"><tr><th>Stade</th><th>Seuil</th><th>Visage</th><th>Cheveux</th><th>Tenue</th><th>Effets autour</th><th>Mouvement de repos</th></tr>{st}</table>

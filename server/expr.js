@@ -2,10 +2,10 @@
 /* Alamb'hic — notifications « expressions » envoyées aux potes, tirées des expressions françaises de l'alcool.
    Exemples : « Max remet le facteur sur le vélo » (un verre le lendemain d'une soirée), « Max tue le ver » (avant midi),
    « Max a du vent dans les voiles » (0,8 g/L), « Max met de l'eau dans son vin » (3 verres d'eau)…
-   Le lieu de la session s'ajoute quand il est connu : « Kiki remet le facteur sur le vélo – à La Folie Douce ».
+   Le lieu de la cuvée s'ajoute quand il est connu : « Kiki remet le facteur sur le vélo – à La Folie Douce ».
    Destinataires : les amis (liste d'amis, si le joueur partage avec eux) et les membres de ses groupes.
    Chaque destinataire choisit ce qu'il reçoit (users.notif_prefs.expr) : tout (défaut), amis, groupes ou rien.
-   Garde-fous : une seule fois par session et par expression ; au plus une expression du même joueur toutes les 30 min par destinataire. */
+   Garde-fous : une seule fois par cuvée et par expression ; au plus une expression du même joueur toutes les 30 min par destinataire. */
 const YD = require("../public/engine.js");
 const { q } = require("./db");
 const push = require("./push");
@@ -58,7 +58,7 @@ async function emit(uid, key, phrase, body, place) {
   return n;
 }
 
-/* après chaque verre noté : expression de début de session, paliers de taux, verres d'eau */
+/* après chaque verre noté : expression de début de cuvée, paliers de taux, verres d'eau */
 async function check(uid) {
   const l = await conso.live(uid), me = l.me, now = l.now;
   if (!me.sessionStart) return;
@@ -79,10 +79,10 @@ async function check(uid) {
     LEVELS.filter(x => x[0] < lv[0]).forEach(x => sent.add(base + ":" + x[1]));
     await emit(uid, base + ":" + lv[1], lv[2], lv[3], me.place);
   }
-  if (water >= 3 && alc.length) await emit(uid, base + ":eau", "met de l'eau dans son vin", `${water} verres d'eau pendant la session.`, me.place);
+  if (water >= 3 && alc.length) await emit(uid, base + ":eau", "met de l'eau dans son vin", `${water} verres d'eau pendant la cuvée.`, me.place);
 }
 
-/* le matin (10 h, heure de Paris) : « a sûrement mal aux cheveux » après une session montée à 1 g/L ou plus */
+/* le matin (10 h, heure de Paris) : « a sûrement mal aux cheveux » après une cuvée montée à 1 g/L ou plus */
 const morningDone = new Set();
 async function morning() {
   const now = Date.now(), paris = new Date(new Date(now).toLocaleString("en-US", { timeZone: "Europe/Paris" }));
@@ -92,7 +92,7 @@ async function morning() {
   const { rows } = await q(`SELECT DISTINCT user_id FROM drinks WHERE abv>0 AND deleted_at IS NULL AND t > now() - interval '16 hours' AND t < now() - interval '3 hours'`);
   for (const r of rows) {
     const l = await conso.live(r.user_id).catch(() => null);
-    if (!l || l.me.sessionStart) continue;   // encore en session : pas de message du matin
+    if (!l || l.me.sessionStart) continue;   // encore en cuvée : pas de message du matin
     const { rows: ses } = await q(`SELECT id, t, label, ml, abv, water, place FROM drinks WHERE user_id=$1 AND deleted_at IS NULL AND t > now() - interval '20 hours' ORDER BY t`, [r.user_id]);
     const { rows: u } = await q("SELECT sex, age, height, weight, cap FROM users WHERE id=$1", [r.user_id]);
     const dr = ses.map(d => ({ t: +d.t, ml: d.ml, abv: d.abv, ...(d.water ? { water: 1 } : {}) }));

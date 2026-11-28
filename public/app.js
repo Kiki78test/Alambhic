@@ -42,7 +42,7 @@ function stateOf(b,cap){
   return ["Sobre","var(--ok)"];
 }
 
-/* Lieu de la session : sélecteur avec favoris ; repris par l'historique, les groupes et les notifications des potes */
+/* Lieu de la cuvée : sélecteur avec favoris ; repris par l'historique, les groupes et les notifications des potes */
 const PIN=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>`;
 async function loadPlace(){ try{ S.place=await api("GET","/api/me/place") }catch(e){} }
 /* position des favoris, gardée seulement sur ce téléphone (jamais envoyée) : pour proposer « Chez moi » quand on y revient */
@@ -78,7 +78,7 @@ function viewPlace(){
    <div class="row" style="flex-wrap:nowrap"><input id="placeIn" maxlength="40" placeholder="Autre lieu : chez Paul, camping…" style="flex:1;min-width:0"><button class="btn small" id="placeOk">OK</button></div>
    <label class="toggle"><span>Ajouter aux favoris</span><input type="checkbox" id="placeFav" checked></label>
    <div class="row" style="justify-content:space-between">${P.place?`<button class="link" id="placeNone">Aucun lieu</button>`:"<span></span>"}${P.places.length?`<button class="link" id="placeEdit">${S.placeEdit?"Terminé":"Gérer les favoris"}</button>`:""}</div>
-   <span class="muted" style="font-size:12px">Le lieu vaut pour la session en cours et les verres des 10 h qui suivent. Vos amis et vos groupes le voient (« Kiki remet le facteur sur le vélo – à La Folie Douce »). Votre position sert seulement à la recherche : elle n'est pas enregistrée ; celle de vos favoris reste sur ce téléphone.</span>
+   <span class="muted" style="font-size:12px">Le lieu vaut pour la cuvée en cours et les verres des 10 h qui suivent. Vos amis et vos groupes le voient (« Kiki remet le facteur sur le vélo – à La Folie Douce »). Votre position sert seulement à la recherche : elle n'est pas enregistrée ; celle de vos favoris reste sur ce téléphone.</span>
   </div>`;
 }
 async function setPlace(body,msg){
@@ -134,10 +134,10 @@ function viewMe(p,now,mid=""){
   ${my.sam?"":`<div class="row"><div class="field" style="flex:1;min-width:90px"><span class="label">Volume (cl)</span><input id="cml" type="number" inputmode="decimal" min="1" max="100" placeholder="15"></div><div class="field" style="flex:1;min-width:90px"><span class="label">Degré (%)</span><input id="cabv" type="number" inputmode="decimal" min="0" max="80" placeholder="13"></div><button class="btn${pend.perso?" "+pend.perso:""}" id="cadd" style="align-self:flex-end">${pend.perso==="ok"?"✓ Noté":pend.perso==="sending"?"Envoi…":"Ajouter"}</button></div>`}
   </section>
   ${viewMeals()}
-  ${titles.length>1?`${zs("titre")}<details class="hq"><summary>Titres de la session (${titles.length})</summary><div class="badges" style="margin-top:8px">${titles.map(e=>`<span class="badge ${e.kind}">${esc(e.title)} · ${hm(e.t)}</span>`).join("")}</div></details></section>`:""}
+  ${titles.length>1?`${zs("titre")}<details class="hq"><summary>Titres de la cuvée (${titles.length})</summary><div class="badges" style="margin-top:8px">${titles.map(e=>`<span class="badge ${e.kind}">${esc(e.title)} · ${hm(e.t)}</span>`).join("")}</div></details></section>`:""}
   ${zs("liste")}${zh("liste","Mes verres")}${mine.length?`<div class="list">${mine.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div><button class="x" data-del="${d.id}" aria-label="Supprimer ce verre">×</button></div>`).join("")}</div>`:`<p class="muted">Touchez une boisson ci-dessus pour l'enregistrer. Pensez à l'eau : trois verres débloquent le Chameau.</p>`}</section>${viewMealPop()}`;
 }
-/* Courbes sur une fenêtre : soirée (début → fin prévus), session (premier verre → retour à 0), groupe (48 h).
+/* Courbes sur une fenêtre : soirée (début → fin prévus), cuvée (premier verre → retour à 0), groupe (48 h).
    Zoom et déplacement aux doigts : pincer pour zoomer, glisser pour se déplacer, double-toucher pour revenir à la vue entière.
    La vue choisie est gardée quand l'écran se redessine (CHV). */
 const CH={}, CHV={};
@@ -346,10 +346,10 @@ const futureHM=hmS=>{const [h,m]=hmS.split(":").map(Number);const d=new Date(NOW
 const atHM=hmS=>{const [h,m]=hmS.split(":").map(Number);const d=new Date(NOW());d.setHours(h,m,0,0);if(d.getTime()>NOW()+15*MIN)d.setDate(d.getDate()-1);return d.getTime()};
 const hourNow=()=>{const d=new Date(NOW());return d.getHours()+d.getMinutes()/60};
 function kindSelect(id,val,withNone){return `<select id="${id}">${withNone?`<option value="">Rien</option>`:""}${MEAL_ORDER.map(k=>`<option value="${k}" ${val===k?"selected":""}>${MEALS[k].l}</option>`).join("")}</select>`}
-/* Premier verre d'alcool de la session : fenêtre facultative « votre dernier repas ? » (heure et type), que l'on peut passer ou fermer. */
+/* Premier verre d'alcool de la cuvée : fenêtre facultative « votre dernier repas ? » (heure et type), que l'on peut passer ou fermer. */
 function needMealPop(d){
   if(demo||noAdd||d.water||my.sam) return false;
-  if((my.drinks||[]).some(x=>x.abv>0)) return false;                  // pas le premier verre de la session
+  if((my.drinks||[]).some(x=>x.abv>0)) return false;                  // pas le premier verre de la cuvée
   if(myMeals().some(m=>m.t>NOW()-5*H_MS)) return false;               // un repas récent est déjà noté
   return NOW()-ls.get("yd_mpop",0)>8*H_MS;                            // déjà demandé il y a moins de 8 h
 }
@@ -503,6 +503,7 @@ function viewProfile(){
   ${S.err?`<div class="banner">${esc(S.err)}</div>`:""}
   <div class="row"><button class="btn" id="saveProf">Enregistrer</button>${edit?`<button class="btn ghost" id="back">Retour</button>`:""}</div>
   </section>
+  ${edit?viewLook():""}
   ${wk}
   ${edit?viewBadges()+viewNotifs()+viewLang():""}
   ${edit?`<section><div class="row"><button class="btn ghost small" id="helpBtn2">Aide</button>${S.user?.admin?`<button class="btn ghost small" id="openDocs">Documentation</button>`:""}<button class="btn ghost small" id="demoBtn2">Voir la démo</button>${S.user?.admin?`<a class="btn ghost small" href="/demo.html" target="_blank" rel="noopener" style="text-decoration:none">Banc de test (ordinateur)</a>`:""}</div></section><section><div class="row">${S.code?`<button class="btn ghost small" id="leave">Quitter la soirée ${esc(S.code)}</button>`:""}<button class="btn ghost small" id="logout">Me déconnecter</button></div>
@@ -537,8 +538,8 @@ function openFriends(){ S.err=""; S.screen="friends"; render(); loadFriends().th
 const inviteLink=()=>`${location.origin}/?ami=${S.friends?.code||""}`;
 function friendCard(f,i,now){
   const L=f.live, color=COLORS[(i+1)%COLORS.length];
-  if(!L) return `<div class="lcard off"><div class="lhead">${avatar({id:f.id,color,cap:f.cap,sim:{cur:0,prev:0,peak:0},drinks:[]},50)}<div class="lname"><b data-noi18n>${esc(f.pseudo)}</b><span class="lstate muted">${f.share?"Pas en soirée":"Ne partage pas son taux"}</span></div></div><button class="link danger" data-unf="${f.id}" data-name="${esc(f.pseudo)}">Retirer</button></div>`;
-  const p={id:f.id,color,cap:f.cap,sim:{cur:L.cur,prev:L.prev,peak:L.peak,pts:L.pts},drinks:L.drinks};
+  if(!L) return `<div class="lcard off"><div class="lhead">${avatar({id:f.id,color,cap:f.cap,sex:f.sex,look:f.look,sim:{cur:0,prev:0,peak:0},drinks:[]},50)}<div class="lname"><b data-noi18n>${esc(f.pseudo)}</b><span class="lstate muted">${f.share?"Pas en soirée":"Ne partage pas son taux"}</span></div></div><button class="link danger" data-unf="${f.id}" data-name="${esc(f.pseudo)}">Retirer</button></div>`;
+  const p={id:f.id,color,cap:f.cap,sex:f.sex,look:f.look,sim:{cur:L.cur,prev:L.prev,peak:L.peak,pts:L.pts},drinks:L.drinks};
   const [lab,col]=stateOf(L.cur,+f.cap||0.8), tr=trendOf(p,now);
   return `<div class="lcard"><div class="lhead">${avx(p,58,L.sam?"Sam ce soir":lab,"f"+f.id)}<div class="lname"><b data-noi18n>${esc(f.pseudo)}</b><span class="lstate" style="color:${col}">${L.sam?"Sam ce soir":lab}</span></div></div>
     <div class="lrow"><span class="lnum" style="color:${col}">${fmt(L.cur)}<small>g/L</small></span><span class="ltr ${tr.k}${trendPrev["f"+f.id]&&trendPrev["f"+f.id]!==tr.k?" chg":""}" data-tk="f${f.id}|${tr.k}">${tr.k==="up"?"▲":tr.k==="down"?"▼":"■"} ${tr.txt}</span></div>
@@ -624,6 +625,26 @@ function viewNotifs(){
   </div></section>`;
 }
 
+/* ---------- apparence de l'avatar : personnage, teinte de peau, couleur de cheveux ---------- */
+function viewLook(){
+  const u=S.user, lk=u.look||{}, g=lk.g||(u.sex==="F"?"f":"h"), sk=AV_SKIN[lk.skin]?lk.skin:1, hr=AV_HAIR[lk.hair]?lk.hair:0;
+  const sw=(arr,cur,attr,names)=>arr.map((c,i)=>`<button class="swatch${i===cur?" on":""}" data-${attr}="${i}" style="background:${c}" aria-label="${names[i]}" aria-pressed="${i===cur}"></button>`).join("");
+  return `<section><h2>Mon avatar</h2><div class="card lookcard">
+   <div class="lookprev">${avatar({id:"look",color:COLORS[0],sex:u.sex,look:{g,skin:sk,hair:hr},sim:{cur:0.12,prev:0.12,peak:0.12},drinks:[{t:NOW()-MIN,l:"Vin",ml:120,abv:12}]},104,"look")}</div>
+   <div class="lookopts">
+    <div class="field"><span class="label">Personnage</span><div class="seg" id="lookG"><button data-g="h" aria-pressed="${g==="h"}">Homme</button><button data-g="f" aria-pressed="${g==="f"}">Femme</button></div></div>
+    <div class="field"><span class="label">Peau</span><div class="swatches">${sw(AV_SKIN,sk,"skin",["Très claire","Claire","Dorée","Mate","Brune","Foncée"])}</div></div>
+    <div class="field"><span class="label">Cheveux</span><div class="swatches">${sw(AV_HAIR,hr,"hair",["Bruns","Noirs","Châtains","Blonds","Roux","Gris"])}</div></div>
+   </div></div><p class="muted" style="font-size:12px;margin:0">Visible par vos potes. La peau de l'avatar rosit puis pâlit quand le taux monte.</p></section>`;
+}
+function bindLook(){
+  const save=patch=>{ const old=S.user.look; S.user.look={...(old||{}),...patch}; render();
+    api("PUT","/api/me/look",patch).then(r=>{ S.user.look=r.look; hubDirty("moi","groupes") }).catch(e=>{ S.user.look=old; render(); snack("Avatar non enregistré",e.message,{err:1}) }) };
+  document.querySelectorAll("#lookG [data-g]").forEach(b=>b.onclick=()=>save({g:b.dataset.g}));
+  document.querySelectorAll("[data-skin]").forEach(b=>b.onclick=()=>save({skin:+b.dataset.skin}));
+  document.querySelectorAll("[data-hair]").forEach(b=>b.onclick=()=>save({hair:+b.dataset.hair}));
+}
+
 /* ---------- langue ---------- */
 const LANGS={fr:"Français",en:"English",es:"Español",pt:"Português"};
 function viewLang(){ return `<section><div class="field"><span class="label">Langue</span><select id="langSel">${Object.entries(LANGS).map(([k,l])=>`<option value="${k}" ${I18N.lang===k?"selected":""}>${l}</option>`).join("")}</select></div></section>` }
@@ -675,7 +696,7 @@ function viewShare(me){
 }
 
 
-/* ---------- accueil hors soirée : Moi (verres partout), Sessions, Agenda, Groupes, Soirées ---------- */
+/* ---------- accueil hors soirée : Moi (verres partout), Cuvées, Agenda, Groupes, Soirées ---------- */
 const H_MS=3600e3;
 const curMonth=()=>new Date().toLocaleDateString("sv-SE").slice(0,7);
 const dShort=t=>new Date(t).toLocaleDateString(I18N.lang==="fr"?"fr-FR":I18N.lang,{weekday:"short",day:"numeric",month:"short"});
@@ -716,17 +737,17 @@ function viewHub(now){
   return h;
 }
 
-/* Moi : la session en cours, où que l'on boive */
+/* Moi : la cuvée en cours, où que l'on boive */
 function viewSolo(now){
   if(!S.live) return loading();
-  const p={...S.live.me,color:COLORS[0]}, pa=S.live.party;
+  const p={...S.live.me,color:COLORS[0],sex:S.user.sex,look:S.user.look}, pa=S.live.party;
   my={pseudo:p.pseudo,cap:p.cap,sam:p.sam,mealsOk:p.mealsOk,drinks:p.drinks};
   return `<div class="hero" style="padding-bottom:0"><h1>Salut ${esc(S.user.pseudo)} !</h1></div>
   ${pa?`<section><div class="card pnow"><div><span class="label" style="color:var(--accent)">Soirée en cours</span><b>${esc(pa.name||"Soirée "+pa.code)} · ${esc(pa.code)}</b><span class="muted" style="font-size:13px">Vos verres comptent aussi dans cette soirée.</span></div><button class="btn small" data-open="${esc(pa.code)}">Ouvrir</button></div></section>`:""}
-  ${viewMe(p,now,p.sim.pts.length>1?viewChart([p],now,{title:"Ma session en cours",zone:1,t0:p.sessionStart-10*MIN,note:"La session a commencé à votre premier verre d'alcool ; elle se terminera quand votre taux sera revenu à 0."}):"")}`;
+  ${viewMe(p,now,p.sim.pts.length>1?viewChart([p],now,{title:"Ma cuvée en cours",zone:1,t0:p.sessionStart-10*MIN,note:"La cuvée a commencé à votre premier verre d'alcool ; elle se terminera quand votre taux sera revenu à 0."}):"")}`;
 }
 
-/* Sessions : du premier verre au retour à 0 */
+/* Cuvées : du premier verre au retour à 0 */
 function sparkS(s){
   const pts=s.pts||[]; if(pts.length<2) return "";
   const W=84,Hh=30,t0=pts[0][0],t1=pts[pts.length-1][0],m=Math.max(0.3,...pts.map(x=>x[1]));
@@ -736,11 +757,11 @@ function sparkS(s){
 function viewSessions(now){
   if(!S.sessions) return loading();
   if(S.sesOpen){ const s=S.sessions.find(x=>x.id===S.sesOpen); if(s) return viewSession(s,now) }
-  return `<section><h2>Mes sessions</h2><p class="muted" style="font-size:13px;margin:0">Une session commence au premier verre d'alcool et se termine quand le taux revient à 0. 60 derniers jours.</p>
+  return `<section><h2>Mes cuvées</h2><p class="muted" style="font-size:13px;margin:0">Une cuvée commence au premier verre d'alcool et se termine quand le taux revient à 0. 60 derniers jours.</p>
   ${S.sessions.length?`<div class="slist">${S.sessions.map(s=>`<button class="scard${s.ongoing?" on":""}" data-ses="${s.id}">
     <div class="sd"><b>${esc(dShort(s.start))}</b><span>${hm(s.start)} → ${s.ongoing?"en cours":hm(s.end)}</span>${s.party?`<span class="pchip">${esc(s.partyName||"Soirée "+s.party)}</span>`:""}</div>
     ${sparkS(s)}<div class="sv"><b>${fmt(s.peak)}</b><span>pic · ${stdF(s.std)} v.</span></div></button>`).join("")}</div>`
-  :`<p class="muted">Aucune session pour l'instant. Elles apparaîtront ici dès votre premier verre d'alcool.</p>`}</section>`;
+  :`<p class="muted">Aucune cuvée pour l'instant. Elles apparaîtront ici dès votre premier verre d'alcool.</p>`}</section>`;
 }
 function viewSession(s,now){
   const p={id:S.me,pseudo:S.user.pseudo,color:COLORS[0],sim:{pts:s.pts,cur:s.cur,zeroT:s.end}};
@@ -752,8 +773,8 @@ function viewSession(s,now){
    <div><span>Début</span><b>${hm(s.start)}</b></div><div><span>${s.ongoing?"Retour à 0 prévu":"Retour à 0"}</span><b>${hm(s.end)}</b></div>
    <div><span>Pic</span><b>${fmt(s.peak)}</b>${s.peakT?`<small>à ${hm(s.peakT)}</small>`:""}</div><div><span>Verres standard</span><b>${stdF(s.std)}</b></div>
    <div><span>Verres d'alcool</span><b>${s.n}</b></div><div><span>Verres d'eau</span><b>${s.water}</b></div></div></section>
-  ${viewChart([p],now,{title:"Courbe de la session",t0:s.start-10*MIN,t1:s.end+10*MIN,note:s.ongoing?"Trait plein : jusqu'à maintenant. Pointillés : redescente prévue si vous ne buvez plus.":"Du premier verre au retour à 0."})}
-  <section><h2>Verres de la session</h2><div class="list">${dr.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div></div>`).join("")}</div></section>`;
+  ${viewChart([p],now,{title:"Courbe de la cuvée",t0:s.start-10*MIN,t1:s.end+10*MIN,note:s.ongoing?"Trait plein : jusqu'à maintenant. Pointillés : redescente prévue si vous ne buvez plus.":"Du premier verre au retour à 0."})}
+  <section><h2>Verres de la cuvée</h2><div class="list">${dr.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div></div>`).join("")}</div></section>`;
 }
 
 /* Agenda : verres standard par jour, vert 1-2, orange 3-5, rouge 6+ */
@@ -824,7 +845,7 @@ function viewGroup(now){
   ${S.gLeave?`<div class="card"><b>Quitter ce groupe ?</b><span class="muted" style="font-size:13px">Les autres ne verront plus vos courbes.</span><div class="row"><button class="btn small" id="gLeaveYes">Oui, quitter</button><button class="btn ghost small" id="gLeaveNo">Annuler</button></div></div>`:`<button class="link danger" id="gLeave" style="align-self:flex-start">Quitter le groupe</button>`}</section>`;
 }
 
-/* Soirées : une seule page pour les sessions (du premier verre au retour à 0) et les soirées à code (horaires prévus).
+/* Soirées : une seule page pour les cuvées (du premier verre au retour à 0) et les soirées à code (horaires prévus).
    En haut : soirées en cours ou à venir, créer, rejoindre. Dessous : l'historique par date, filtrable. */
 function viewNights(now){
   if(!S.parties||!S.sessions) return loading();
@@ -843,9 +864,9 @@ function viewNights(now){
    <div class="row"><div class="field" style="flex:1;min-width:150px"><span class="label">Début</span><input id="pStart" type="datetime-local" value="${dtLocal(st)}"></div><div class="field" style="flex:1;min-width:150px"><span class="label">Fin</span><input id="pEnd" type="datetime-local" value="${dtLocal(en)}"></div></div>
    <button class="btn" id="create">Créer la soirée</button></div>`:""}
   <div class="row"><div class="field" style="flex:1;min-width:120px"><span class="label">Rejoindre avec un code</span><input id="joinCode" maxlength="4" autocapitalize="characters" placeholder="ABCD" style="text-transform:uppercase;letter-spacing:.2em"></div><button class="btn ghost" id="join" style="align-self:flex-end">Rejoindre</button></div></section>
-  <section><h2>Historique</h2><p class="muted" style="font-size:13px;margin:0">Une session va de votre premier verre d'alcool jusqu'au retour à 0 ; une soirée à code a des horaires prévus et plusieurs joueurs. 60 derniers jours.</p>
+  <section><h2>Historique</h2><p class="muted" style="font-size:13px;margin:0">Une cuvée va de votre premier verre d'alcool jusqu'au retour à 0 ; une soirée à code a des horaires prévus et plusieurs joueurs. 60 derniers jours.</p>
   <div class="seg" id="nightF">${[["tout","Tout"],["solo","Solo"],["code","Soirées à code"]].map(([v,l])=>`<button data-nf="${v}" aria-pressed="${f===v}">${l}</button>`).join("")}</div>
-  ${items.length?`<div class="slist">${items.map(x=>x.s?sRow(x.s):pRow(x.p)).join("")}</div>`:`<p class="muted">Rien pour l'instant. Votre premier verre d'alcool ouvrira une session.</p>`}
+  ${items.length?`<div class="slist">${items.map(x=>x.s?sRow(x.s):pRow(x.p)).join("")}</div>`:`<p class="muted">Rien pour l'instant. Votre premier verre d'alcool ouvrira une cuvée.</p>`}
   <div class="row"><button class="btn ghost" id="friendsBtn2" style="flex:1">Mes amis</button><button class="btn ghost" id="demoBtn3" style="flex:1">Voir la démo</button></div></section>`;
 }
 /* Soirées à code : début et fin prévus */
@@ -931,7 +952,7 @@ function render0(){
   $("#codeChip").textContent=demo?"Démo":S.code;
   const {now,list,log}=compute();
   notify(list,log);
-  const meP=list.find(p=>p.id===S.me);
+  const meP=list.find(p=>p.id===S.me); if(meP&&S.user&&!demo) meP.look=S.user.look;
   my=meP?{pseudo:meP.pseudo,cap:meP.cap,sam:meP.sam,mealsOk:meP.mealsOk,drinks:meP.drinks}:{pseudo:S.user?.pseudo,cap:S.user?.cap||0.8,drinks:[]};
   document.querySelectorAll("#navParty button").forEach(b=>b.setAttribute("aria-current",b.dataset.tab===S.tab));
   if(S.tab==="fil") feedUnread=0;
@@ -971,6 +992,7 @@ function bindOut(){
     run(async()=>{
     await api("POST",S.authMode==="register"?"/api/auth/register":"/api/auth/login",{email:S.fEmail,password:pw}); await afterLogin() })};
   on("demoBtn",startDemo);
+  bindLook();
   on("saveProf",()=>run(async()=>{ S.fProf=readProfile(); const r=await api("PUT","/api/me",S.fProf); S.user=r.user; S.fProf=null; await loadWeek(); S.screen=S.code?"party":"home"; render(); if(S.code) refresh() }));
   on("back",()=>{S.err="";S.fProf=null;S.screen=S.code?"party":"home";render()});
   /* aide, mot de passe oublié, langue, badges, notifications */

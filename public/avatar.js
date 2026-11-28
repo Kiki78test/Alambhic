@@ -40,6 +40,15 @@ const AV_GL={
   champ:{hr:28,hw:3.7,a:-40,top:-24.6,bot:-9,fw:5.8,stem:1,g0:[91,94]},
   cocktail:{hr:19,hw:9.8,a:-30,top:-16.8,bot:-9,fw:5.8,stem:1,g0:[90.5,91]},
 };
+/* teintes au choix du joueur (profil) */
+const AV_SKIN=["#f8d5b8","#f3c39e","#e5ad82","#c98e62","#a06a45","#6f4630"];
+const AV_HAIR=["#4b2b18","#1f1512","#7a5230","#d8a24e","#b5502a","#9a9a9a"];
+const avRgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const avHex=a=>"#"+a.map(v=>Math.round(Math.max(0,Math.min(255,v))).toString(16).padStart(2,"0")).join("");
+const avMix=(a,b,t)=>{ const x=avRgb(a), y=avRgb(b); return avHex(x.map((v,i)=>v+(y[i]-v)*t)) };
+const avShade=h=>{ const [r,g,b]=avRgb(h); return avHex([r*.9,g*.8,b*.76]) };
+/* la peau change avec le taux : elle rosit puis rougit jusque vers 1,1 g/L, puis vire au pâle verdâtre (le cœur au bord des lèvres) */
+function avSkin(base,b){ const up=cl((b-.25)/.85), dn=cl((b-1.1)/.4); return avMix(avMix(base,"#ff5340",.2*up*(1-.65*dn)),"#9dbb72",.22*dn) }
 const avE=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;                 // accélère puis ralentit
 const avBack=x=>{const c=1.70158;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};   // dépasse puis revient
 const avF=v=>Math.round(v*100)/100;
@@ -104,11 +113,12 @@ function avCalc(P,t,ev){
   const th=AV_TILT[st]+sw, hrR=hr*PI/180, ch=cos(hrR), sh=sin(hrR);
   const hT=(x,y)=>[60+(x-60)*ch-(y-82)*sh+hx, 82+(x-60)*sh+(y-82)*ch+hy];        // point de la tête → repère du buste
   /* cou souple : de la base (col) jusque sous la mâchoire, où que soit la tête */
-  const [ax,ay]=hT(60,77.5), ndx=ax-60, ndy=ay-99, nl=Math.hypot(ndx,ndy)||1, ux=ndx/nl, uy=ndy/nl, nx=-uy*8.7, ny=ux*8.7;
+  const [ax,ay]=hT(60,77.5), ndx=ax-60, ndy=ay-99, nl=Math.hypot(ndx,ndy)||1, ux=ndx/nl, uy=ndy/nl, nw=P.f?7.7:8.7, nx=-uy*nw, ny=ux*nw;
   const R={
     body:`translate(0 ${avF(by)}) rotate(${avF(th)} 60 126)`,
     torso:`translate(60 126) scale(${avF(1+.008*br)} ${avF(1+.014*br)}) translate(-60 -126)`,
     head:`translate(${avF(hx)} ${avF(hy)}) rotate(${avF(hr)} 60 82)`,
+    hb:`translate(${avF(hx)} ${avF(hy)}) rotate(${avF(hr)} 60 82) rotate(${avF(-.5*hr+.5*tuft)} 60 30)`,   // cheveux longs : ils pendent et suivent avec retard
     neck:`M60 99L${avF(ax)} ${avF(ay)}`,
     nclip:`M${avF(60+nx)} ${avF(99+ny)}L${avF(ax+nx+ux*6)} ${avF(ay+ny+uy*6)}L${avF(ax-nx+ux*6)} ${avF(ay-ny+uy*6)}L${avF(60-nx)} ${avF(99-ny)}Z`,
     tie:avF(AV_TIE[st]-.7*swL-3.2*swV+5*hic),
@@ -181,14 +191,14 @@ function avGlassDefs(k,n,P){
   <linearGradient id="gl${n}" x1="0" x2="1"><stop offset="0" stop-color="#e6f2ff" stop-opacity=".34"/><stop offset=".45" stop-color="#e6f2ff" stop-opacity=".08"/><stop offset="1" stop-color="#e6f2ff" stop-opacity=".24"/></linearGradient>`;
 }
 /* la main : dos et poignet derrière le verre, quatre doigts devant ; le pouce se devine à travers le verre */
-function avHand(k,n,P,R,SK,SKD,INK){
-  const G=AV_GL[k], fw=G.fw, F=[[-5.6,3,-fw+.3,fw-.2],[-2.8,3,-fw-.2,fw],[0,3,-fw+.1,fw-.1],[2.8,2.9,-fw+.9,fw-.7]];
-  const back=`<rect x="-4.9" y="3" width="9.8" height="6.4" fill="${SK}" stroke="${INK}" stroke-width="1"/>
-   <rect x="-6.1" y="7.2" width="12.2" height="3.9" rx="1.3" fill="#f7f3ee" stroke="${INK}" stroke-width="1"/><circle cx="3.6" cy="9.1" r=".6" fill="#b9b1a6"/>
-   <rect x="${avF(-fw+1.2)}" y="-5.9" width="${avF(2*fw-1.2)}" height="12.2" rx="4" fill="${SK}" stroke="${INK}" stroke-width="1"/>
+function avHand(k,n,P,R,C){
+  const {SK,SKD,SKL,INK,FSEP,fem}=C, G=AV_GL[k], fw=G.fw, F=[[-5.6,3,-fw+.3,fw-.2],[-2.8,3,-fw-.2,fw],[0,3,-fw+.1,fw-.1],[2.8,2.9,-fw+.9,fw-.7]];
+  const wrist=fem?`<rect x="-4.2" y="3" width="8.4" height="7.4" fill="${SK}" stroke="${INK}" stroke-width="1"/><rect x="-4.9" y="7.3" width="9.8" height="2.1" rx="1.05" fill="#ffcf4a" stroke="${INK}" stroke-width=".8"/>`
+   :`<rect x="-4.9" y="3" width="9.8" height="6.4" fill="${SK}" stroke="${INK}" stroke-width="1"/><rect x="-6.1" y="7.2" width="12.2" height="3.9" rx="1.3" fill="#f7f3ee" stroke="${INK}" stroke-width="1"/><circle cx="3.6" cy="9.1" r=".6" fill="#b9b1a6"/>`;
+  const back=`${wrist}<rect x="${avF(-fw+1.2)}" y="-5.9" width="${avF(2*fw-1.2)}" height="12.2" rx="4" fill="${SK}" stroke="${INK}" stroke-width="1"/>
    ${G.stem?"":`<rect x="${avF(-fw+.2)}" y="-7.3" width="9" height="3.5" rx="1.75" fill="${SK}" stroke="${INK}" stroke-width=".9"/>`}`;
   const sil=`<rect x="${avF(-fw-.5)}" y="-6" width="${avF(2*fw+.6)}" height="12.1" rx="3" fill="${INK}"/>`;
-  const fingers=sil+F.map(([y,h,x0,x1])=>`<rect x="${avF(x0)}" y="${y}" width="${avF(x1-x0)}" height="${h}" rx="1.5" fill="${SK}" stroke="#a9623f" stroke-width=".7"/><path d="M${avF(x0+1.8)} ${avF(y+h-.8)}H${avF(x1-2.4)}" stroke="${SKD}" stroke-width=".7" stroke-linecap="round" opacity=".7"/><path d="M${avF(x1-2.6)} ${avF(y+.9)}h1.2" stroke="#fbd9bc" stroke-width=".8" stroke-linecap="round"/>`).join("")
+  const fingers=sil+F.map(([y,h,x0,x1])=>`<rect x="${avF(x0)}" y="${y}" width="${avF(x1-x0)}" height="${h}" rx="1.5" fill="${SK}" stroke="${FSEP}" stroke-width=".7"/><path d="M${avF(x0+1.8)} ${avF(y+h-.8)}H${avF(x1-2.4)}" stroke="${SKD}" stroke-width=".7" stroke-linecap="round" opacity=".7"/><path d="M${avF(x1-2.6)} ${avF(y+.9)}h1.2" stroke="${SKL}" stroke-width=".8" stroke-linecap="round"/>${fem?`<rect x="${avF(x0+.35)}" y="${avF(y+.55)}" width="2.3" height="${avF(h-1.1)}" rx=".9" fill="#e0527a"/>`:""}`).join("")
    +(G.stem?`<rect x="-5.6" y="-8" width="8.4" height="3.4" rx="1.7" fill="${SK}" stroke="${INK}" stroke-width=".9" transform="rotate(-8 -1.4 -6.3)"/>`:"");
   return `<g class="av-hand" transform="${R.hand}">${back}${avGlass(k,n,P,R)}${fingers}</g>`;
 }
@@ -201,13 +211,18 @@ function avatar(p,size,key){
   const ko=st>=9, down=s.peak>=0.3&&b<s.prev-0.004, now=NOW(), dr=(p.drinks||[]).filter(d=>d.t<=now), last=dr.slice().sort((x,y)=>y.t-x.t)[0];
   const fresh=!!last&&now-last.t<25*MIN, k=ko?"":((fresh?drinkKind(last):(down?"water":""))||"");
   key=String(key||p.id||"a");
-  const P={st,b,k,seed:avF(avSeed(key)),lvl:avF(fresh?1-.7*cl((now-last.t)/(25*MIN)):.75)}, R=avCalc(P,null), fx=R.fx;
-  const INK="#2b1810", SK="#f3c39e", SKD="#df9f78", SKL="#fbd9bc", LIDC="#ecb590", HAIR="#4b2b18", HAIRL="#7a4a2a", ring=AV_RING[st], EY=AV_EY;
+  /* personnage (homme ou femme : choix du profil, sinon le sexe du profil), teinte de peau et couleur de cheveux */
+  const lk=p.look||{}, fem=lk.g?lk.g==="f":String(p.sex||"").toUpperCase()==="F", si=AV_SKIN[lk.skin]?+lk.skin:1, hi=AV_HAIR[lk.hair]?+lk.hair:0;
+  const P={st,b,k,f:fem?1:0,seed:avF(avSeed(key)),lvl:avF(fresh?1-.7*cl((now-last.t)/(25*MIN)):.75)}, R=avCalc(P,null), fx=R.fx;
+  const INK="#2b1810", SK=avSkin(AV_SKIN[si],b), SKD=avShade(SK), SKL=avMix(SK,"#ffffff",.38), LIDC=avMix(SK,SKD,.45), FSEP=avMix(SKD,"#4a2210",.4), ring=AV_RING[st], EY=AV_EY;
+  const HAIR=AV_HAIR[hi], HAIRL=avMix(HAIR,"#ffffff",hi===1?.2:.27), HAIRD=avMix(HAIR,"#000000",.42), BROWC=hi===3||hi===5?avMix(HAIR,"#2b1810",.5):si>=4?avMix(HAIR,"#000000",.55):HAIR;
+  const LIP="#b93f62", MST=fem?LIP:INK, BLC=avMix("#ff5f5f","#c4313f",si/5);
   const happy=st===5||st===6, sleep=st===9;
-  const blush=cl((b-0.15)/0.6), nose=cl((b-0.3)/0.6)*0.8, flush=cl((b-0.9)/0.7)*0.26;
+  const blush=cl((b-0.15)/0.6), nose=cl((b-0.3)/0.6)*0.8;
   /* yeux */
   const almond=x=>`M${x-5.8} ${EY}C${x-4.2} ${EY-5.2} ${x+4.2} ${EY-5.2} ${x+5.8} ${EY}C${x+4.2} ${EY+3.9} ${x-4.2} ${EY+3.9} ${x-5.8} ${EY}Z`;
-  const arc=x=>`<path d="M${x-5.4} ${EY+1}Q${x} ${EY-5.4} ${x+5.4} ${EY+1}" fill="none" stroke="${INK}" stroke-width="2.3" stroke-linecap="round"/>`;
+  const lash=(x,side,y)=>fem?`<path d="M${x+side*5.5} ${avF(y-.4)}l${side*2} -1.5M${x+side*4.5} ${avF(y-1.8)}l${side*1.3} -1.6" fill="none" stroke="${INK}" stroke-width=".9" stroke-linecap="round"/>`:"";
+  const arc=(x,side)=>`<path d="M${x-5.4} ${EY+1}Q${x} ${EY-5.4} ${x+5.4} ${EY+1}" fill="none" stroke="${INK}" stroke-width="2.3" stroke-linecap="round"/>${lash(x,side,EY+1.4)}`;
   const shut=x=>`<path d="M${x-5.4} ${EY-.6}Q${x} ${EY+4.2} ${x+5.4} ${EY-.6}" fill="none" stroke="${INK}" stroke-width="2.2" stroke-linecap="round"/><path d="M${x-3} ${EY+2.6}l-.6 1.6M${x} ${EY+3.2}v1.7M${x+3} ${EY+2.6}l.6 1.6" stroke="${INK}" stroke-width="1" stroke-linecap="round"/>`;
   const eye=(x,side)=>{ const i=side<0?0:1, sf=side<0?"l":"r", px=st>=7?side*-0.9:0, [lf,le]=R.lid[i];
     return `<path d="${almond(x)}" fill="#fffdf8"/>
@@ -216,17 +231,19 @@ function avatar(p,size,key){
      <circle cx="${x+px+1.3}" cy="${EY-1.2}" r="1.15" fill="#fff"/><circle cx="${x+px-1.2}" cy="${EY+1.5}" r=".55" fill="#fff" opacity=".8"/></g></g>
     <path d="M${x-4.4} ${EY+2.7}C${x-2} ${EY+4.1} ${x+2} ${EY+4.1} ${x+4.4} ${EY+2.7}" fill="none" stroke="${INK}" stroke-width=".8" opacity=".45"/>
     <path class="av-lf${sf}" d="${lf}" fill="${LIDC}"/><path class="av-le${sf}" d="${le}" fill="none" stroke="${INK}" stroke-width="1.9" stroke-linecap="round"/>
+    ${lash(x,side,EY)}
     ${st>=4?`<path d="M${x-4} ${EY+5.4}q4 ${(1.3+b).toFixed(1)} 8 0" fill="none" stroke="#9a5a6a" stroke-opacity="${cl((b-0.4)/1).toFixed(2)}" stroke-width="1"/>`:""}` };
-  const eyesM=happy?arc(50)+arc(70):sleep?shut(50)+shut(70):`<g class="av-eo">${eye(50,-1)}${eye(70,1)}</g><g class="av-eh" opacity="0">${arc(50)}${arc(70)}</g>`;
+  const eyesM=happy?arc(50,-1)+arc(70,1):sleep?shut(50)+shut(70):`<g class="av-eo">${eye(50,-1)}${eye(70,1)}</g><g class="av-eh" opacity="0">${arc(50,-1)}${arc(70,1)}</g>`;
   /* sourcils pleins */
   const [bo,bi]=AV_BROW[st], br=(x0,x1,yo,yi)=>{ const mx=(x0+x1)/2, my=Math.min(yo,yi)-2.4;
-    return `<path d="M${x0} ${yo+.6}Q${mx} ${my} ${x1} ${yi-.4}Q${x1+(x1>x0?.8:-.8)} ${yi+1.4} ${x1-(x1>x0?.4:-.4)} ${yi+2.2}Q${mx} ${my+2.8} ${x0} ${yo+1.6}Z" fill="${HAIR}" stroke="${HAIR}" stroke-width=".6" stroke-linejoin="round"/>` };
+    return fem?`<path d="M${x0} ${yo+.9}Q${mx} ${my-.5} ${x1} ${yi}Q${mx} ${my+1.4} ${x0} ${yo+.9}Z" fill="${BROWC}" stroke="${BROWC}" stroke-width=".6" stroke-linejoin="round"/>`
+     :`<path d="M${x0} ${yo+.6}Q${mx} ${my} ${x1} ${yi-.4}Q${x1+(x1>x0?.8:-.8)} ${yi+1.4} ${x1-(x1>x0?.4:-.4)} ${yi+2.2}Q${mx} ${my+2.8} ${x0} ${yo+1.6}Z" fill="${BROWC}" stroke="${BROWC}" stroke-width=".6" stroke-linejoin="round"/>` };
   const brows=`<g class="av-brw" transform="${R.brow}">${br(43.5,55,48+bo,48+bi)}${br(76.5,65,48+bo,48+bi)}</g>`;
   /* bouches */
   const open=(d,teeth,tongue,id="")=>`<clipPath id="mc${id}${n}"><path d="${d}"/></clipPath><path d="${d}" fill="#4a1414"/>
     <g clip-path="url(#mc${id}${n})">${teeth?`<rect x="44" y="${teeth}" width="32" height="3.6" fill="#fff"/>`:""}${tongue?`<ellipse cx="${tongue[0]}" cy="${tongue[1]}" rx="6.2" ry="4" fill="#e66a68"/><ellipse cx="${tongue[0]-1.5}" cy="${tongue[1]-1}" rx="2.4" ry="1.1" fill="#f59a92" opacity=".7"/>`:""}</g>
-    <path d="${d}" fill="none" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>`;
-  const line=d=>`<path d="${d}" fill="none" stroke="${INK}" stroke-width="1.9" stroke-linecap="round"/>`;
+    <path d="${d}" fill="none" stroke="${MST}" stroke-width="${fem?1.8:1.4}" stroke-linejoin="round"/>`;
+  const line=d=>`<path d="${d}" fill="none" stroke="${MST}" stroke-width="${fem?2.3:1.9}" stroke-linecap="round"/>`;
   const tongueOut=(x,y,r)=>`<path d="M${x-4.5} ${y}q0 ${r} 4.5 ${r}q4.5 0 4.5-${r}z" fill="#ef7a73" stroke="${INK}" stroke-width="1.2"/><path d="M${x} ${y+1}v${r-3}" stroke="#c4534e" stroke-width="1"/>`;
   const MOUTH=[
     ()=>open("M49.5 71Q60 83.5 70.5 71Q60 73.2 49.5 71Z",70.4,[60,81]),
@@ -240,32 +257,44 @@ function avatar(p,size,key){
     ()=>open("M51 72Q60 67.4 69 72Q66.8 83.6 60 83.6Q53.2 83.6 51 72Z",70.6,[60,82.6])+tongueOut(60,80.4,8),
     ()=>open("M54.4 76Q60 72.4 65.6 76Q64.4 80.6 60 80.6Q55.6 80.6 54.4 76Z",0,[60,79.6]),
   ];
-  const mouthM=`<g class="av-mo" transform="${R.mS}">${MOUTH[st]()}</g>`+(k?`<g class="av-ms" opacity="0"><path d="M55.4 74.8q1.2 1.9 3.6 2.1" fill="none" stroke="${INK}" stroke-width="1.7" stroke-linecap="round"/></g>
+  const mouthM=`<g class="av-mo" transform="${R.mS}">${MOUTH[st]()}</g>`+(k?`<g class="av-ms" opacity="0"><path d="M55.4 74.8q1.2 1.9 3.6 2.1" fill="none" stroke="${MST}" stroke-width="${fem?2.1:1.7}" stroke-linecap="round"/></g>
     <g class="av-ma" opacity="0">${open("M51.4 71.6Q60 82 68.6 71.6Q60 73.6 51.4 71.6Z",71.1,[60,80.6],"a")}</g>`:"");
   /* cheveux : mèche souple avec reflet ; épis qui bougent, de plus en plus en bataille */
   const tf=(d,x,y)=>`<g class="av-tf" data-o="${x} ${y}" transform="rotate(${R.tuft} ${x} ${y})"><path d="${d}" fill="${HAIR}" stroke="${INK}" stroke-width="1.15" stroke-linejoin="round"/></g>`;
-  const hair=`${tf("M52.4 21.6c.2-3.6 2.2-6.4 5.4-7.6c-.8 2.2-.6 4.2.4 6.2c1.2-3 3.8-5 7.2-5.4c-1.6 1.8-2.2 3.8-1.8 6.4z",58.6,21.4)}
-   ${st>=4?tf("M67 21.4c1.6-4.4 5.4-6.6 9.4-6.6c-2.6 1.9-4 4.6-4.4 8z",69.6,22)+tf("M39 40.6c-3.8-1-6.4-3.6-7.2-7.4c2.6 1.8 5.2 2.4 8.2 2.2z",39,38):""}
-   ${st>=7?tf("M82.4 40.6c3.8-.4 6.6-2.8 7.8-6.4c-2.6 1.5-5.3 1.9-8.2 1.3z",82.4,38.4)+tf("M46.4 22.4c-3.8-2.2-5.6-6-5-9.8c1.5 3 4 4.8 7.2 5.8z",47,21.6):""}
+  const wild=`${st>=4?tf("M67 21.4c1.6-4.4 5.4-6.6 9.4-6.6c-2.6 1.9-4 4.6-4.4 8z",69.6,22)+tf("M39 40.6c-3.8-1-6.4-3.6-7.2-7.4c2.6 1.8 5.2 2.4 8.2 2.2z",39,38):""}
+   ${st>=7?tf("M82.4 40.6c3.8-.4 6.6-2.8 7.8-6.4c-2.6 1.5-5.3 1.9-8.2 1.3z",82.4,38.4)+tf("M46.4 22.4c-3.8-2.2-5.6-6-5-9.8c1.5 3 4 4.8 7.2 5.8z",47,21.6):""}`;
+  /* version femme : cheveux longs (une nappe derrière les épaules, dessinée avant le buste), frange sur le côté, mèches devant les oreilles */
+  const FRONT="M37.6 57C34.6 38 43 21 58.6 18.4C69.6 16.6 80 21.6 83 32C85 39.6 84.4 48.6 82.4 57C82.4 48.6 80.6 41.6 76.4 36.8C74.4 31.8 71.6 28.6 68.6 26.8C63.4 35.2 52.4 42.8 42 44.8C40.2 48.8 38.8 52.8 37.6 57Z";
+  const hairBack=fem?`<g class="av-hb" transform="${R.hb}"><path d="M34.6 52C31.6 30 44 14.6 60 14.6C76 14.6 88.4 30 85.4 52C86 66 88.6 82 92 95C86.4 101 77 100.8 73 96L47 96C43 100.8 33.6 101 28 95C31.4 82 34 66 34.6 52Z" fill="${HAIR}" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>
+   <path d="M33.4 70c-.8 9-2 17-3.6 23.6M86.6 70c.8 9 2 17 3.6 23.6M39 86c-.6 4-1.6 7.4-3 10.4" fill="none" stroke="${HAIRD}" stroke-width="1" stroke-linecap="round" opacity=".7"/></g>`:"";
+  const hair=fem?`${wild}<path d="${FRONT}" fill="${HAIR}" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>
+   <path d="M45.4 33.4C50.6 26.8 59 23 67.6 22.8C60.4 25.4 54 29.6 49.8 35C48.2 36.8 46.2 36.2 45.4 33.4Z" fill="${HAIRL}"/>
+   <path d="M74.6 27.6c3 2 5 5 5.8 8.4" fill="none" stroke="${HAIRL}" stroke-width="1.6" stroke-linecap="round"/>
+   <path d="M44 43C52.6 40.4 60 35 65.4 28.6M41.4 40C48 36 52.6 31.4 56 26" fill="none" stroke="${HAIRD}" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+   <path d="M38.8 50C35.4 58 35.2 68.4 37.8 78C40.2 73.4 41.2 66 40.8 58.6C40.6 55 40 52 38.8 50Z" fill="${HAIR}" stroke="${INK}" stroke-width="1.1" stroke-linejoin="round"/>
+   <path d="M81.2 50C84.6 58 84.8 68.4 82.2 78C79.8 73.4 78.8 66 79.2 58.6C79.4 55 80 52 81.2 50Z" fill="${HAIR}" stroke="${INK}" stroke-width="1.1" stroke-linejoin="round"/>
+   <circle cx="34.4" cy="66.8" r="2.2" fill="none" stroke="#ffcf4a" stroke-width="1.3"/><circle cx="85.6" cy="66.8" r="2.2" fill="none" stroke="#ffcf4a" stroke-width="1.3"/>`
+  :`${tf("M52.4 21.6c.2-3.6 2.2-6.4 5.4-7.6c-.8 2.2-.6 4.2.4 6.2c1.2-3 3.8-5 7.2-5.4c-1.6 1.8-2.2 3.8-1.8 6.4z",58.6,21.4)}${wild}
    <path d="M36.4 55C33.2 39 39.6 22.6 55.6 19.2C64.4 17.4 74.6 19.4 80.4 25.6C86.4 32 87.2 44 84 55C82.8 47.4 80.4 42.4 77 39.4C76.2 43 73.6 45.2 70.4 45.8C71.8 42.8 71.4 39.8 69.8 37.2C64 42.4 55 44.4 45.8 43.4C47.8 41.8 49.4 39.8 50 37.6C45 40.4 40.8 46.4 36.4 55Z" fill="${HAIR}" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/>
    <path d="M44.6 30.4C50 23.6 62 21.4 71.4 24.6C64.4 24.2 55.6 25.8 49.4 31.6C47.8 33.2 45.8 33 44.6 30.4Z" fill="${HAIRL}"/>
    <path d="M73.6 27.4c3.4 1.6 5.6 4.4 6.4 7.6" fill="none" stroke="${HAIRL}" stroke-width="1.6" stroke-linecap="round"/>
-   <path d="M50 37.6c3-4.6 8.6-8.4 15-9.6M58.6 41.6c4.4-1.8 8.4-4.6 11.2-8.6M41 46c1.6-5 4.4-9 8-11.4" fill="none" stroke="#2f190c" stroke-width="1" stroke-linecap="round" opacity=".7"/>`;
-  const stubble=st>=3?`<path d="M45 72Q47 84 60 86Q73 84 75 72Q72 80 60 81Q48 80 45 72Z" fill="#6b4a36" opacity="${(0.1+cl((b-0.35)/1.2)*0.16).toFixed(2)}"/>`:"";
-  const FACE="M38.6 52C38.6 36.4 47.2 26.4 60 26.4C72.8 26.4 81.4 36.4 81.4 52C81.4 62.6 79 70.6 74.2 77C70 82.4 65.2 85.8 60 85.8C54.8 85.8 50 82.4 45.8 77C41 70.6 38.6 62.6 38.6 52Z";
+   <path d="M50 37.6c3-4.6 8.6-8.4 15-9.6M58.6 41.6c4.4-1.8 8.4-4.6 11.2-8.6M41 46c1.6-5 4.4-9 8-11.4" fill="none" stroke="${HAIRD}" stroke-width="1" stroke-linecap="round" opacity=".7"/>`;
+  const stubble=st>=3&&!fem?`<path d="M45 72Q47 84 60 86Q73 84 75 72Q72 80 60 81Q48 80 45 72Z" fill="#6b4a36" opacity="${(0.1+cl((b-0.35)/1.2)*0.16).toFixed(2)}"/>`:"";
+  const FACE=fem?"M39.4 52C39.4 36.4 47.6 26.4 60 26.4C72.4 26.4 80.6 36.4 80.6 52C80.6 62.6 78.6 70.4 74 76.4C70.2 81.2 65.4 84.8 60 84.8C54.6 84.8 49.8 81.2 46 76.4C41.4 70.4 39.4 62.6 39.4 52Z"
+    :"M38.6 52C38.6 36.4 47.2 26.4 60 26.4C72.8 26.4 81.4 36.4 81.4 52C81.4 62.6 79 70.6 74.2 77C70 82.4 65.2 85.8 60 85.8C54.8 85.8 50 82.4 45.8 77C41 70.6 38.6 62.6 38.6 52Z";
   const ear=(x,sd)=>`<path d="M${x} 51.6c${sd*-4.8}-2.2 ${sd*-8.2} 1 ${sd*-7.6} 6.2c${sd*.5} 4.4 ${sd*3.6} 7.4 ${sd*7.8} 6.6Z" fill="${SK}" stroke="${INK}" stroke-width="1.3" stroke-linejoin="round"/><path d="M${x+sd*-2} 54.6c${sd*-2.6} .4 ${sd*-3.2} 3.6 ${sd*-.6} 5.6" fill="none" stroke="${SKD}" stroke-width="1.3" stroke-linecap="round"/>`;
   const star=r=>`M0 ${-r}L${r*.3} ${-r*.3}L${r} 0L${r*.3} ${r*.3}L0 ${r}L${-r*.3} ${r*.3}L${-r} 0L${-r*.3} ${-r*.3}Z`;
   const head=`
-   ${ear(40,1)}${ear(80,-1)}
+   ${fem?ear(40.6,1)+ear(79.4,-1):ear(40,1)+ear(80,-1)}
    <path d="${FACE}" fill="${SK}"/>
    <g clip-path="url(#fc${n})">
     <path d="M71 28C82 36 85 58 77.4 74C72.6 82.4 66.4 86 60 86C68.6 81 74.4 70 75.2 56C75.8 45 74.4 35.6 71 28Z" fill="${SKD}" opacity=".55"/>
-    <path d="M36 50C40 44 45 46.4 46 43.4C55 44.8 64 42.8 70 38C71.4 40.6 71.8 43 70.6 46C74 45.4 76.4 43.2 77.4 40C80.4 42.6 82.6 47 84 52L84 40L36 40Z" fill="${SKD}" opacity=".5" transform="translate(0 3)"/>
-    <path d="${FACE}" fill="#ff5a4a" opacity="${flush.toFixed(2)}"/>
+    ${fem?`<path d="${FRONT}" fill="${SKD}" opacity=".5" transform="translate(0 3)"/>`
+      :`<path d="M36 50C40 44 45 46.4 46 43.4C55 44.8 64 42.8 70 38C71.4 40.6 71.8 43 70.6 46C74 45.4 76.4 43.2 77.4 40C80.4 42.6 82.6 47 84 52L84 40L36 40Z" fill="${SKD}" opacity=".5" transform="translate(0 3)"/>`}
    </g>
    <path d="${FACE}" fill="none" stroke="${INK}" stroke-width="1.4"/>
    ${stubble}
-   <ellipse cx="45" cy="66.6" rx="6.4" ry="4" fill="url(#bl${n})" opacity="${(0.25+blush*0.75).toFixed(2)}"/><ellipse cx="75" cy="66.6" rx="6.4" ry="4" fill="url(#bl${n})" opacity="${(0.25+blush*0.75).toFixed(2)}"/>
+   <ellipse cx="45" cy="66.6" rx="6.4" ry="4" fill="url(#bl${n})" opacity="${((fem?.38:.25)+blush*(fem?.62:.75)).toFixed(2)}"/><ellipse cx="75" cy="66.6" rx="6.4" ry="4" fill="url(#bl${n})" opacity="${((fem?.38:.25)+blush*(fem?.62:.75)).toFixed(2)}"/>
    ${hair}${brows}${eyesM}
    <path d="M61.4 60.4c1.8 2.6 2.4 5 1.4 6.6" fill="none" stroke="${SKD}" stroke-width="1.4" stroke-linecap="round"/>
    <ellipse cx="60.2" cy="67.2" rx="3.4" ry="1.3" fill="${SKD}" opacity=".75"/><ellipse cx="59.4" cy="64.8" rx="1.3" ry=".8" fill="${SKL}" opacity=".9"/>
@@ -278,9 +307,23 @@ function avatar(p,size,key){
   /* buste : cou souple, chemise à la couleur du joueur, col, cravate qui se défait */
   const open1=st>=3, tieY=open1?103.5:99, V=open1?105:98.6;
   const SH=`M13 132V124C14.4 106 27 97.4 46 93.4L60 ${V}L74 93.4C93 97.4 105.6 106 107 124V132Z`;
-  const neck=`<path class="av-nk" d="${R.neck}" fill="none" stroke="${INK}" stroke-width="20" stroke-linecap="round"/><path class="av-nk" d="${R.neck}" fill="none" stroke="${SK}" stroke-width="17.4" stroke-linecap="round"/>
+  const neck=`<path class="av-nk" d="${R.neck}" fill="none" stroke="${INK}" stroke-width="${fem?18:20}" stroke-linecap="round"/><path class="av-nk" d="${R.neck}" fill="none" stroke="${SK}" stroke-width="${fem?15.4:17.4}" stroke-linecap="round"/>
    <g clip-path="url(#nc${n})"><g class="av-hs" transform="${R.head}"><ellipse cx="60" cy="86" rx="14" ry="6.2" fill="${SKD}" opacity=".85"/></g></g>`;
-  const torso=`<g class="av-to" transform="${R.torso}">
+  const marks=`${st>=5?`<path d="M27 111q5 2.4 9 .6M40 116q3.4 1.4 6 .2" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="1.3" stroke-linecap="round"/>`:""}
+   ${st>=6?`<circle cx="77" cy="113" r="3.2" fill="#8c1d32" opacity=".55"/><circle cx="81" cy="117" r="1.5" fill="#8c1d32" opacity=".5"/>`:""}`;
+  /* version femme : haut à encolure ronde, chaîne et pendentif qui se balance (il prend la place de la cravate) */
+  const SHF="M20 132V124C21.4 110 31 102 50.5 96Q60 107 69.5 96C89 102 98.6 110 100 124V132Z";
+  const torso=fem?`<g class="av-to" transform="${R.torso}">
+   <path d="${SHF}" fill="${c}"/>
+   <path d="M69.5 96C89 102 98.6 110 100 124V132H82V124C83 113 79 103 69.5 96Z" fill="#000" opacity=".18"/>
+   <path d="M50.5 96C37 99.6 28.4 105 25 112C30.4 106.6 38.4 102.6 51.8 99.4Z" fill="#fff" opacity=".18"/>
+   <path d="M35 128C35 120 34 113 32 108M85 128C85 120 86.4 113 88.4 108" fill="none" stroke="#000" stroke-opacity=".18" stroke-width="1.2" stroke-linecap="round"/>
+   <path d="${SHF}" fill="none" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/>
+   <path d="M51.6 97.6Q60 107.6 68.4 97.6" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="1.6" stroke-linecap="round" transform="translate(0 1.9)"/>
+   <path d="M52.9 92.6Q60 101.4 67.1 92.6" fill="none" stroke="#ffcf4a" stroke-width=".9" stroke-linecap="round"/>
+   <g class="av-tie" data-o="60 97" transform="rotate(${R.tie} 60 97)"><path d="M60 97v1.8" stroke="#ffcf4a" stroke-width=".9"/><path d="M60 98.6l2.1 2.7l-2.1 3.2l-2.1-3.2z" fill="#8fd8ff" stroke="#ffcf4a" stroke-width=".8" stroke-linejoin="round"/><path d="M59.2 100.6l.8-1" stroke="#fff" stroke-width=".7" stroke-linecap="round"/></g>
+   ${marks}</g>`
+  :`<g class="av-to" transform="${R.torso}">
    <path d="${SH}" fill="${c}"/>
    <path d="M74 93.4C93 97.4 105.6 106 107 124V132H86V124C87.4 112 83 100.6 74 93.4Z" fill="#000" opacity=".2"/>
    <path d="M46 93.4C33 96 24 101.6 19.4 109C26 103.6 35 99.6 47.4 97.6Z" fill="#fff" opacity=".18"/>
@@ -290,12 +333,14 @@ function avatar(p,size,key){
    <path d="M46 93.4L60 ${V}L54.4 ${V+2.4}L43.4 96.4Z" fill="#f7f3ee" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round" transform="rotate(${st>=5?-8:0} 46 93.4)"/>
    <path d="M74 93.4L60 ${V}L65.6 ${V+2.4}L76.6 96.4Z" fill="#e6e0d8" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round"/>
    <g class="av-tie" data-o="60 ${tieY}" transform="rotate(${R.tie} 60 ${tieY})"><path d="M57.2 ${tieY}h5.6l-1 3.8h-3.6z" fill="#1d2a45" stroke="${INK}" stroke-width="1"/><path d="M58.2 ${tieY+3.8}h3.6l2.6 17.6l-4.4 4.8l-4.4-4.8z" fill="#22304d" stroke="${INK}" stroke-width="1"/><path d="M60 ${tieY+3.8}l4.4 17.6l-4.4 4.8z" fill="#000" opacity=".22"/><path d="M58.6 ${tieY+9}l4-2M58.4 ${tieY+15}l4.6-2.4" stroke="rgba(255,255,255,.2)" stroke-width="1.1"/></g>
-   ${st>=5?`<path d="M27 111q5 2.4 9 .6M40 116q3.4 1.4 6 .2" fill="none" stroke="rgba(0,0,0,.22)" stroke-width="1.3" stroke-linecap="round"/>`:""}
-   ${st>=6?`<circle cx="77" cy="113" r="3.2" fill="#8c1d32" opacity=".55"/><circle cx="81" cy="117" r="1.5" fill="#8c1d32" opacity=".5"/>`:""}</g>`;
+   ${marks}</g>`;
   /* bras : manche souple de l'épaule au poignet, puis la main et le verre */
-  const arm=k?`<path class="av-sl" d="${R.sl}" fill="none" stroke="${INK}" stroke-width="12.6" stroke-linecap="round"/><path class="av-sl" d="${R.sl}" fill="none" stroke="${c}" stroke-width="10" stroke-linecap="round"/>
-   <path class="av-sl" d="${R.sl}" fill="none" stroke="#000" stroke-opacity=".17" stroke-width="3.4" stroke-linecap="round" transform="translate(2.9 0)"/>${avHand(k,n,P,R,SK,SKD,INK)}`:"";
-  const person=`<g class="av-bd" transform="${R.body}">${neck}${torso}<g class="av-hd" transform="${R.head}">${head}</g>${arm}
+  const HC={SK,SKD,SKL,INK,FSEP,fem};
+  const arm=!k?"":fem?`<path class="av-sl" d="${R.sl}" fill="none" stroke="${INK}" stroke-width="10.8" stroke-linecap="round"/><path class="av-sl" d="${R.sl}" fill="none" stroke="${SK}" stroke-width="8.4" stroke-linecap="round"/>
+   <path class="av-sl" d="${R.sl}" fill="none" stroke="${SKD}" stroke-opacity=".7" stroke-width="2.6" stroke-linecap="round" transform="translate(2.6 0)"/>${avHand(k,n,P,R,HC)}`
+   :`<path class="av-sl" d="${R.sl}" fill="none" stroke="${INK}" stroke-width="12.6" stroke-linecap="round"/><path class="av-sl" d="${R.sl}" fill="none" stroke="${c}" stroke-width="10" stroke-linecap="round"/>
+   <path class="av-sl" d="${R.sl}" fill="none" stroke="#000" stroke-opacity=".17" stroke-width="3.4" stroke-linecap="round" transform="translate(2.9 0)"/>${avHand(k,n,P,R,HC)}`;
+  const person=`<g class="av-bd" transform="${R.body}">${hairBack}${neck}${torso}<g class="av-hd" transform="${R.head}">${head}</g>${arm}
    ${fx.zz?fx.zz.map(([x,y,sc,op])=>`<g class="av-fz" transform="translate(${x} ${y}) scale(${sc})" opacity="${op}"><path d="M-2.4 -2.6h4.8l-4.8 5.2h4.8" fill="none" stroke="#dfe9f7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g>`).join(""):""}</g>`;
   /* effets hors du personnage */
   let out="";
@@ -303,15 +348,15 @@ function avatar(p,size,key){
   if(fx.bub) out+=fx.bub.map(([x,y,op],i)=>`<circle class="av-fb" r="${AV_BUB[i][2]}" fill="none" stroke="#dfe9f7" stroke-width="1.3" transform="translate(${x} ${y})" opacity="${op}"/>`).join("");
   if(fx.spin!=null) out+=`<g class="av-fsp" transform="rotate(${fx.spin} 89.4 24.6)"><path d="M93 26a4.5 4.5 0 1 1 -4.5-4.5a3 3 0 1 1 -3 3a1.5 1.5 0 1 1 1.5 1.5" fill="none" stroke="#dfe9f7" stroke-width="1.5" stroke-linecap="round"/></g>`;
   if(fx.tw) out+=[[30,32,3.6],[91,24,4.4],[100,52,2.6]].map(([x,y,r],i)=>`<g class="av-ft" transform="translate(${x} ${y})" opacity="${fx.tw[i]}"><path d="${star(r)}" fill="#ffcf4a" stroke="#c98f12" stroke-width=".6"/></g>`).join("");
-  const kwP={st,b,k:"water",seed:0,lvl:.8};
+  const kwP={st,b,k:"water",f:0,seed:0,lvl:.8};
   const koWater=ko?`<g class="av-kw" transform="translate(33 99)"><circle cx="0" cy="-5" r="15" fill="url(#kg${n})"/><g transform="scale(.95)">${avGlass("water",n,kwP,{liq:`rotate(0 0 ${AV_GL.water.bot+(AV_GL.water.top-AV_GL.water.bot)*.8})`})}</g></g>`:"";
   const keys=b>=0.5&&!ko?`<g transform="translate(-2 -2)"><circle cx="11" cy="11" r="10.5" fill="#18140f" stroke="#ff5a4e" stroke-width="1.8"/><circle cx="7.6" cy="11" r="3" fill="none" stroke="#f7f1ea" stroke-width="1.6"/><path d="M10.6 11h6.4M15 11v2.8M12.8 11v2" stroke="#f7f1ea" stroke-width="1.6"/><path d="M4 18L18 4" stroke="#ff5a4e" stroke-width="2"/></g>`:"";
   const lab=ko?"avatar KO":st>=7?"avatar très éméché":st>=5?"avatar éméché":st>=2?"avatar pompette":"avatar en forme";
   const gk=k||(ko?"water":"");
-  return `<svg class="avr" data-st="${st}" data-b="${b.toFixed(3)}" data-k="${k}" data-key="${key.replace(/[^\w-]/g,"_")}" data-seed="${P.seed}" data-lvl="${P.lvl}" data-nd="${dr.length}" viewBox="0 0 120 120" width="${size}" height="${size}" role="img" aria-label="${lab}" style="flex:none;overflow:visible">${AV_CSS}
+  return `<svg class="avr" data-st="${st}" data-b="${b.toFixed(3)}" data-k="${k}" data-key="${key.replace(/[^\w-]/g,"_")}" data-f="${P.f}" data-seed="${P.seed}" data-lvl="${P.lvl}" data-nd="${dr.length}" viewBox="0 0 120 120" width="${size}" height="${size}" role="img" aria-label="${lab}" style="flex:none;overflow:visible">${AV_CSS}
   <defs><radialGradient id="ir${n}" cx="50%" cy="35%" r="65%"><stop offset="0" stop-color="#a8743e"/><stop offset=".6" stop-color="#6a4022"/><stop offset="1" stop-color="#3a2210"/></radialGradient>
   <clipPath id="fc${n}"><path d="${FACE}"/></clipPath><clipPath id="nc${n}"><path class="av-ncp" d="${R.nclip}"/></clipPath>
-  <radialGradient id="bl${n}"><stop offset="0" stop-color="#ff5f5f" stop-opacity=".7"/><stop offset="1" stop-color="#ff4d4d" stop-opacity="0"/></radialGradient>
+  <radialGradient id="bl${n}"><stop offset="0" stop-color="${BLC}" stop-opacity=".7"/><stop offset="1" stop-color="${BLC}" stop-opacity="0"/></radialGradient>
   <radialGradient id="bg${n}" cx="50%" cy="40%" r="65%"><stop offset="0" stop-color="#1d3354"/><stop offset="1" stop-color="#0c1728"/></radialGradient>
   <radialGradient id="ha${n}" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="${ring}" stop-opacity=".2"/><stop offset="1" stop-color="${ring}" stop-opacity="0"/></radialGradient>
   ${ko?`<radialGradient id="kg${n}"><stop offset="0" stop-color="#8fd0ff" stop-opacity=".32"/><stop offset="1" stop-color="#8fd0ff" stop-opacity="0"/></radialGradient>`:""}
@@ -329,19 +374,19 @@ const AV_EVT={};      // par avatar : dernier verre tenu, nombre de verres, heur
 const AV_RED=(()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}})();
 function avSet(el,a,v){ if(el&&el["_"+a]!==v){ el["_"+a]=v; el.setAttribute(a,v) } }
 function avRig(svg,t){
-  const d=svg.dataset, P={st:+d.st,b:+d.b,k:d.k||"",seed:+d.seed,lvl:+d.lvl,key:d.key}, q=c=>svg.querySelector("."+c), qa=c=>[...svg.querySelectorAll("."+c)], nd=+d.nd, e=AV_EVT[P.key];
+  const d=svg.dataset, P={st:+d.st,b:+d.b,k:d.k||"",f:+d.f||0,seed:+d.seed,lvl:+d.lvl,key:d.key}, q=c=>svg.querySelector("."+c), qa=c=>[...svg.querySelectorAll("."+c)], nd=+d.nd, e=AV_EVT[P.key];
   /* un verre de plus → gorgée ; un autre type de verre → il arrive par le bas, puis gorgée */
   if(!e) AV_EVT[P.key]={k:P.k,nd};
   else{ if(P.k&&e.k!==P.k) e.glAt=t; if(nd>e.nd&&P.k) e.sipAt=t+(e.glAt===t?.5:0); e.k=P.k; e.nd=nd }
   return svg._rig={P,svg,n:0,vis:true,slow:(+svg.getAttribute("width")||99)<64,
-    bd:q("av-bd"),to:q("av-to"),hd:q("av-hd"),hs:q("av-hs"),nk:qa("av-nk"),ncp:q("av-ncp"),tie:q("av-tie"),tf:qa("av-tf"),
+    bd:q("av-bd"),to:q("av-to"),hd:q("av-hd"),hs:q("av-hs"),hb:q("av-hb"),nk:qa("av-nk"),ncp:q("av-ncp"),tie:q("av-tie"),tf:qa("av-tf"),
     pl:q("av-pl"),pr:q("av-pr"),lfl:q("av-lfl"),lel:q("av-lel"),lfr:q("av-lfr"),ler:q("av-ler"),eo:q("av-eo"),eh:q("av-eh"),brw:q("av-brw"),
     mo:q("av-mo"),ms:q("av-ms"),ma:q("av-ma"),sl:qa("av-sl"),hand:q("av-hand"),liq:q("av-liq"),
     fb:qa("av-fb"),fk:qa("av-fk"),fsp:q("av-fsp"),fsw:q("av-fsw"),fs:qa("av-fs"),fz:qa("av-fz"),fd:q("av-fd"),ft:qa("av-ft"),fh:q("av-fh"),kw:q("av-kw")};
 }
 function avApply(r,R){
   const S=avSet, fx=R.fx;
-  S(r.bd,"transform",R.body); S(r.to,"transform",R.torso); S(r.hd,"transform",R.head); S(r.hs,"transform",R.head);
+  S(r.bd,"transform",R.body); S(r.to,"transform",R.torso); S(r.hd,"transform",R.head); S(r.hs,"transform",R.head); S(r.hb,"transform",R.hb);
   r.nk.forEach(e=>S(e,"d",R.neck)); S(r.ncp,"d",R.nclip);
   if(r.tie) S(r.tie,"transform",`rotate(${R.tie} ${r.tie.dataset.o})`);
   r.tf.forEach((e,i)=>S(e,"transform",`rotate(${avF(R.tuft*(i%2?-.8:1))} ${e.dataset.o})`));

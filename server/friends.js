@@ -55,11 +55,11 @@ async function live(f) {
 function routes(app) {
   app.get("/api/friends", requireUser, async (req, res) => {
     const me = req.user.id, mine = await myCode(me);
-    const { rows } = await q(`SELECT f.status, f.requested_by, u.id, u.pseudo, u.sex, u.age, u.height, u.weight, u.cap, u.share_friends
+    const { rows } = await q(`SELECT f.status, f.requested_by, u.id, u.pseudo, u.sex, u.age, u.height, u.weight, u.cap, u.look, u.share_friends
       FROM friendships f JOIN users u ON u.id = CASE WHEN f.a=$1 THEN f.b ELSE f.a END
       WHERE (f.a=$1 OR f.b=$1) ORDER BY u.pseudo`, [me]);
     const friends = [];
-    for (const r of rows.filter(r => r.status === "accepted")) friends.push({ id: r.id, pseudo: r.pseudo || "Ami", cap: r.cap, share: r.share_friends, live: await live(r) });
+    for (const r of rows.filter(r => r.status === "accepted")) friends.push({ id: r.id, pseudo: r.pseudo || "Ami", cap: r.cap, sex: r.sex, look: r.look, share: r.share_friends, live: await live(r) });
     res.json({
       code: mine.friend_code, share: mine.share_friends, friends,
       incoming: rows.filter(r => r.status === "pending" && r.requested_by !== me).map(r => ({ id: r.id, pseudo: r.pseudo || "Quelqu'un" })),

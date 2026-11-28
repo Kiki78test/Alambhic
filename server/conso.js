@@ -1,10 +1,10 @@
 "use strict";
 /* Alamb'hic — la consommation appartient au joueur : un verre se note partout (seul, en soirée à code, entre potes).
    Trois façons de la regarder :
-   - les SESSIONS : du premier verre d'alcool jusqu'au retour à 0 g/L (découpage automatique) ;
+   - les CUVÉES (les « sessions » du code) : du premier verre d'alcool jusqu'au retour à 0 g/L (découpage automatique) ;
    - les SOIRÉES à code : début et fin prévus à l'avance (server/parties.js) ;
    - les GROUPES de potes : les courbes de tous les membres par créneaux de 48 h.
-   Chaque verre garde le LIEU choisi (sélecteur avec favoris), repris par la session, les groupes et les notifications.
+   Chaque verre garde le LIEU choisi (sélecteur avec favoris), repris par la cuvée, les groupes et les notifications.
    Plus l'AGENDA : verres standard par jour, en couleur (vert 1-2, orange 3-5, rouge 6+), et alertes bienveillantes. */
 const YD = require("../public/engine.js");
 const { q } = require("./db");
@@ -37,7 +37,7 @@ async function mealsOf(uids, from, to) {
 /* courbe réduite (un point toutes les 5 min, plus les extrémités) */
 const thin = (pts, from, to) => pts.filter((x, i) => (i % 5 === 0 || i === pts.length - 1) && x[0] >= from - MIN && x[0] <= to + MIN).map(([t, b]) => [t, Math.round(b * 1000) / 1000]);
 
-/* Découpe en sessions : un nouveau verre d'alcool bu après le retour à 0 ouvre une nouvelle session. */
+/* Découpe en cuvées : un nouveau verre d'alcool bu après le retour à 0 ouvre une nouvelle cuvée. */
 function splitSessions(p, drinks, meals) {
   const alc = drinks.filter(d => d.abv > 0).sort((a, b) => a.t - b.t), out = [];
   let cur = [], zero = 0;
@@ -64,11 +64,11 @@ function sessionView(p, list, allDrinks, meals, now, withPts) {
     ...(withPts ? { pts: thin(sim.pts, start, end), drinks: inWin } : {}) };
 }
 
-async function userRow(uid) { const { rows } = await q("SELECT id, pseudo, sex, age, height, weight, cap, meals_day::text AS meals_day, places, cur_place, cur_place_t FROM users WHERE id=$1", [uid]); return rows[0]; }
+async function userRow(uid) { const { rows } = await q("SELECT id, pseudo, sex, age, height, weight, cap, look, meals_day::text AS meals_day, places, cur_place, cur_place_t FROM users WHERE id=$1", [uid]); return rows[0]; }
 /* lieu en cours : celui choisi il y a moins de 10 h */
 const curPlace = (u, now = Date.now()) => u.cur_place && u.cur_place_t && now - +u.cur_place_t < PLACE_TTL ? u.cur_place : null;
 
-/* état en direct « solo » : la session en cours (ou rien si on est à 0) */
+/* état en direct « solo » : la cuvée en cours (ou rien si on est à 0) */
 async function live(uid, now = Date.now()) {
   const u = await userRow(uid), p = profileOf(u);
   const dr = (await drinksOf([uid], now - 36 * H, now)).map(mapDrink);
@@ -80,7 +80,7 @@ async function live(uid, now = Date.now()) {
   const { sim, ev, score } = YD.scoreSummary(pl, now);
   const party = await hooks.activeParty(uid);
   const mealsOk = u.meals_day === parisDay(now) || meals.some(m => m.t > now - 16 * H) || (party && party.meals_ok);
-  return { now, party, me: { id: uid, pseudo: u.pseudo, cap: u.cap, sam: !!(party && party.sam), mealsOk: !!mealsOk, drinks: curDrinks,
+  return { now, party, me: { id: uid, pseudo: u.pseudo, cap: u.cap, sex: u.sex, look: u.look, sam: !!(party && party.sam), mealsOk: !!mealsOk, drinks: curDrinks,
     sim: { pts: view && view.ongoing ? view.pts : [], cur: sim.cur, prev: sim.prev, peak: sim.peak, peakT: sim.peakT, zeroT: sim.zeroT, grams: sim.grams },
     ev: view && view.ongoing ? ev : [], score, sessionStart: view && view.ongoing ? view.start : null,
     place: (view && view.ongoing && view.place) || curPlace(u, now), places: u.places || [] } };
@@ -116,7 +116,7 @@ async function delDrink(uid, id, undo) {
   hooks.drinkAdded(uid, rows[0].party_code);
 }
 
-/* choisir le lieu : vaut pour la session en cours (verres déjà notés compris) et les verres des 10 h qui suivent */
+/* choisir le lieu : vaut pour la cuvée en cours (verres déjà notés compris) et les verres des 10 h qui suivent */
 async function setPlace(uid, b) {
   const place = cleanPlace(b.place), u = await userRow(uid);
   let favs = Array.isArray(u.places) ? u.places.slice() : [];
@@ -156,7 +156,7 @@ async function calendar(uid, month) {
 async function groupMember(gid, uid) { const { rows } = await q("SELECT 1 FROM group_members WHERE group_id=$1 AND user_id=$2", [gid, uid]); return !!rows[0]; }
 async function groupView(gid, end) {
   const { rows: g } = await q("SELECT id, name, code, created_by FROM groups WHERE id=$1", [gid]);
-  const { rows: mem } = await q(`SELECT u.id, u.pseudo, u.sex, u.age, u.height, u.weight, u.cap, gm.joined_at FROM group_members gm JOIN users u ON u.id=gm.user_id
+  const { rows: mem } = await q(`SELECT u.id, u.pseudo, u.sex, u.age, u.height, u.weight, u.cap, u.look, gm.joined_at FROM group_members gm JOIN users u ON u.id=gm.user_id
     WHERE gm.group_id=$1 ORDER BY gm.joined_at`, [gid]);
   const now = Date.now(), start = end - 48 * H, ids = mem.map(m => m.id);
   const dr = (await drinksOf(ids, start - 18 * H, Math.min(end, now))).map(d => ({ ...mapDrink(d), uid: d.user_id }));
@@ -166,12 +166,12 @@ async function groupView(gid, end) {
     const sim = YD.simulate({ ...p, drinks, meals }, Math.min(now, end));
     const win = drinks.filter(d => d.t >= start && d.abv > 0);
     /* titre actuel : le dernier titre gagné sur le créneau (pas les simples infos) */
-    /* … de la dernière session seulement (sinon un « Retour sur Terre » d'hier masquerait la session en cours) */
+    /* … de la dernière cuvée seulement (sinon un « Retour sur Terre » d'hier masquerait la cuvée en cours) */
     const ses = splitSessions(p, drinks.filter(d => d.t <= end), meals), last = ses[ses.length - 1] || [];
     const lastD = last.length ? drinks.filter(d => d.t >= last[0].t - 30 * MIN && d.t <= end) : [];
     const tNow = Math.min(now, end), simL = YD.simulate({ ...p, drinks: lastD, meals }, tNow);
     const ev = lastD.length ? YD.events({ ...p, drinks: lastD, meals, joined: last[0].t }, simL, tNow).filter(e => e.kind !== "info" && e.t >= start && e.t <= end).sort((a, b) => b.t - a.t) : [];
-    return { id: m.id, pseudo: m.pseudo, cap: m.cap, sim: { pts: thin(sim.pts, start, end), cur: end >= now ? sim.cur : 0, prev: sim.prev, peak: sim.peak, peakT: sim.peakT, zeroT: sim.zeroT },
+    return { id: m.id, pseudo: m.pseudo, cap: m.cap, sex: m.sex, look: m.look, sim: { pts: thin(sim.pts, start, end), cur: end >= now ? sim.cur : 0, prev: sim.prev, peak: sim.peak, peakT: sim.peakT, zeroT: sim.zeroT },
       title: ev[0] ? { title: ev[0].title, kind: ev[0].kind, t: ev[0].t } : null, place: end >= now && simL.cur > 0 ? placeForOthers(placeOf(lastD), m.sex) : null,
       std: Math.round(win.reduce((s, d) => s + STD(d), 0) * 10) / 10, n: win.length, water: drinks.filter(d => d.water && d.t >= start).length };
   });

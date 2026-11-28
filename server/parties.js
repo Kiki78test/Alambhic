@@ -21,7 +21,7 @@ async function snapshot(code, opt = {}) {
   const { rows: pr } = await q("SELECT name, starts_at, ends_at FROM parties WHERE code=$1", [code]);
   const P = pr[0] || {}, ws = +P.starts_at || now - 12 * H, we = +P.ends_at || now + 12 * H;
   const { rows: mem } = await q(`
-    SELECT u.id, u.pseudo, u.sex, u.age, u.height, u.weight, u.cap, m.sam, m.fed, m.meals_ok, m.joined_at, m.recap_ok
+    SELECT u.id, u.pseudo, u.sex, u.age, u.height, u.weight, u.cap, u.look, m.sam, m.fed, m.meals_ok, m.joined_at, m.recap_ok
     FROM party_members m JOIN users u ON u.id = m.user_id
     WHERE m.party_code=$1 AND ${opt.recap ? "m.recap_ok" : "m.left_at IS NULL"} ORDER BY m.joined_at`, [code]);
   const { rows: dr } = await q(`
@@ -45,7 +45,7 @@ async function snapshot(code, opt = {}) {
     const ev = r.ev.filter(e => e.t >= ws - MIN && e.t <= we + 6 * H), score = YD.scoreOf(ev);
     const pts = sim.pts.filter((x, i) => (i % 5 === 0 || Math.abs(x[0] - now) < MIN || i === sim.pts.length - 1) && x[0] >= ws)
       .map(([t, b]) => [t, Math.round(b * 1000) / 1000]);
-    return { id: m.id, pseudo: m.pseudo, cap: m.cap, sam: m.sam, fed: m.fed, mealsOk: m.meals_ok, recapOk: m.recap_ok, sex: m.sex, joined: p.joined, drinks,
+    return { id: m.id, pseudo: m.pseudo, cap: m.cap, sam: m.sam, fed: m.fed, mealsOk: m.meals_ok, recapOk: m.recap_ok, sex: m.sex, look: m.look, joined: p.joined, drinks,
       sim: { pts, cur: sim.cur, prev: sim.prev, peak: sim.peak, peakT: sim.peakT, zeroT: sim.zeroT, grams: sim.grams }, ev, score };
   });
   if (opt.recap) return { now, members: members.map(({ id, recapOk, ...m }, i) => ({ id: "j" + i, ...m, ev: m.ev.map(e => ({ ...e, pid: "j" + i, key: "j" + i + ":" + e.key.split(":")[1] })) })) };

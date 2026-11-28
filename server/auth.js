@@ -54,7 +54,7 @@ function limited(key, max = 10, windowMs = 10 * 60 * 1000) {
   return h.length > max;
 }
 
-const PUBLIC_USER = "id, email, pseudo, sex, age, height, weight, cap, lang, (google_sub IS NOT NULL) AS google, (pass_hash IS NOT NULL) AS has_pass, is_admin";
+const PUBLIC_USER = "id, email, pseudo, sex, age, height, weight, cap, lang, look, (google_sub IS NOT NULL) AS google, (pass_hash IS NOT NULL) AS has_pass, is_admin";
 const withAdmin = u => { if (!u) return u; const { is_admin, ...rest } = u; return { ...rest, admin: !!is_admin || ADMIN_EMAILS.has(String(u.email || "").toLowerCase()) }; };
 
 async function requireUser(req, res, next) {
@@ -171,6 +171,16 @@ function routes(app) {
     const { rows } = await q(`UPDATE users SET pseudo=$2, sex=$3, age=$4, height=$5, weight=$6, cap=$7 WHERE id=$1 RETURNING ${PUBLIC_USER}`,
       [req.user.id, pseudo, sex, age, height, weight, cap]);
     res.json({ user: withAdmin(rows[0]) });
+  });
+
+  /* apparence de l'avatar : personnage (homme ou femme, indépendant du sexe biologique du calcul), teinte de peau, couleur de cheveux */
+  app.put("/api/me/look", requireUser, async (req, res) => {
+    const b = req.body || {}, look = {};
+    if (b.g === "h" || b.g === "f") look.g = b.g;
+    if (Number.isInteger(b.skin) && b.skin >= 0 && b.skin <= 5) look.skin = b.skin;
+    if (Number.isInteger(b.hair) && b.hair >= 0 && b.hair <= 5) look.hair = b.hair;
+    const { rows } = await q("UPDATE users SET look = look || $2::jsonb WHERE id=$1 RETURNING look", [req.user.id, JSON.stringify(look)]);
+    res.json({ look: rows[0].look });
   });
 
   app.put("/api/me/lang", requireUser, async (req, res) => {

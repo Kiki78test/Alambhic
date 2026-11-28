@@ -76,7 +76,7 @@ S.append(slide(f"""<div class="cols"><div><div class="k">L'écran Moi</div><h2>S
 <ul><li>Taux estimé en grand, état coloré : sobre, pompette, interdit de conduire, au-dessus du plafond, alerte.</li>
 <li>Alambic en verre et cuivre qui se remplit de potion à côté de l'avatar ; pic de la soirée et heure estimée du retour à 0.</li>
 <li>Huit boissons prêtes, un verre perso (volume et degré), « bu il y a 15 min à 1 h ».</li>
-<li>Dernier repas proposé (facultatif) au premier verre d'une session, ajout d'un repas à tout moment, question « avez-vous dîné ? » à l'heure des repas.</li>
+<li>Dernier repas proposé (facultatif) au premier verre d'une cuvée, ajout d'un repas à tout moment, question « avez-vous dîné ? » à l'heure des repas.</li>
 <li>Mes titres et l'historique de mes verres.</li></ul></div>
 <div class="phones">{img("demo-moi-1930")}{img("demo-moi-2235")}</div></div>"""))
 
@@ -143,7 +143,7 @@ S.append(slide("""<div class="k">Architecture et supports</div><h2>Un seul serve
 
 S.append(slide("""<div class="k">Seul, en soirée, entre potes</div><h2>Les verres se notent partout</h2>
 <div class="cards" style="grid-template-columns:repeat(4,1fr)">
-<div class="card"><b>Sessions</b><span>Du premier verre au retour à 0, découpées toutes seules : une courbe nette par session, son pic et ses verres.</span></div>
+<div class="card"><b>Cuvées</b><span>Du premier verre au retour à 0, découpées toutes seules : une courbe nette par cuvée, son pic et ses verres.</span></div>
 <div class="card"><b>Agenda</b><span>Chaque jour en vert (1-2 verres), orange (3-5) ou rouge (6 et +), total par semaine, alertes bienveillantes et Alcool info service.</span></div>
 <div class="card"><b>Groupes de potes</b><span>Un lien d'invitation, puis les courbes de tous les membres en continu, par créneaux de 48 h.</span></div>
 <div class="card"><b>Soirées à code</b><span>Début et fin prévus à l'avance ; la courbe couvre la soirée, les verres s'y rattachent tout seuls.</span></div></div>"""))

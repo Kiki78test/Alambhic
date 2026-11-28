@@ -39,7 +39,12 @@ const out = n => require('path').join(__dirname, 'img', n + '.png');
   await p.evaluate(() => window.scrollTo(0, 0)); await shot('h-moi');
   await p.evaluate(() => document.querySelector('#mAdd').scrollIntoView({ block: 'center' })); await p.waitForTimeout(300);
   await p.evaluate(() => { document.querySelectorAll('#toasts .toast').forEach(t => t.remove()); const k = document.querySelector('#snack'); if (k) k.hidden = true; }); await p.screenshot({ path: out('repas-liste') });
-  await p.click('#profBtn'); await p.waitForTimeout(500); await p.click('#delAcc'); await p.click('#delYes'); await p.waitForTimeout(1200);
+  // profil : « Mon avatar » (personnage, peau, cheveux)
+  await p.click('#profBtn'); await p.waitForTimeout(700);
+  await p.click('#lookG [data-g="f"]'); await p.waitForTimeout(400); await p.click('[data-skin="2"]'); await p.waitForTimeout(400); await p.click('[data-hair="2"]'); await p.waitForTimeout(600);
+  await p.evaluate(() => { document.querySelector('.lookcard').scrollIntoView({ block: 'center' }); const k = document.querySelector('#snack'); if (k) k.hidden = true; }); await p.waitForTimeout(300);
+  await p.screenshot({ path: out('mon-avatar') });
+  await p.click('#delAcc'); await p.click('#delYes'); await p.waitForTimeout(1200);
   if (EMAIL) {
     await p.click('#mLogin'); await p.fill('#email', EMAIL); await p.fill('#pass', PASS); await p.click('#authForm button[type=submit]');
     await p.waitForTimeout(1500); await shot('soiree-moi', true);

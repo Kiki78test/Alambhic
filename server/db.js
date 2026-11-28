@@ -115,11 +115,13 @@ async function migrate() {
   await pool.query("ALTER TABLE parties ADD COLUMN IF NOT EXISTS ends_at TIMESTAMPTZ");
   await pool.query("UPDATE parties SET starts_at=created_at, ends_at=created_at + interval '12 hours' WHERE starts_at IS NULL");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS meals_day DATE");
-  /* lieu des sessions : sur chaque verre, lieu en cours et lieux favoris du joueur */
+  /* lieu des cuvées : sur chaque verre, lieu en cours et lieux favoris du joueur */
   await pool.query("ALTER TABLE drinks ADD COLUMN IF NOT EXISTS place TEXT");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS places JSONB NOT NULL DEFAULT '[]'::jsonb");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS cur_place TEXT");
   await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS cur_place_t TIMESTAMPTZ");
+  /* apparence de l'avatar : personnage (h/f), teinte de peau, couleur de cheveux */
+  await pool.query("ALTER TABLE users ADD COLUMN IF NOT EXISTS look JSONB NOT NULL DEFAULT '{}'::jsonb");
   await pool.query("CREATE INDEX IF NOT EXISTS drinks_user_t ON drinks(user_id, t)");
   await pool.query(`CREATE TABLE IF NOT EXISTS groups (
     id BIGSERIAL PRIMARY KEY,

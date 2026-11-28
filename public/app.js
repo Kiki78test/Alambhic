@@ -123,7 +123,7 @@ function viewMe(p,now,mid=""){
   return `${mealQuestion()}<section>
   <div class="card" style="display:flex;flex-direction:column;gap:12px">
     <div class="row" style="justify-content:space-between"><span class="label">${esc(my.pseudo)} · taux estimé</span><span class="state" style="color:${col}">${lab}</span></div>
-    <div class="row merow"><div class="avcol">${alertBtn()}${avx(p,88,lab,"me")}<span class="curt ${cur?cur.kind:""}" title="Titre actuel, visible par vos potes">${cur?esc(cur.title):"Pas encore de titre"}</span></div>${gauge(s.cur,maxB,cap,col,s.cur<s.prev-0.004)}<div class="bac">${fmt(s.cur)}<small>g/L</small></div></div>
+    <div class="row merow"><div class="avcol">${alertBtn()}${avx(p,88,lab,"me")}<span class="curt ${cur?cur.kind:""}" title="Titre actuel, visible par vos potes">${cur?esc(cur.title):"Pas encore de titre"}</span></div>${gauge(s.cur,maxB,cap,col,s.cur<s.prev-0.004)}<div class="bac">${fmt(bacNow(Math.max(0,s.cur)))}<small>g/L</small></div></div>
     <div class="muted" style="font-size:13px">${sub}. Plafond perso : ${fmt(cap)} g/L.</div>
   </div></section>${S.alertOpen&&S.cal&&S.cal.alerts.length&&!demo?alertsCard(true):""}${mid}
   ${zs("verre")}${zh("verre",my.sam?"Sam boit de l'eau":"Ajouter un verre")}
@@ -137,7 +137,6 @@ function viewMe(p,now,mid=""){
   ${titles.length>1?`${zs("titre")}<details class="hq"><summary>Titres de la session (${titles.length})</summary><div class="badges" style="margin-top:8px">${titles.map(e=>`<span class="badge ${e.kind}">${esc(e.title)} · ${hm(e.t)}</span>`).join("")}</div></details></section>`:""}
   ${zs("liste")}${zh("liste","Mes verres")}${mine.length?`<div class="list">${mine.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div><button class="x" data-del="${d.id}" aria-label="Supprimer ce verre">×</button></div>`).join("")}</div>`:`<p class="muted">Touchez une boisson ci-dessus pour l'enregistrer. Pensez à l'eau : trois verres débloquent le Chameau.</p>`}</section>${viewMealPop()}`;
 }
-/* Courbes sur une fenêtre : soirée (début → fin prévus), session (premier verre → retour à 0), groupe (48 h). */
 /* Courbes sur une fenêtre : soirée (début → fin prévus), session (premier verre → retour à 0), groupe (48 h).
    Zoom et déplacement aux doigts : pincer pour zoomer, glisser pour se déplacer, double-toucher pour revenir à la vue entière.
    La vue choisie est gardée quand l'écran se redessine (CHV). */
@@ -178,17 +177,43 @@ function chartBody(c,a,b){
   for(const p of c.series){
     const pts=p.pts.filter((x,i)=>(i%every===0||Math.abs(x[0]-now)<=MIN)&&x[0]>=a-30*MIN&&x[0]<=b+30*MIN), past=pts.filter(x=>x[0]<=now), fut=pts.filter(x=>x[0]>=now);
     const d=arr=>arr.map((x,i)=>(i?"L":"M")+X(x[0]).toFixed(1)+" "+Y(x[1]).toFixed(1)).join("");
-    if(past.length>1) g+=`<path d="${d(past)}" fill="none" stroke="${p.color}" stroke-width="2.5" stroke-linejoin="round"/>`;
+    if(past.length>1&&c.series.length===1){ const gid="ar"+Math.round(a)%100000;   /* une seule courbe : aire dégradée dessous */
+      g+=`<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.color}" stop-opacity=".34"/><stop offset="1" stop-color="${p.color}" stop-opacity="0"/></linearGradient></defs><path d="${d(past)}L${X(past[past.length-1][0]).toFixed(1)} ${Y(0)}L${X(past[0][0]).toFixed(1)} ${Y(0)}Z" fill="url(#${gid})"/>` }
+    if(past.length>1) g+=`<path d="${d(past)}" fill="none" stroke="${p.color}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>`;
     if(fut.length>1) g+=`<path d="${d(fut)}" fill="none" stroke="${p.color}" stroke-width="2" stroke-dasharray="4 5" stroke-opacity=".7"/>`;
     if(live){ const pe=Date.now()-lastPour; if(pe>-1000&&pe<2600&&p.id===S.me&&!REDUCE) g+=`<circle cx="${X(now)}" cy="${Y(p.cur)}" r="5" fill="none" stroke="${p.color}" stroke-width="2.5" class="cpulse" style="animation-delay:${-pe}ms"/><circle cx="${X(now)}" cy="${Y(p.cur)}" r="5" fill="none" stroke="${p.color}" stroke-width="2" class="cpulse" style="animation-delay:${-pe+350}ms"/>`;
-      g+=`<circle cx="${X(now)}" cy="${Y(p.cur)}" r="4.5" fill="${p.color}" stroke="var(--bg)" stroke-width="2"/>` }
+      g+=`<circle cx="${X(now)}" cy="${Y(p.cur)}" r="10" fill="${p.color}" opacity=".16"/><circle cx="${X(now)}" cy="${Y(p.cur)}" r="4.5" fill="${p.color}" stroke="var(--bg)" stroke-width="2"/>` }
   }
   g+=`</g>`;
   if(live) g+=`<text x="${Math.min(X(now)+4,W-R-60)}" y="${T+10}" fill="var(--muted)" font-size="11">maintenant</text>`;
   return g;
 }
+/* Quand une courbe change (verre ajouté ou supprimé), elle glisse de l'ancienne forme à la nouvelle au lieu de sauter. */
+const CHP={}, CHM={}; let chRaf=0;
+function chartMixed(a,b,e){
+  const f=(pts,t)=>{ const n=pts.length; if(!n||t<pts[0][0]||t>pts[n-1][0]) return 0; let i=1; while(i<n-1&&pts[i][0]<t) i++; const [t0,v0]=pts[i-1],[t1,v1]=pts[i]; return t1===t0?v1:v0+(v1-v0)*(t-t0)/(t1-t0) };
+  return {...b,ymax:a.ymax+(b.ymax-a.ymax)*e,series:b.series.map(s=>{ const o=a.series.find(x=>x.id===s.id), op=o?o.pts:[], oc=o?o.cur:0;
+    return {...s,cur:oc+(s.cur-oc)*e,pts:s.pts.map(([t,v])=>{ const w=f(op,t); return [t,w+(v-w)*e] })} })};
+}
+const chEase=u=>1-Math.pow(1-Math.min(1,Math.max(0,u)),3);
+function chartTick(){
+  chRaf=0; let live=false; const now=performance.now();
+  for(const id in CHM){ const m=CHM[id], u=(now-m.t0)/850, el=document.querySelector(`.chart[data-ch="${CSS.escape(id)}"] svg`), c=CH[id], v=CHV[id];
+    if(!el||!c){ delete CHM[id]; continue }
+    if(u>=1){ el.innerHTML=chartBody(c,v?v.a:c.t0,v?v.b:c.t1); delete CHM[id]; continue }
+    el.innerHTML=chartBody(chartMixed(m.from,c,chEase(u)),v?v.a:c.t0,v?v.b:c.t1); live=true }
+  if(live) chRaf=requestAnimationFrame(chartTick);
+}
+function chartMorphs(){
+  document.querySelectorAll(".chart.zoomable").forEach(el=>{ const id=el.dataset.ch, c=CH[id], p=CHP[id]; if(!c) return;
+    if(p&&p!==c&&!REDUCE&&!demo){ const d=Math.max(0,...c.series.map(s=>{ const o=p.series.find(x=>x.id===s.id); return Math.abs((o?o.cur:0)-s.cur) }));
+      if(d>0.012){ const m=CHM[id]; CHM[id]={from:m?chartMixed(m.from,p,chEase((performance.now()-m.t0)/850)):p,t0:performance.now()} } }
+    CHP[id]=c });
+  if(Object.keys(CHM).length){ if(chRaf) cancelAnimationFrame(chRaf); chartTick() }
+}
 /* gestes : 2 doigts = zoom autour du milieu, 1 doigt = déplacement (horizontal ; le défilement vertical de la page reste libre) */
 function bindCharts(){
+  chartMorphs();
   document.querySelectorAll(".chart.zoomable").forEach(el=>{
     const id=el.dataset.ch, c=CH[id]; if(!c||el._z) return; el._z=1;
     const svg=el.querySelector("svg"), hint=el.querySelector(".zhint"), full=c.t1-c.t0, minSpan=Math.min(full,20*MIN);
@@ -218,37 +243,57 @@ function bindCharts(){
 /* ---------- animations ---------- */
 const REDUCE=(()=>{try{return matchMedia("(prefers-reduced-motion: reduce)").matches}catch(e){return false}})();
 /* Jauge : alambic qui se remplit de potion (dessin dans avatar.js), sans graduation (indicatif). */
-let gaugePrev=null, lastPour=-1e9, lastSip=-1e9;   // verre qui vient d'être noté : goutte et remous dans l'alambic, gorgée de l'avatar, pulsation sur la courbe
+let gaugePrev=null, lastPour=-1e9;   // verre qui vient d'être noté : goutte et remous dans l'alambic, pulsation sur la courbe (la gorgée de l'avatar est gérée par avatar.js)
 function gauge(cur,maxB,cap,col,down){
   const r=Math.max(0,Math.min(1,cur/maxB)), from=gaugePrev===null?r:gaugePrev; gaugePrev=r;
   const pe=Date.now()-lastPour, pour=pe>-1000&&pe<1800&&!REDUCE;
   return `<div class="gauge alam"${pour?` style="--pel:${-pe}ms"`:""}>${alambic(r,from,down,pour)}</div>`;
 }
+/* Le chiffre du taux défile de l'ancienne valeur à la nouvelle (0,9 s), même si l'écran se redessine entre-temps. */
+const BAC={from:null,to:null,t0:0,raf:0};
+function bacNow(to){
+  if(BAC.to===null||REDUCE||demo){ BAC.from=BAC.to=to; return to }
+  const now=performance.now(), u=Math.min(1,(now-BAC.t0)/900), cur=BAC.from+(BAC.to-BAC.from)*(1-Math.pow(1-u,3));
+  if(Math.abs(to-BAC.to)>0.004){ BAC.from=cur; BAC.to=to; BAC.t0=now; return cur }
+  return u<1?cur:to;
+}
+function bacTick(){
+  BAC.raf=0; const el=document.querySelector(".merow .bac"); if(!el||BAC.to===null) return;
+  const u=Math.min(1,(performance.now()-BAC.t0)/900), cur=BAC.from+(BAC.to-BAC.from)*(1-Math.pow(1-u,3));
+  if(el.firstChild) el.firstChild.nodeValue=fmt(u<1?cur:BAC.to);
+  el.classList.toggle("roll",u<1);
+  if(u<1) BAC.raf=requestAnimationFrame(bacTick);
+}
 function animateGauge(){
+  if(BAC.to!==null&&performance.now()-BAC.t0<900&&!BAC.raf) BAC.raf=requestAnimationFrame(bacTick);
   document.querySelectorAll(".gauge .alq").forEach(q=>{ const go=()=>{q.style.transform=`translateY(${q.dataset.to}px)`};
     if(REDUCE) return go(); requestAnimationFrame(()=>requestAnimationFrame(go)) });
 }
 /* Une goutte de potion vole du bouton touché jusqu'à l'entrée du tuyau. */
-function flyDrop(rect){
+const DROPC=l=>/Bi|Pinte|Cidre/.test(l)?"#f2b233":/Champ/.test(l)?"#f6d778":/Vin/.test(l)?"#c0304c":/Cocktail/.test(l)?"#ff7fb4":/Shot/.test(l)?"#e08a2e":"#2f8cff";
+function flyDrop(rect,label){
   if(REDUCE||!rect) return;
+  const col=DROPC(label||"");
   const go=()=>{ const g=document.querySelector(".gauge svg"); if(!g) return; const t=g.getBoundingClientRect();
-    const x0=rect.left+rect.width/2, y0=rect.top+rect.height/2, x1=t.left+t.width*0.5, y1=t.top-2;
-    const d=document.createElement("div"); d.className="dropfx"; document.body.appendChild(d);
+    const x0=rect.left+rect.width/2, y0=rect.top+rect.height/2, x1=t.left+t.width*0.42, y1=t.top+t.height*0.12;
     const mx=(x0+x1)/2, my=Math.min(y0,y1)-90;
-    const a=d.animate([{transform:`translate(${x0}px,${y0}px) scale(.6)`,opacity:0},{transform:`translate(${mx}px,${my}px) scale(1)`,opacity:1,offset:.45},{transform:`translate(${x1}px,${y1}px) scale(.8)`,opacity:1}],{duration:700,easing:"cubic-bezier(.4,0,.2,1)"});
-    a.onfinish=()=>{ d.remove(); const s=document.createElement("div"); s.className="splashfx"; s.style.left=x1+"px"; s.style.top=y1+"px"; document.body.appendChild(s); setTimeout(()=>s.remove(),600) } };
+    /* la goutte et deux petites qui la suivent */
+    [0,70,140].forEach((dl,i)=>{ const d=document.createElement("div"); d.className="dropfx"; d.style.background=`radial-gradient(circle at 35% 35%,#fff,${col} 62%)`; d.style.boxShadow=`0 0 10px ${col}`; document.body.appendChild(d);
+      const sc=i?.55-.12*i:1;
+      const a=d.animate([{transform:`translate(${x0}px,${y0}px) scale(${.6*sc})`,opacity:0},{transform:`translate(${mx}px,${my+i*8}px) scale(${sc})`,opacity:i?.7:1,offset:.45},{transform:`translate(${x1}px,${y1}px) scale(${.8*sc})`,opacity:i?.5:1}],{duration:720,delay:dl,easing:"cubic-bezier(.4,0,.2,1)",fill:"backwards"});
+      a.onfinish=()=>{ d.remove(); if(i) return; const sp=document.createElement("div"); sp.className="splashfx"; sp.style.left=x1+"px"; sp.style.top=y1+"px"; sp.style.borderColor=col; document.body.appendChild(sp); setTimeout(()=>sp.remove(),600) } }) };
   setTimeout(go,30);
 }
 /* Fiole qui se remplit, à la place de « Chargement… ». */
 const loader=t=>`<div class="loader"><svg viewBox="0 0 40 48" aria-hidden="true"><path d="M15 4h10M17 4v12L7 34a8 8 0 0 0 7 12h12a8 8 0 0 0 7-12L23 16V4" class="lf"/><clipPath id="lc"><path d="M17 16L7 34a8 8 0 0 0 7 12h12a8 8 0 0 0 7-12L23 16z"/></clipPath><g clip-path="url(#lc)"><rect x="0" y="20" width="40" height="30" class="ll"/></g></svg><span>${t}</span></div>`;
 let trendPrev={}, statePrev={};
-/* Avatar vivant : il se balance d'autant plus que le taux est haut ; à chaque changement de stade (seuils fixes, pas le plafond perso), il sursaute et annonce son nouveau stade. */
+/* Avatar vivant (pantin animé dans avatar.js) ; à chaque changement de stade (seuils fixes, pas le plafond perso), il sursaute, un anneau s'élargit et une bulle annonce le stade.
+   Un toucher sur un avatar le fait réagir (petit saut, clin d'œil, verre levé). */
+document.addEventListener("click",e=>{ const a=e.target.closest&&e.target.closest("svg.avr"); if(a&&typeof avPoke==="function") avPoke(a.dataset.key) });
 function avx(p,size,_lab,key){
-  key=key||p.id; const lab=AV_NAMES[avStage(Math.max(0,p.sim?.cur||0))]; const old=statePrev[key], now=Date.now();
+  key=key||p.id; const stg=avStage(Math.max(0,p.sim?.cur||0)), lab=AV_NAMES[stg]; const old=statePrev[key], now=Date.now();
   const at=old?(old.lab!==lab?now:old.at):0, el=now-at, changed=!!at&&el<2200&&!REDUCE;   // l'animation continue au fil des rafraîchissements
-  const sw=Math.min(1.4,Math.max(0,p.sim?.cur||0))*4.5;
-  const se=Date.now()-lastSip, sip=key==="me"&&se<1800&&!REDUCE;
-  return `<span class="avw${changed?" avchg":""}${sw<0.4?" still":""}${sip?" sip":""}" style="--sw:${sw.toFixed(2)}deg;--el:-${el}ms;--sel:-${Math.max(0,se)}ms" data-st="${esc(key)}|${at}|${esc(lab)}">${avatar(p,size)}${changed?`<em class="avbub">${esc(lab)}</em>`:""}</span>`;
+  return `<span class="avw${changed?" avchg":""}" style="--el:-${el}ms;--rc:${AV_RING[stg]}" data-st="${esc(key)}|${at}|${esc(lab)}">${avatar(p,size,key)}${changed?`<em class="avbub">${esc(lab)}</em>`:""}</span>`;
 }
 
 /* Potes en direct : taux, tendance façon bourse, mini-courbe, dernier titre */
@@ -849,7 +894,16 @@ function bindHub(){
 
 /* ---------- rendu ---------- */
 const i18nAll=()=>{ I18N.apply($("#app")); I18N.apply(document.querySelector("header")); I18N.apply($("#nav")); I18N.apply($("#demoBar")) };
+/* Changement d'écran ou d'onglet : les blocs arrivent en fondu, l'un après l'autre (0,45 s) ; un simple rafraîchissement ne rejoue rien. */
+let viewKey="", viewAt=0;
 function render(){
+  render0();
+  const app=$("#app"), k=[demo?"demo":S.screen,S.tab,S.htab,S.sesOpen||"",S.gid||"",S.code||""].join("|"), now=performance.now();
+  if(k!==viewKey){ viewKey=k; viewAt=now }
+  const el=now-viewAt;
+  if(el<450&&!REDUCE){ app.style.setProperty("--ve",`-${Math.round(el)}ms`); app.classList.add("enter") } else app.classList.remove("enter");
+}
+function render0(){
   const app=$("#app"), inParty=demo||(S.screen==="party"&&S.code);
   const ready=!!S.user&&profileReady(S.user), hub=!demo&&ready&&S.screen==="home";
   $("#nav").hidden=!(inParty||hub); $("#navParty").hidden=!inParty; $("#navHub").hidden=!hub; $("#codeChip").hidden=!inParty; $("#demoHdr").hidden=demo||(ready&&!!S.code);
@@ -887,8 +941,8 @@ function render(){
   else{
     noAdd=false;
     if(S.tab==="moi"&&!demo&&S.snap){ const sa=S.snap.startsAt, ea=S.snap.endsAt;
-      if(now<sa-H_MS){ noAdd=true; h+=`<section><div class="card"><b>La soirée commence ${esc(dLong(sa))} à ${hm(sa)}</b><span class="muted" style="font-size:13px">D'ici là, vos verres se notent depuis l'accueil (onglet Moi) et ne comptent pas dans la soirée.</span></div></section>` }
-      else if(now>ea){ noAdd=true; h+=`<section><div class="card"><b>Soirée terminée ${esc(dLong(ea))} à ${hm(ea)}</b><span class="muted" style="font-size:13px">Vos verres se notent maintenant depuis l'accueil (onglet Moi).</span><button class="btn ghost small" data-htab-go="moi" style="align-self:flex-start">Aller à l'accueil</button></div></section>` } }
+      if(now<sa-H_MS){ noAdd=true; h+=`<section><div class="card" style="display:flex;flex-direction:column;gap:6px"><b>La soirée commence ${esc(dLong(sa))} à ${hm(sa)}</b><span class="muted" style="font-size:13px">D'ici là, vos verres se notent depuis l'accueil (onglet Moi) et ne comptent pas dans la soirée.</span></div></section>` }
+      else if(now>ea){ noAdd=true; h+=`<section><div class="card" style="display:flex;flex-direction:column;gap:6px"><b>Soirée terminée ${esc(dLong(ea))} à ${hm(ea)}</b><span class="muted" style="font-size:13px">Vos verres se notent maintenant depuis l'accueil (onglet Moi).</span><button class="btn ghost small" data-htab-go="moi" style="align-self:flex-start">Aller à l'accueil</button></div></section>` } }
     if(S.tab==="moi") h+= meP?viewMe(meP,now):"";
     if(S.tab==="courbes") h+=viewChart(list,now,demo?{}:{t0:S.snap.startsAt,t1:S.snap.endsAt,title:S.snap.name?"Courbes · "+S.snap.name:"Courbes de la soirée"});
     if(S.tab==="classement") h+=viewRank(list,now);
@@ -953,13 +1007,13 @@ async function addDrink(d,key,rect,noPop){
   if(!noPop&&needMealPop(d)){ S.mealPop={d,key,rect,kind:guessKind(),t:""}; render(); return }
   const a=ago, when=NOW()-a*MIN;
   if(demo){ const p=demoPlayers[S.me]; p.drinks=[...p.drinks,{id:when,t:when,l:d.l,ml:d.ml,abv:d.abv,...(d.water?{water:1}:{})}]; ago=0;
-    if(!d.water){ lastSip=Date.now(); lastPour=Date.now()+650 }
-    buzz(25); setPend(key,"ok",1300); if(!d.water) flyDrop(rect); snack("Verre enregistré",`${d.l} · ${hm(when)}`,{undo:()=>{p.drinks=p.drinks.filter(x=>x.id!==when);render();snack("Verre retiré")}}); return }
+    if(!d.water) lastPour=Date.now()+650;
+    buzz(25); setPend(key,"ok",1300); if(!d.water) flyDrop(rect,d.l); snack("Verre enregistré",`${d.l} · ${hm(when)}`,{undo:()=>{p.drinks=p.drinks.filter(x=>x.id!==when);render();snack("Verre retiré")}}); return }
   setPend(key,"sending");
   try{
     const r=await api("POST","/api/me/drinks",{label:d.l,ml:d.ml,abv:d.abv,agoMin:a}); hubDirty("soirees","agenda");
-    if(!d.water){ lastSip=Date.now(); lastPour=Date.now()+650 }
-    ago=0; buzz(25); setPend(key,"ok",1300); if(!d.water) flyDrop(rect);
+    if(!d.water) lastPour=Date.now()+650;
+    ago=0; buzz(25); setPend(key,"ok",1300); if(!d.water) flyDrop(rect,d.l);
     snack("Verre enregistré",`${d.l} · ${hm(r.t||when)}`,{undo:async()=>{ try{ await api("DELETE",`/api/me/drinks/${r.id}?undo=1`); snack("Verre retiré"); refresh() }catch(e){ snack("Impossible d'annuler",e.message,{err:1}) } }});
     refresh();
   }catch(e){ setPend(key,null); snack("Verre non enregistré",e.message,{err:1}); buzz([40,60,40]) }

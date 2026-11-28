@@ -20,7 +20,7 @@ const KB = [
     a: "Les badges suivent votre historique, soirée après soirée : l'Habitué (soirées jouées), le Chameau d'or (verres d'eau), Sam fidèle, Sans fausse note (soirées sans honte), Pilote de ligne (atterrissages en douceur), Bande de potes (amis). Ils sont dans votre profil, avec le nombre qui manque pour le palier suivant." },
   { id: "avatar", k: ["avatar", "personnage", "stade", "stades", "cercle", "bonhomme"],
     q: "Comment évolue l'avatar ?",
-    a: "Il passe par 10 stades, du sourire (0) au KO (1,5 g/L), avec les mêmes seuils pour tous. Il tient son verre 25 min après chaque verre, boit de l'eau quand le taux redescend, et sursaute en annonçant chaque nouveau stade." },
+    a: "Il passe par 10 stades, du sourire (0) au KO (1,5 g/L), avec les mêmes seuils pour tous. Il tient son verre 25 min après chaque verre et en boit une gorgée quand vous en notez un, boit de l'eau quand le taux redescend, et sursaute en annonçant chaque nouveau stade. Touchez-le : il vous fait un clin d'œil et lève son verre." },
   { id: "sam", k: ["sam", "conducteur", "conduire", "voiture", "volant", "ramener"],
     q: "Comment devenir Sam ?",
     a: "Sur l'écran Moi, cochez « Je suis Sam ce soir » avant tout verre d'alcool. Vous ne pourrez noter que des boissons sans alcool, et vous gagnez le trophée Sam. Rappel : après avoir bu, même un peu, on ne prend pas le volant." },

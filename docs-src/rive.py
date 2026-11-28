@@ -80,7 +80,7 @@ body = f"""<div class="page">{band("Avatar animé : cahier des charges", "Pour l
 <li>Humour bienveillant : il devient drôle, jamais pathétique ni sale.</li>
 </ul>
 <img class="ref" src="img/rive-stades.png" alt="Les 10 stades de l'avatar actuel">
-<p class="cap">Référence : les 10 stades de l'avatar actuel (dessin en code). Garder les idées (expressions, cheveux, cravate, effets), en mieux.</p>
+<p class="cap">Référence : les 10 stades de l'avatar actuel (pantin dessiné et animé en code). Garder les idées (expressions, cheveux, cravate, effets, gorgée jusqu'à la bouche, liquide qui reste à l'horizontale), en mieux.</p>
 <h2>3. Les 10 stades</h2>
 <p style="font-size:9pt">Seuil = taux estimé en g/L à partir duquel le stade s'affiche. L'appli calcule le stade et le transmet à l'animation (entrée <code>stage</code>).</p>
 <table class="t"><tr><th>Stade</th><th>Seuil</th><th>Visage</th><th>Cheveux</th><th>Tenue</th><th>Effets autour</th><th>Mouvement de repos</th></tr>{st}</table>

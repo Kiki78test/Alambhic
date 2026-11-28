@@ -47,6 +47,7 @@ async function collecter() {
   const aujourdhui = (await q("SELECT to_char(current_date, 'YYYY-MM-DD') d")).rows[0].d;
   const partSuppr = consos + suppr ? Math.round(suppr / (consos + suppr) * 100) : 0;
   return {
+    interesses: { total: comptes, detail: `${comptes} compte(s) · pas de liste d'attente` },   // (28/11)
     version: require("../package.json").version,
     online_now: enLigne, today: auj, history: quatorzeJours(hist, aujourdhui),
     metrics: [

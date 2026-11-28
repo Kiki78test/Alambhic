@@ -8,7 +8,7 @@ const KB = [
     a: "Alamb'hic utilise la formule de Widmark avec l'eau corporelle de Watson (sexe, âge, taille, poids). L'alcool passe dans le sang pendant 30 à 90 minutes selon le repas, puis le corps en élimine environ 0,15 g/L par heure. C'est une estimation : l'écart avec un éthylotest peut dépasser 0,2 g/L. Ce n'est jamais une autorisation de conduire." },
   { id: "repas", k: ["repas", "manger", "mange", "diner", "dejeuner", "pic", "baisse", "ventre", "jeun", "absorption"],
     q: "Pourquoi mon pic baisse-t-il après un repas ?",
-    a: "Un repas ralentit le passage de l'alcool dans le sang : à jeun il passe en 30 min, après un gros repas en 90 min, et une partie est éliminée en route. Le pic est donc plus bas et plus tardif. Notez vos repas avec leur heure (avant le premier verre, ou dans « Mes repas »)." },
+    a: "Un repas ralentit le passage de l'alcool dans le sang : à jeun il passe en 30 min, après un gros repas en 90 min, et une partie est éliminée en route. Le pic est donc plus bas et plus tardif. Notez vos repas avec leur heure : la fenêtre « Votre dernier repas ? » au premier verre (facultative), ou « Mes repas » à tout moment." },
   { id: "plafond", k: ["plafond", "limite", "hors plafond", "perso", "personnel"],
     q: "À quoi sert le plafond perso ?",
     a: "C'est la limite que vous vous fixez (0,5 à 1 g/L, 0,8 conseillé). La dépasser donne le titre de honte « Hors plafond » (−15 points). Il ne change pas l'avatar, qui suit les mêmes seuils pour tout le monde." },

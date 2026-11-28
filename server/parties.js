@@ -226,10 +226,6 @@ function routes(app) {
     if (!(abv >= 0 && abv <= 80)) return res.status(400).json({ error: "Indiquez un degré entre 0 et 80 %." });
     if (!(ago >= 0 && ago <= 180)) return res.status(400).json({ error: "Un verre peut être noté jusqu'à 3 h après coup." });
     if (m.sam && !water) return res.status(400).json({ error: "Vous êtes Sam ce soir : seulement des boissons sans alcool." });
-    if (!m.meals_ok && !water) {
-      const { rows: had } = await q("SELECT 1 FROM drinks WHERE party_code=$1 AND user_id=$2 AND abv>0 AND deleted_at IS NULL LIMIT 1", [m.code, req.user.id]);
-      if (!had[0]) return res.status(400).json({ error: "Avant votre premier verre, indiquez vos repas du jour (ou « rien mangé »)." });
-    }
     const { rows: recent } = await q(`SELECT count(*)::int AS n FROM drinks WHERE user_id=$1 AND abv>0 AND deleted_at IS NULL
                                        AND created_at > now() - interval '10 minutes'`, [req.user.id]);
     if (!water && recent[0].n >= 6) return res.status(429).json({ error: "Six verres d'alcool en dix minutes : ce rythme n'est pas crédible. Patientez un peu." });

@@ -96,8 +96,6 @@ async function addDrink(uid, b) {
   const party = await hooks.activeParty(uid);
   if (party && party.sam && !water) throw Object.assign(new Error("Vous êtes Sam ce soir : seulement des boissons sans alcool."), { status: 400 });
   if (!water) {
-    const l = await live(uid);
-    if (!l.me.mealsOk && !l.me.drinks.some(d => d.abv > 0)) throw Object.assign(new Error("Avant votre premier verre, indiquez vos repas du jour (ou « rien mangé »)."), { status: 400 });
     const { rows: recent } = await q(`SELECT count(*)::int AS n FROM drinks WHERE user_id=$1 AND abv>0 AND deleted_at IS NULL AND created_at > now() - interval '10 minutes'`, [uid]);
     if (recent[0].n >= 6) throw Object.assign(new Error("Six verres d'alcool en dix minutes : ce rythme n'est pas crédible. Patientez un peu."), { status: 429 });
   }

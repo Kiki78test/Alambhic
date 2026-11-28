@@ -93,6 +93,7 @@ A_FAIRE = [
     ("ok", "<b>Notifications avec les expressions</b> : envoyées aux amis et aux membres des groupes (facteur sur le vélo, tuer le ver, apéro, paliers 0,5 / 0,8 / 1,2 g/L, eau, mal aux cheveux à 10 h) ; chacun choisit amis, groupes, tout ou rien (Profil → Notifications)."),
     ("ok", "<b>Lieu des sessions</b> : sélecteur avec favoris (écran Moi), affiché dans l'historique, les groupes et les notifications des potes."),
     ("ok", "<b>Lieu autour de moi</b> : bars et restaurants proches (OpenStreetMap), « Chez moi », position des favoris gardée sur le téléphone."),
+    ("ok", "<b>Repas facultatifs</b> : fenêtre « Votre dernier repas ? » au premier verre d'une session (passer ou fermer possible)."),
     ("todo", "<b>Tester « Autour de moi »</b> en vrai (le serveur de test ne joint pas OpenStreetMap) : dans un bar, chez soi, et sur l'APK (nouvelle autorisation de localisation)."),
     ("todo", "<b>Tester les expressions des potes</b> sur deux téléphones (un ami, un groupe) : réglage amis / groupes / tout / rien respecté, pas de rafale (30 min)."),
     ("todo", "<b>Tester le zoom des courbes</b> au doigt (pincer, glisser, double-toucher) sur Android et iPhone."),

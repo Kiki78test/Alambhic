@@ -65,7 +65,7 @@ function locate(silent){
 }
 function viewPlace(){
   const P=S.place; if(!P) return "";
-  const head=`<button class="placebtn${P.place?" set":""}" id="placeBtn" aria-expanded="${!!S.placeOpen}">${PIN}<span data-noi18n>${P.place?esc(P.place):""}</span>${P.place?"":"<span>Où êtes-vous ?</span>"}<small>${S.placeOpen?"Fermer":P.place?"Changer":"Indiquer le lieu"}</small></button>`;
+  const head=`<button class="placebtn${P.place?" set":""}" id="placeBtn" aria-expanded="${!!S.placeOpen}">${PIN}${P.place?`<span data-noi18n>${esc(P.place)}</span>`:"<span>Où êtes-vous ?</span>"}<small>${S.placeOpen?"Fermer":P.place?"Changer":"Indiquer le lieu"}</small></button>`;
   if(!S.placeOpen) return head;
   const N=S.near, here=favHere(S.pos&&Date.now()-S.pos.t<10*MIN?S.pos:null);
   const favs=P.places.some(f=>f.toLowerCase()==="chez moi")?P.places:[...P.places,"Chez moi"];
@@ -110,8 +110,7 @@ function viewMe(p,now){
   const sub=s.peakT?`Pic ${fmt(s.peak)} à ${hm(s.peakT)} · ${std} verres standard`+(s.cur>0&&s.zeroT?` · retour à 0 vers ${hm(s.zeroT)}`:""):"Aucun verre d'alcool pour l'instant";
   const mine=(my.drinks||[]).slice().sort((a,b)=>b.t-a.t);
   const titles=p.ev.filter(e=>e.kind!=="info").sort((a,b)=>b.t-a.t), cur=titles[0];
-  const needMeals=!demo&&!noAdd&&!p.mealsOk&&!(my.drinks||[]).some(d=>d.abv>0)&&!my.sam;
-  return `${needMeals?viewMealsFirst():mealQuestion()}<section>
+  return `${mealQuestion()}<section>
   <div class="card" style="display:flex;flex-direction:column;gap:12px">
     <div class="row" style="justify-content:space-between"><span class="label">${esc(my.pseudo)} · taux estimé</span><span class="state" style="color:${col}">${lab}</span></div>
     <div class="row merow"><div class="avcol">${alertBtn()}${avx(p,88,lab,"me")}<span class="curt ${cur?cur.kind:""}" title="Titre actuel, visible par vos potes">${cur?esc(cur.title):"Pas encore de titre"}</span></div>${gauge(s.cur,maxB,cap,col,s.cur<s.prev-0.004)}<div class="bac">${fmt(s.cur)}<small>g/L</small></div></div>
@@ -121,13 +120,12 @@ function viewMe(p,now){
   ${demo?"":viewPlace()}
   <div class="field"><span class="label">Bu</span><div class="seg" id="ago">${[[0,"Maintenant"],[15,"il y a 15 min"],[30,"30 min"],[60,"1 h"]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${ago===v}">${l}</button>`).join("")}</div></div>
   ${demo||S.screen!=="party"?"":`<label class="toggle"><span>Je suis Sam ce soir (zéro alcool)</span><input type="checkbox" id="samT" ${my.sam?"checked":""}></label>`}
-  ${needMeals?`<div class="banner">Indiquez d'abord vos repas du jour, juste au-dessus : ils changent beaucoup le calcul. L'eau reste disponible.</div>`:""}
-  <div class="drinks${needMeals?" locked":""}">${PRESETS.filter(d=>!my.sam||d.water).map((d,i)=>`<button class="drink${d.water?" water":""}${pend["p"+PRESETS.indexOf(d)]?" "+pend["p"+PRESETS.indexOf(d)]:""}" data-p="${PRESETS.indexOf(d)}" ${pend["p"+PRESETS.indexOf(d)]==="sending"?'aria-busy="true"':""}><b>${d.l}</b><span>${d.d}</span></button>`).join("")}</div>
+  <div class="drinks">${PRESETS.filter(d=>!my.sam||d.water).map((d,i)=>`<button class="drink${d.water?" water":""}${pend["p"+PRESETS.indexOf(d)]?" "+pend["p"+PRESETS.indexOf(d)]:""}" data-p="${PRESETS.indexOf(d)}" ${pend["p"+PRESETS.indexOf(d)]==="sending"?'aria-busy="true"':""}><b>${d.l}</b><span>${d.d}</span></button>`).join("")}</div>
   ${my.sam?"":`<div class="row"><div class="field" style="flex:1;min-width:90px"><span class="label">Volume (cl)</span><input id="cml" type="number" inputmode="decimal" min="1" max="100" placeholder="15"></div><div class="field" style="flex:1;min-width:90px"><span class="label">Degré (%)</span><input id="cabv" type="number" inputmode="decimal" min="0" max="80" placeholder="13"></div><button class="btn${pend.perso?" "+pend.perso:""}" id="cadd" style="align-self:flex-end">${pend.perso==="ok"?"✓ Noté":pend.perso==="sending"?"Envoi…":"Ajouter"}</button></div>`}
   </section>
-  ${needMeals?"":viewMeals()}
+  ${viewMeals()}
   ${titles.length>1?`<section><details class="hq"><summary>Titres de la session (${titles.length})</summary><div class="badges" style="margin-top:8px">${titles.map(e=>`<span class="badge ${e.kind}">${esc(e.title)} · ${hm(e.t)}</span>`).join("")}</div></details></section>`:""}
-  <section><h2>Mes verres</h2>${mine.length?`<div class="list">${mine.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div><button class="x" data-del="${d.id}" aria-label="Supprimer ce verre">×</button></div>`).join("")}</div>`:`<p class="muted">Touchez une boisson ci-dessus pour l'enregistrer. Pensez à l'eau : trois verres débloquent le Chameau.</p>`}</section>`;
+  <section><h2>Mes verres</h2>${mine.length?`<div class="list">${mine.map(d=>`<div class="item"><span class="t">${hm(d.t)}</span><div class="grow"><b>${esc(d.l)}</b> <span class="muted">${d.ml/10} cl · ${String(d.abv).replace(".",",")} %</span></div><button class="x" data-del="${d.id}" aria-label="Supprimer ce verre">×</button></div>`).join("")}</div>`:`<p class="muted">Touchez une boisson ci-dessus pour l'enregistrer. Pensez à l'eau : trois verres débloquent le Chameau.</p>`}</section>${viewMealPop()}`;
 }
 /* Courbes sur une fenêtre : soirée (début → fin prévus), session (premier verre → retour à 0), groupe (48 h). */
 /* Courbes sur une fenêtre : soirée (début → fin prévus), session (premier verre → retour à 0), groupe (48 h).
@@ -290,13 +288,35 @@ const futureHM=hmS=>{const [h,m]=hmS.split(":").map(Number);const d=new Date(NOW
 const atHM=hmS=>{const [h,m]=hmS.split(":").map(Number);const d=new Date(NOW());d.setHours(h,m,0,0);if(d.getTime()>NOW()+15*MIN)d.setDate(d.getDate()-1);return d.getTime()};
 const hourNow=()=>{const d=new Date(NOW());return d.getHours()+d.getMinutes()/60};
 function kindSelect(id,val,withNone){return `<select id="${id}">${withNone?`<option value="">Rien</option>`:""}${MEAL_ORDER.map(k=>`<option value="${k}" ${val===k?"selected":""}>${MEALS[k].l}</option>`).join("")}</select>`}
-function viewMealsFirst(){
-  const h=hourNow(), past=SLOTS.filter(x=>x.from<=h);
-  return `<section><div class="card meals1"><span class="label" style="color:var(--accent)">Avant votre premier verre</span>
-  <h2>Qu'avez-vous mangé aujourd'hui ?</h2>
-  <p class="muted" style="margin:0;font-size:13px">Un repas ralentit le passage de l'alcool dans le sang et baisse le pic. Pour chaque repas pris, indiquez son type et son heure.</p>
-  ${(past.length?past:SLOTS.slice(0,1)).map(x=>`<div class="mrow"><b>${x.l}</b><input type="time" id="mt-${x.k}" value="" aria-label="Heure du ${x.l}" placeholder="${x.h}">${kindSelect("mk-"+x.k,x.def,true)}</div>`).join("")}
-  <div class="row"><button class="btn" id="mealsOk">Valider mes repas</button><button class="btn ghost" id="mealsNone">Rien mangé</button></div></div></section>`;
+/* Premier verre d'alcool de la session : fenêtre facultative « votre dernier repas ? » (heure et type), que l'on peut passer ou fermer. */
+function needMealPop(d){
+  if(demo||noAdd||d.water||my.sam) return false;
+  if((my.drinks||[]).some(x=>x.abv>0)) return false;                  // pas le premier verre de la session
+  if(myMeals().some(m=>m.t>NOW()-5*H_MS)) return false;               // un repas récent est déjà noté
+  return NOW()-ls.get("yd_mpop",0)>8*H_MS;                            // déjà demandé il y a moins de 8 h
+}
+function guessKind(){ const h=hourNow(); const sl=SLOTS.slice().reverse().find(x=>x.from<=h); return sl?sl.def:"light" }
+function viewMealPop(){
+  const M=S.mealPop; if(!M) return "";
+  return `<div class="mpop" role="dialog" aria-modal="true" aria-labelledby="mpTitle"><div class="card mpopc">
+   <button class="x mpx" id="mpX" aria-label="Fermer">×</button>
+   <span class="label" style="color:var(--accent)">Avant ce premier verre · facultatif</span>
+   <h2 id="mpTitle">Votre dernier repas ?</h2>
+   <p class="muted" style="margin:0;font-size:13px">Un repas ralentit le passage de l'alcool et baisse le pic : l'estimation sera plus juste.</p>
+   <div class="mrow"><b>À</b><input type="time" id="mpT" value="${esc(M.t||"")}" aria-label="Heure du dernier repas">${kindSelect("mpK",M.kind,false)}</div>
+   <button class="btn" id="mpOk">Noter le repas et le verre</button>
+   <div class="row" style="justify-content:space-between"><button class="link" id="mpNone">Rien mangé depuis ce matin</button><button class="link" id="mpSkip">Passer</button></div>
+  </div></div>`;
+}
+function bindMealPop(){
+  const M=S.mealPop; if(!M) return;
+  const t=$("#mpT"), k=$("#mpK"); if(t) t.oninput=()=>M.t=t.value; if(k) k.onchange=()=>M.kind=k.value;
+  const go=()=>{ ls.set("yd_mpop",NOW()); S.mealPop=null; render(); addDrink(M.d,M.key,M.rect,true) };
+  $("#mpX").onclick=go; $("#mpSkip").onclick=go; $("#mpNone").onclick=go;
+  $("#mpOk").onclick=()=>run(async()=>{ const v=t.value; if(!v) throw new Error("Indiquez l'heure du repas, ou touchez « Passer »."); if(futureHM(v)) throw new Error("Cette heure n'est pas encore passée.");
+    const meal={kind:k.value,t:atHM(v)}; ls.set("yd_mpop",NOW()); S.mealPop=null;
+    await addMeals([meal]); addDrink(M.d,M.key,M.rect,true) });
+  setTimeout(()=>{ if(t&&!M.t&&!M.focused){ M.focused=1; t.focus() } },50);
 }
 function mealSlotNow(){
   const h=hourNow(); const sl=SLOTS.find(x=>ASK[x.k]&&h>=ASK[x.k][0]&&h<=ASK[x.k][1]); if(!sl) return null;
@@ -916,8 +936,9 @@ function bindOut(){
 /* Ajout d'un verre : état « envoi » immédiat, coche verte quand c'est enregistré, puis bandeau avec Annuler. */
 const pend={};
 function setPend(k,v,ms){ if(v) pend[k]=v; else delete pend[k]; render(); if(ms) setTimeout(()=>{ if(pend[k]===v){ delete pend[k]; render() } },ms) }
-async function addDrink(d,key,rect){
+async function addDrink(d,key,rect,noPop){
   key=key??d.l; if(pend[key]==="sending") return;
+  if(!noPop&&needMealPop(d)){ S.mealPop={d,key,rect,kind:guessKind(),t:""}; render(); return }
   const a=ago, when=NOW()-a*MIN;
   if(demo){ const p=demoPlayers[S.me]; p.drinks=[...p.drinks,{id:when,t:when,l:d.l,ml:d.ml,abv:d.abv,...(d.water?{water:1}:{})}]; ago=0;
     buzz(25); setPend(key,"ok",1300); if(!d.water) flyDrop(rect); snack("Verre enregistré",`${d.l} · ${hm(when)}`,{undo:()=>{p.drinks=p.drinks.filter(x=>x.id!==when);render();snack("Verre retiré")}}); return }
@@ -932,7 +953,7 @@ async function addDrink(d,key,rect){
 function bindMain(){
   document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>addDrink(PRESETS[+b.dataset.p],"p"+b.dataset.p,b.getBoundingClientRect()));
   document.querySelectorAll("#ago button").forEach(b=>b.onclick=()=>{ago=+b.dataset.v;render()});
-  bindMeals(); bindPlace(); animateGauge(); rememberStates();
+  bindMeals(); bindPlace(); bindMealPop(); animateGauge(); rememberStates();
   document.querySelectorAll("[data-tk]").forEach(e=>{const [id,k]=e.dataset.tk.split("|");trendPrev[id]=k});
   document.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{S.rankMode=b.dataset.rm;render()});
   const ca=$("#cadd"); if(ca) ca.onclick=()=>{const ml=parseFloat($("#cml").value.replace(",","."))*10, abv=parseFloat($("#cabv").value.replace(",","."));if(!(ml>0&&ml<=1000&&abv>=0&&abv<=80)){flash("Verre incomplet","Indiquez un volume en cl et un degré entre 0 et 80 %.");return}addDrink({l:abv?"Verre perso":"Sans alcool",ml,abv,water:abv?0:1},"perso")};

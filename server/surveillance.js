@@ -47,7 +47,9 @@ async function collecter() {
   const aujourdhui = (await q("SELECT to_char(current_date, 'YYYY-MM-DD') d")).rows[0].d;
   const partSuppr = consos + suppr ? Math.round(suppr / (consos + suppr) * 100) : 0;
   return {
-    interesses: { total: comptes, detail: `${comptes} compte(s) · pas de liste d'attente` },   // (28/11)
+    interesses: { total: comptes, detail: `${comptes} compte(s) · pas de liste d'attente`,   // (28/11)
+      history: (await q(`SELECT to_char(d, 'YYYY-MM-DD') date, (SELECT count(*) FROM users WHERE created_at < d + interval '1 day')::int n
+        FROM generate_series(current_date - 29, current_date, interval '1 day') d ORDER BY d`)).rows },
     version: require("../package.json").version,
     online_now: enLigne, today: auj, history: quatorzeJours(hist, aujourdhui),
     metrics: [

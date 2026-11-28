@@ -3,10 +3,12 @@
    - CORS limité aux adresses de MONITOR_ORIGIN (séparées par des virgules), ex. https://controle.airmonylive.com
    - Fonctionne avec un serveur Node simple (http) comme avec Express : traiter(req, res) renvoie true si la requête est prise.
    - Les indicateurs propres à l'appli (collecter) sont mis en cache 20 s pour ne pas charger la base à chaque actualisation.
+   - (28/11) Réponse compressée en gzip si le demandeur l'accepte ; « interesses » : { total, detail, history[30] }.
    Réponse : { app, version, commit, uptime_s, db, db_ms, db_size_mb, db_conn, memory_mb, lag_ms, online_now, today, history[14],
                metrics[], checks[], security{level, items[]}, live?, highlight?, ai_cost_usd?, time } */
 "use strict";
 const crypto = require("crypto");
+const zlib = require("zlib");
 
 let lag = 0;
 { let t = Date.now(); setInterval(() => { const n = Date.now(); lag = Math.max(0, n - t - 1000); t = n; }, 1000).unref(); }
@@ -103,7 +105,13 @@ function creer(opts) {
       res.setHeader("Access-Control-Allow-Headers", "X-Monitor-Key"); res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
       res.setHeader("Access-Control-Max-Age", "600");
     }
-    const envoyer = (code, obj) => { res.writeHead(code, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }); res.end(JSON.stringify(obj)); };
+    // (28/11) réponse compressée (gzip) quand le demandeur l'accepte : environ 4 fois moins de bande passante
+    const envoyer = (code, obj) => {
+      let corps = Buffer.from(JSON.stringify(obj));
+      const h = { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "Vary": "Accept-Encoding, Origin" };
+      if (corps.length > 600 && /\bgzip\b/.test(String(req.headers["accept-encoding"] || ""))) { corps = zlib.gzipSync(corps); h["Content-Encoding"] = "gzip"; }
+      h["Content-Length"] = corps.length; res.writeHead(code, h); res.end(corps);
+    };
     if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return true; }
     const cle = process.env.MONITOR_KEY;
     if (!cle || !egal(req.headers["x-monitor-key"] || "", cle)) { envoyer(401, { erreur: "clé invalide" }); return true; }
